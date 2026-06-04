@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -15,17 +16,17 @@ export default function Navbar() {
         </a>
 
         <div className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">Features</a>
-          <a href="#vergleich" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">Vergleich</a>
+          <a href="#konzept" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">Konzept</a>
+          <Link href="/verzeichnis" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">Verzeichnis</Link>
           <a href="#preise" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">Preise</a>
           <a href="#kontakt" className="text-sm text-gray-600 hover:text-blue-600 transition-colors">Kontakt</a>
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <a href="#kontakt" className="text-sm text-gray-600 hover:text-gray-900">Anmelden</a>
-          <a href="#kontakt" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-            Demo anfragen
-          </a>
+          <Link href="/verzeichnis" className="text-sm text-gray-600 hover:text-gray-900">Anmelden</Link>
+          <Link href="/eintragen" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Firma eintragen
+          </Link>
         </div>
 
         <button onClick={() => setOpen(!open)} className="md:hidden p-2 text-gray-600">
@@ -39,13 +40,13 @@ export default function Navbar() {
 
       {open && (
         <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 flex flex-col gap-4">
-          <a href="#features" className="text-sm text-gray-700" onClick={() => setOpen(false)}>Features</a>
-          <a href="#vergleich" className="text-sm text-gray-700" onClick={() => setOpen(false)}>Vergleich</a>
+          <a href="#konzept" className="text-sm text-gray-700" onClick={() => setOpen(false)}>Konzept</a>
+          <Link href="/verzeichnis" className="text-sm text-gray-700" onClick={() => setOpen(false)}>Verzeichnis</Link>
           <a href="#preise" className="text-sm text-gray-700" onClick={() => setOpen(false)}>Preise</a>
           <a href="#kontakt" className="text-sm text-gray-700" onClick={() => setOpen(false)}>Kontakt</a>
-          <a href="#kontakt" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg text-center" onClick={() => setOpen(false)}>
-            Demo anfragen
-          </a>
+          <Link href="/eintragen" className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg text-center" onClick={() => setOpen(false)}>
+            Firma eintragen
+          </Link>
         </div>
       )}
     </nav>

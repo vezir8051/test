@@ -1,4 +1,5 @@
 import Hero from "@/components/Hero";
+import Konzept from "@/components/Konzept";
 import Features from "@/components/Features";
 import Comparison from "@/components/Comparison";
 import Pricing from "@/components/Pricing";
@@ -11,6 +12,7 @@ export default function Home() {
     <main className="min-h-screen bg-white">
       <Navbar />
       <Hero />
+      <Konzept />
       <Features />
       <Comparison />
       <Pricing />

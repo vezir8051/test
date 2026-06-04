@@ -20,6 +20,9 @@
 # production
 /build
 
+# lokaler Daten-Store (wird zur Laufzeit aus lib/seed.ts erzeugt)
+/data
+
 # misc
 .DS_Store
 *.pem
