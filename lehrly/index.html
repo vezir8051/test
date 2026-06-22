@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Lehrly">
 <meta name="description" content="Lehrly.ch — die Schweizer Lehrstellenplattform. Lernende und Betriebe, die zusammenpassen.">
 <meta name="theme-color" content="#FFFFFF">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230A0A0A'/><rect x='70' y='14' width='16' height='16' fill='%23E30613'/><text x='12' y='70' font-family='Helvetica,Arial' font-size='46' font-weight='800' fill='white'>L</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230A0A0A'/><rect x='70' y='14' width='16' height='16' fill='%232563EB'/><text x='12' y='70' font-family='Helvetica,Arial' font-size='46' font-weight='800' fill='white'>L</text></svg>">
 <title>Lehrly.ch — Schweizer Lehrstellenplattform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,7 +41,14 @@
 <!-- TOP BAR -->
 <header class="topbar">
   <div class="wordmark" onclick="navTo('home',0)">Lehrly<span class="dot"></span><span class="tld">.ch</span></div>
-  <button class="topbar-link" onclick="navTo('dash',4)">Dashboard</button>
+  <nav class="dnav">
+    <button class="dnav-item on" onclick="navTo('home',0)">Start</button>
+    <button class="dnav-item" onclick="navTo('lernende',1)">Profil</button>
+    <button class="dnav-item" onclick="navTo('betriebe',2)">Betriebe</button>
+    <button class="dnav-item" onclick="navTo('chat',3)">Chat</button>
+    <button class="dnav-item" onclick="navTo('dash',4)">Dashboard</button>
+  </nav>
+  <button class="topbar-link" onclick="navTo('lernende',1)">Profil erstellen</button>
 </header>
 
 <!-- BOTTOM NAV -->
@@ -56,8 +63,8 @@
 <!-- ══ HOME ══ -->
 <section id="sc-home" class="sc on">
   <div class="hero">
-    <span class="eyebrow red">CH — Lehrstellenplattform</span>
-    <h1>Lehrstellen,<br>die <span class="red">passen.</span></h1>
+    <span class="eyebrow acc">CH — Lehrstellenplattform</span>
+    <h1>Lehrstellen,<br>die <span class="acc">passen.</span></h1>
     <p class="lead">Lehrly verbindet Lernende und Betriebe — direkt, ohne Umwege. Profil, Matching, Chat und Lebenslauf an einem Ort.</p>
     <div class="hero-cta">
       <button class="btn" onclick="navTo('lernende',1)">Profil erstellen <svg class="arrow"><use href="#i-arr"/></svg></button>
@@ -66,9 +73,9 @@
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="n">12<span class="red">'</span>400</div><div class="l">Lernende</div></div>
-    <div class="stat"><div class="n">3<span class="red">'</span>800</div><div class="l">Betriebe</div></div>
-    <div class="stat"><div class="n">91<span class="red">%</span></div><div class="l">Erfolg</div></div>
+    <div class="stat"><div class="n">12<span class="acc">'</span>400</div><div class="l">Lernende</div></div>
+    <div class="stat"><div class="n">3<span class="acc">'</span>800</div><div class="l">Betriebe</div></div>
+    <div class="stat"><div class="n">91<span class="acc">%</span></div><div class="l">Erfolg</div></div>
   </div>
 
   <div class="lbar"><span class="eyebrow">So funktioniert's</span></div>
@@ -80,7 +87,7 @@
 
   <div class="lbar"><span class="eyebrow">Aktuelle Matches</span><a onclick="navTo('lernende',1)">Alle</a></div>
   <div class="rows">
-    <div class="row" onclick="openStelle('zkb')"><div class="mk red">ZK</div><div class="bd"><div class="nm">ZKB — Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 750/Mt.</div></div><div class="score hi">96<small>MATCH</small></div></div>
+    <div class="row" onclick="openStelle('zkb')"><div class="mk acc">ZK</div><div class="bd"><div class="nm">ZKB — Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 750/Mt.</div></div><div class="score hi">96<small>MATCH</small></div></div>
     <div class="row" onclick="openStelle('sbb')"><div class="mk fill">SB</div><div class="bd"><div class="nm">SBB — Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 730/Mt.</div></div><div class="score">89<small>MATCH</small></div></div>
     <div class="row" onclick="openStelle('sanitas')"><div class="mk">SA</div><div class="bd"><div class="nm">Sanitas — City</div><div class="sb">Kauffrau EFZ · CHF 700/Mt.</div></div><div class="score">82<small>MATCH</small></div></div>
   </div>
@@ -96,7 +103,7 @@
 
 <!-- ══ LERNENDE / PROFIL ══ -->
 <section id="sc-lernende" class="sc">
-  <div class="shead"><span class="eyebrow red">Lernende</span><h2>Mein Profil</h2><p>Erfasse deine Angaben — das Matching findet passende Betriebe.</p></div>
+  <div class="shead"><span class="eyebrow acc">Lernende</span><h2>Mein Profil</h2><p>Erfasse deine Angaben — das Matching findet passende Betriebe.</p></div>
   <div class="form">
     <div class="photo">
       <div class="ph" onclick="toast('Foto hochladen')"><svg><use href="#i-cam"/></svg></div>
@@ -151,13 +158,13 @@
   </div>
 
   <div class="match-wrap">
-    <button class="btn red full" onclick="runMatch(this)">Matches finden</button>
+    <button class="btn full" onclick="runMatch(this)">Matches finden</button>
     <div class="btn-note">Nur passende Betriebe sehen dein Profil.</div>
   </div>
 
-  <div class="lbar"><span class="eyebrow">Deine Matches</span><span class="eyebrow red">03</span></div>
+  <div class="lbar"><span class="eyebrow">Deine Matches</span><span class="eyebrow acc">03</span></div>
   <div class="rows" id="match-list">
-    <div class="row" onclick="openStelle('zkb')"><div class="mk red">ZK</div><div class="bd"><div class="nm">ZKB — Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 750/Mt.</div></div><div class="score hi">96<small>MATCH</small></div></div>
+    <div class="row" onclick="openStelle('zkb')"><div class="mk acc">ZK</div><div class="bd"><div class="nm">ZKB — Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 750/Mt.</div></div><div class="score hi">96<small>MATCH</small></div></div>
     <div class="row" onclick="openStelle('sbb')"><div class="mk fill">SB</div><div class="bd"><div class="nm">SBB — Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 730/Mt.</div></div><div class="score">89<small>MATCH</small></div></div>
     <div class="row" onclick="openStelle('sanitas')"><div class="mk">SA</div><div class="bd"><div class="nm">Sanitas — City</div><div class="sb">Kauffrau EFZ · CHF 700/Mt.</div></div><div class="score">82<small>MATCH</small></div></div>
   </div>
@@ -165,7 +172,7 @@
 
 <!-- ══ BETRIEBE ══ -->
 <section id="sc-betriebe" class="sc">
-  <div class="shead"><div class="shead-row"><div><span class="eyebrow red">Betriebe</span><h2>Kandidaten</h2></div><button class="btn sm" onclick="openM('mo-inserat')">+ Stelle</button></div><p>47 neue Profile heute.</p></div>
+  <div class="shead"><div class="shead-row"><div><span class="eyebrow acc">Betriebe</span><h2>Kandidaten</h2></div><button class="btn sm" onclick="openM('mo-inserat')">+ Stelle</button></div><p>47 neue Profile heute.</p></div>
   <div class="filters">
     <div class="fchip on" data-filter="all" onclick="filterKandidaten(this)">Alle</div>
     <div class="fchip" data-filter="kv" onclick="filterKandidaten(this)">KV</div>
@@ -205,7 +212,7 @@
 
 <!-- ══ CHAT LIST ══ -->
 <section id="sc-chat" class="sc">
-  <div class="shead"><span class="eyebrow red">Nachrichten</span><h2>Chat</h2></div>
+  <div class="shead"><span class="eyebrow acc">Nachrichten</span><h2>Chat</h2></div>
   <div class="clist">
     <div class="citem on" onclick="openChat('zkb','ZKB HR — Sandra Meier')"><div class="cmk fill">ZK</div><div class="bd"><div class="cname">ZKB HR — Sandra Meier</div><div class="cprev">Wir würden Sie gerne einladen …</div></div><div><div class="ctime">14:32</div><div class="cunread"></div></div></div>
     <div class="citem" onclick="openChat('sbb','SBB — Ausbildung')"><div class="cmk">SB</div><div class="bd"><div class="cname">SBB — Ausbildung</div><div class="cprev">Vielen Dank für Ihre Bewerbung</div></div><div class="ctime">09:15</div></div>
@@ -232,7 +239,7 @@
 
 <!-- ══ DASHBOARD ══ -->
 <section id="sc-dash" class="sc">
-  <div class="shead"><span class="eyebrow red">Übersicht</span><h2>Dashboard</h2></div>
+  <div class="shead"><span class="eyebrow acc">Übersicht</span><h2>Dashboard</h2></div>
   <div class="dash-id">
     <div class="mk">LM</div>
     <div><div class="nm">Lena Müller</div><div class="rl">LERNENDE · KAUFFRAU EFZ</div><div class="pr">Profil 91 % vollständig</div></div>
@@ -261,7 +268,7 @@
 
 <!-- ══ PREISE ══ -->
 <section id="sc-preise" class="sc">
-  <div class="shead"><span class="eyebrow red">Preise</span><h2>Pakete</h2><p>Für Lernende immer kostenlos.</p></div>
+  <div class="shead"><span class="eyebrow acc">Preise</span><h2>Pakete</h2><p>Für Lernende immer kostenlos.</p></div>
   <div class="plans">
     <div class="plan">
       <div class="plan-top"><div><div class="nm">Kostenlos</div><div class="ds">Lernende & Reinschnuppern</div></div><div class="pr free">CHF 0</div></div>
@@ -282,7 +289,7 @@
       <div class="badge">Beliebtestes Paket</div>
       <div class="plan-top"><div><div class="nm">Gold</div><div class="ds">Aktiv suchende Betriebe</div></div><div class="pr"><sup>CHF</sup>189<span class="per">/Mt.</span></div></div>
       <div class="feats"><div class="feat"><span class="yes">+</span>Unbegrenzte Kandidaten</div><div class="feat"><span class="yes">+</span>Unbegrenzte Inserate</div><div class="feat"><span class="yes">+</span>Priority-Listing Top 3</div><div class="feat"><span class="yes">+</span>Persönlicher Support</div></div>
-      <button class="btn red full" onclick="toast('Gold gewählt')">Gold wählen</button>
+      <button class="btn full" onclick="toast('Gold gewählt')">Gold wählen</button>
     </div>
     <div class="plan">
       <div class="plan-top"><div><div class="nm">Enterprise</div><div class="ds">Grossbetriebe & Ketten</div></div><div class="pr">Anfrage</div></div>
@@ -301,7 +308,7 @@
     <div class="sheet-hd"><h3 id="stelle-title-h">Stellenbeschrieb</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
     <div class="sheet-bd" id="stelle-body"></div>
     <div class="sheet-ft">
-      <button class="btn red full" onclick="cM();openM('mo-bew')">Jetzt bewerben <svg class="arrow"><use href="#i-arr"/></svg></button>
+      <button class="btn full" onclick="cM();openM('mo-bew')">Jetzt bewerben <svg class="arrow"><use href="#i-arr"/></svg></button>
       <button class="btn out full" onclick="cM()">Schliessen</button>
     </div>
   </div>
@@ -334,7 +341,7 @@
       <div class="field"><label>Nachricht</label><textarea>Guten Tag! Wir laden Sie herzlich zu einem Schnuppertag ein.</textarea></div>
     </div>
     <div class="sheet-ft">
-      <button class="btn red full" onclick="docS('s-sch')">Senden</button>
+      <button class="btn full" onclick="docS('s-sch')">Senden</button>
       <button class="btn out full" onclick="cM()">Abbrechen</button>
     </div>
   </div>
@@ -351,7 +358,7 @@
       <div class="field"><label>Schnuppertermin</label><input type="date" value="2025-05-20"></div>
     </div>
     <div class="sheet-ft">
-      <button class="btn red full" onclick="docS('s-bew')">Senden</button>
+      <button class="btn full" onclick="docS('s-bew')">Senden</button>
       <button class="btn out full" onclick="cM()">Abbrechen</button>
     </div>
   </div>
@@ -373,7 +380,7 @@
       <div class="field"><label>Beschrieb</label><textarea placeholder="Beschreibe die Stelle …"></textarea></div>
     </div>
     <div class="sheet-ft">
-      <button class="btn red full" onclick="docS('s-ins')">Veröffentlichen</button>
+      <button class="btn full" onclick="docS('s-ins')">Veröffentlichen</button>
       <button class="btn out full" onclick="cM()">Abbrechen</button>
     </div>
   </div>
@@ -394,7 +401,7 @@
       </div>
     </div>
     <div class="sheet-ft">
-      <button class="btn red full" onclick="toast('PDF wird heruntergeladen')">PDF herunterladen</button>
+      <button class="btn full" onclick="toast('PDF wird heruntergeladen')">PDF herunterladen</button>
       <button class="btn out full" onclick="cM()">Schliessen</button>
     </div>
   </div>
