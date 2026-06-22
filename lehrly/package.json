@@ -4,11 +4,15 @@
   "private": true,
   "description": "Lehrly.ch – Schweizer Lehrstellenplattform (statische Mobile-Web-App)",
   "scripts": {
-    "test": "node test/click-through.js",
+    "test": "node test/click-through.js && node test/agentation.js",
+    "build:agentation": "esbuild build/agentation-entry.mjs --bundle --format=iife --minify --define:process.env.NODE_ENV='\"production\"' --outfile=vendor/agentation.bundle.js",
     "serve": "node server.js"
   },
   "devDependencies": {
-    "jsdom": "^24.0.0"
+    "esbuild": "^0.28.1",
+    "jsdom": "^24.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "dependencies": {
     "agentation": "^3.0.2"
