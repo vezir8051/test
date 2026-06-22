@@ -18,46 +18,8 @@
 </head>
 <body>
 
-<!-- ══ LOGIN GATE ══ -->
-<div id="gate">
-  <div class="gate-orb go1"></div>
-  <div class="gate-orb go2"></div>
-  <div class="gate-card" id="gate-card">
-    <div class="gate-logo">
-      <div class="gate-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M6 4L6 17H16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="18" cy="6" r="2.5" fill="#BAD8F5"/></svg></div>
-      <div class="gate-name">Lehr<span>ly</span><span class="gate-tld">.ch</span></div>
-    </div>
-    <div class="gate-lock">🔐</div>
-    <div class="gate-title"><h2>Willkommen</h2><p>Bitte anmelden um fortzufahren</p></div>
-    <div class="gate-alert ga-err" id="ga-err"></div>
-    <div class="gate-alert ga-ok" id="ga-ok"></div>
-    <div class="gate-fg">
-      <label for="gu">Benutzername</label>
-      <input type="text" id="gu" placeholder="Benutzername" autocomplete="username" autocorrect="off" autocapitalize="none">
-    </div>
-    <div class="gate-fg">
-      <label for="gp">Passwort</label>
-      <div class="pwd-rel">
-        <input type="password" id="gp" placeholder="Passwort" autocomplete="current-password" onkeydown="if(event.key==='Enter')gLogin()">
-        <span class="pwd-eye" onclick="toggleGP()" role="button" aria-label="Passwort anzeigen">👁</span>
-      </div>
-    </div>
-    <button class="gate-btn" id="gbtn" onclick="gLogin()">Einloggen →</button>
-    <div class="gate-footer"><p>🇨🇭 <strong>Lehrly.ch</strong> – Die Schweizer Lehrstellenplattform</p></div>
-    <div class="gate-hint">Demo-Zugang: <strong>admin</strong> / <strong>Lehrly2025!</strong></div>
-  </div>
-</div>
-
-<!-- SUCCESS -->
-<div id="success-screen">
-  <div class="ss-icon">✅</div>
-  <div class="ss-title">Willkommen zurück!</div>
-  <div class="ss-sub">Lehrly.ch wird geladen...</div>
-  <div class="ss-bar"><div class="ss-fill"></div></div>
-</div>
-
 <!-- ══ MAIN ══ -->
-<div id="main">
+<div id="main" class="show">
 
 <!-- TOP NAV -->
 <div class="top-nav">
@@ -66,7 +28,7 @@
     <div class="top-lt">Lehr<span>ly</span><small>.ch</small></div>
   </div>
   <div class="top-right">
-    <div class="top-logout" onclick="gLogout()">🔓 Logout</div>
+    <div class="top-logout" onclick="navTo('dash',4)">📊 Dashboard</div>
   </div>
 </div>
 
@@ -284,7 +246,7 @@
       <button class="btn b-blue b-full b-lg" onclick="navTo('lernende',1)">📋 Profil bearbeiten</button>
       <button class="btn b-mint b-full b-lg" onclick="navTo('lernende',1)">🎯 Neue Matches finden</button>
       <button class="btn b-gold b-full b-lg" onclick="openM('mo-cv')">📄 Lebenslauf ansehen</button>
-      <button class="btn b-light b-full b-lg" onclick="gLogout()">🔓 Abmelden</button>
+      <button class="btn b-light b-full b-lg" onclick="show('preise')">💰 Preise ansehen</button>
     </div>
 
     <!-- Preise Link -->

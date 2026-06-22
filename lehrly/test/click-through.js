@@ -60,38 +60,14 @@ function waitFor(cond, ms = 3000) {
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 (async function run() {
-  await waitFor(() => typeof window.gLogin === 'function');
+  await waitFor(() => typeof window.show === 'function');
   console.log('\n── app.js geladen ──');
 
-  // ───────── LOGIN ─────────
-  console.log('\n[Login]');
-  ok('Gate sichtbar beim Start', !$('gate').classList.contains('hidden'));
-  ok('Main versteckt beim Start', !$('main').classList.contains('show'));
-
-  // falscher Login
-  $('gu').value = 'admin';
-  $('gp').value = 'falsch';
-  window.gLogin();
-  await delay(900);
-  ok('Fehlermeldung bei falschem Passwort', $('ga-err').classList.contains('show'));
-  ok('Noch im Gate nach falschem Login', !$('main').classList.contains('show'));
-
-  // Passwort-Toggle
-  window.toggleGP();
-  ok('Passwort sichtbar nach Toggle', $('gp').type === 'text');
-  window.toggleGP();
-  ok('Passwort wieder versteckt', $('gp').type === 'password');
-
-  // richtiger Login
-  $('gu').value = 'admin';
-  $('gp').value = 'Lehrly2025!';
-  window.gLogin();
-  await delay(1500);    // login 700ms + showMain trigger 600ms → success screen visible
-  ok('Success-Screen erscheint', $('success-screen').classList.contains('show'));
-  await delay(2200);    // showMain setTimeout 2000 → main visible, gate hidden
-  ok('Gate versteckt nach Login', $('gate').classList.contains('hidden'));
-  ok('Main sichtbar nach Login', $('main').classList.contains('show'));
-  ok('Session in localStorage gespeichert', !!window.localStorage.getItem('lehrly_gate'));
+  // ───────── DIREKTSTART (ohne Login) ─────────
+  console.log('\n[Direktstart]');
+  ok('Main direkt sichtbar', $('main').classList.contains('show'));
+  ok('Kein Login-Gate im DOM', $('gate') === null);
+  ok('Start-Screen aktiv', $('sc-home').classList.contains('on'));
 
   // ───────── NAVIGATION ─────────
   console.log('\n[Bottom-Nav]');
@@ -257,9 +233,10 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
   priceBtns.forEach((b, i) => { click(b); });
   ok('Preis-Buttons zeigen Toast', $('toast').classList.contains('show'));
 
-  // ───────── LOGOUT (Session) ─────────
-  console.log('\n[Session]');
-  ok('Session noch aktiv vor Logout', !!window.localStorage.getItem('lehrly_gate'));
+  // ───────── TOP-NAV Dashboard-Shortcut ─────────
+  console.log('\n[Top-Nav]');
+  click(doc.querySelector('.top-logout'));
+  ok('Top-Nav-Shortcut → Dashboard', $('sc-dash').classList.contains('on'));
 
   // ───────── ERGEBNIS ─────────
   console.log('\n════════════════════════════');

@@ -4,7 +4,7 @@
   "private": true,
   "description": "Lehrly.ch – Schweizer Lehrstellenplattform (statische Mobile-Web-App)",
   "scripts": {
-    "test": "node test/click-through.js && node test/gate-edge.js",
+    "test": "node test/click-through.js",
     "serve": "node server.js"
   },
   "devDependencies": {

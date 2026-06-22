@@ -9,11 +9,10 @@ Lernende und Betriebe mit KI-Matching, Chat und automatischem Lebenslauf.
 lehrly/
 ├── index.html          # Markup aller Screens & Modals
 ├── css/styles.css      # gesamtes Styling (mobile-first)
-├── js/app.js           # Login-Gate, Navigation, Matching, Chat, Modals
+├── js/app.js           # Navigation, Matching, Chat, Modals
 ├── server.js           # winziger Dev-Server (keine Abhängigkeiten)
 └── test/
-    ├── click-through.js # klickt jede Interaktion durch (jsdom)
-    └── gate-edge.js     # Login-Sonderfälle (Session, Lockout, ...)
+    └── click-through.js # klickt jede Interaktion durch (jsdom)
 ```
 
 ## Starten
@@ -23,25 +22,17 @@ npm run serve     # http://localhost:5173
 # oder einfach index.html im Browser öffnen
 ```
 
-## Demo-Login
-
-| Benutzername | Passwort      |
-|--------------|---------------|
-| `admin`      | `Lehrly2025!` |
-| `lehrly`     | `Schweiz2025` |
-
-Zugangsdaten stehen oben in `js/app.js` (`LOGINS`). Die Session bleibt 8 h im
-`localStorage`.
+Die App startet **direkt** auf der Startseite – kein Login nötig.
 
 ## Tests
 
 ```bash
 npm install      # einmalig: jsdom
-npm test         # 81 Checks, klickt sich durch die ganze App
+npm test         # 64 Checks, klickt sich durch die ganze App
 ```
 
 Die Tests laden die echte `index.html` + `app.js` in jsdom, simulieren jeden
-Klick (Login, Navigation, Matching, Filter, Chat, alle Modals) und schlagen bei
+Klick (Navigation, Matching, Filter, Chat, alle Modals) und schlagen bei
 jedem JS-Laufzeitfehler fehl.
 
 ## Screens

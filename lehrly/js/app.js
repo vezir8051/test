@@ -1,109 +1,7 @@
 'use strict';
 
-/* ════════════════════════════
-   ZUGANGSDATEN – HIER ÄNDERN!
-   ════════════════════════════ */
-const LOGINS = [
-  { user: 'admin',  pwd: 'Lehrly2025!' },
-  { user: 'lehrly', pwd: 'Schweiz2025' },
-];
-/* ════════════════════════════ */
-
-const SK = 'lehrly_gate';
-let att = 5;
-let locked = false;
-
 /* tiny DOM helper */
 const $ = (id) => document.getElementById(id);
-
-/* sichere localStorage-Wrapper (Inkognito/blockiert werfen sonst) */
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* no-op */ } },
-  del(k) { try { localStorage.removeItem(k); } catch (e) { /* no-op */ } },
-};
-
-/* ── Session prüfen ── */
-(function checkSession() {
-  try {
-    const s = JSON.parse(store.get(SK) || '{}');
-    if (s.exp && Date.now() < s.exp) { showMain(true); return; }
-    store.del(SK);
-  } catch (e) { /* ignore corrupt session */ }
-})();
-
-/* ══ LOGIN ══ */
-function gLogin() {
-  if (locked) return;
-  const u = $('gu').value.trim();
-  const p = $('gp').value;
-  if (!u || !p) { showGErr('Bitte beide Felder ausfüllen.'); return; }
-  const btn = $('gbtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Prüfen...';
-  setTimeout(() => {
-    const ok = LOGINS.find((l) => l.user === u && l.pwd === p);
-    if (ok) {
-      store.set(SK, JSON.stringify({ user: u, exp: Date.now() + 8 * 3600000 }));
-      showGOk('✅ Willkommen!');
-      setTimeout(() => showMain(false), 600);
-    } else {
-      att--;
-      btn.disabled = false;
-      btn.textContent = 'Einloggen →';
-      const card = $('gate-card');
-      card.classList.add('shake');
-      setTimeout(() => card.classList.remove('shake'), 350);
-      $('gp').value = '';
-      if (att <= 0) {
-        locked = true;
-        showGErr('⛔ Zu viele Versuche. Bitte 5 Min. warten.');
-        btn.disabled = true;
-        setTimeout(() => { locked = false; att = 5; btn.disabled = false; }, 300000);
-      } else {
-        showGErr(`❌ Falsch – noch ${att} Versuche`);
-      }
-    }
-  }, 700);
-}
-
-function showMain(instant) {
-  if (instant) {
-    $('gate').classList.add('hidden');
-    $('main').classList.add('show');
-    return;
-  }
-  const ss = $('success-screen');
-  ss.classList.add('show');
-  setTimeout(() => {
-    $('gate').classList.add('hidden');
-    ss.classList.remove('show');
-    ss.style.display = 'none';
-    $('main').classList.add('show');
-  }, 2000);
-}
-
-function gLogout() { store.del(SK); location.reload(); }
-
-function toggleGP() {
-  const i = $('gp');
-  const e = document.querySelector('.pwd-eye');
-  i.type = i.type === 'password' ? 'text' : 'password';
-  e.textContent = i.type === 'password' ? '👁' : '🙈';
-}
-
-function showGErr(m) {
-  const e = $('ga-err');
-  e.textContent = m;
-  e.classList.add('show');
-  $('ga-ok').classList.remove('show');
-}
-function showGOk(m) {
-  const e = $('ga-ok');
-  e.textContent = m;
-  e.classList.add('show');
-  $('ga-err').classList.remove('show');
-}
 
 /* ══ NAVIGATION ══ */
 function show(n) {
@@ -293,9 +191,6 @@ function docS(id) { const e = $(id); if (e) e.classList.add('on'); setTimeout(cM
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cM(); });
 
 /* expose for inline handlers */
-window.gLogin = gLogin;
-window.gLogout = gLogout;
-window.toggleGP = toggleGP;
 window.show = show;
 window.setNav = setNav;
 window.navTo = navTo;
