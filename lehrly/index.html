@@ -14,17 +14,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
-<!-- Agentation (visuelles Agent-Feedback) — buildless via ESM-CDN, nur aktiv mit ?annotate -->
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-    "agentation": "https://esm.sh/agentation@3.0.2?external=react,react-dom"
-  }
-}
-</script>
 </head>
 <body>
 
@@ -414,6 +403,7 @@
 </div><!-- /main -->
 
 <script src="js/app.js"></script>
-<script type="module" src="js/agentation.js"></script>
+<!-- Agentation (visuelles Agent-Feedback) — self-contained Bundle, nur aktiv mit ?annotate -->
+<script src="vendor/agentation.bundle.js" defer></script>
 </body>
 </html>

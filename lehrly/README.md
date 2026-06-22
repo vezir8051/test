@@ -34,9 +34,16 @@ https://…/                 → normale Seite, keine Toolbar
 https://…/?annotate        → Toolbar unten rechts: Elemente anklicken & annotieren
 ```
 
-React/ReactDOM/agentation werden buildless per Import-Map vom ESM-CDN geladen
-(`index.html`), der Loader steht in `js/agentation.js`. Normale Besucher sind
-nicht betroffen.
+React, ReactDOM und agentation sind **lokal in eine einzige Datei gebündelt**
+(`vendor/agentation.bundle.js`, via esbuild) — kein CDN, keine Import-Map, keine
+Laufzeit-Abhängigkeit. Neu bauen nach Update:
+
+```bash
+npm run build:agentation
+```
+
+Quelle des Bundles: `build/agentation-entry.mjs`. Normale Besucher sind nicht
+betroffen, die Toolbar lädt nur bei `?annotate`.
 
 ## Tests
 
