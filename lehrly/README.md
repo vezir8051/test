@@ -24,6 +24,20 @@ npm run serve     # http://localhost:5173
 
 Die App startet **direkt** auf der Startseite – kein Login nötig.
 
+### Agentation (visuelles Agent-Feedback)
+
+Die Toolbar von [`agentation`](https://www.npmjs.com/package/agentation) ist eingebaut,
+aber **gated**: Sie lädt nur, wenn die URL den Parameter `?annotate` enthält.
+
+```
+https://…/                 → normale Seite, keine Toolbar
+https://…/?annotate        → Toolbar unten rechts: Elemente anklicken & annotieren
+```
+
+React/ReactDOM/agentation werden buildless per Import-Map vom ESM-CDN geladen
+(`index.html`), der Loader steht in `js/agentation.js`. Normale Besucher sind
+nicht betroffen.
+
 ## Tests
 
 ```bash
