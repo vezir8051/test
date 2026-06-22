@@ -235,10 +235,16 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
   priceBtns.forEach((b) => { click(b); });
   ok('Preis-Buttons zeigen Toast', $('toast').classList.contains('show'));
 
-  // ───────── TOP-BAR Dashboard-Shortcut ─────────
-  console.log('\n[Top-Bar]');
+  // ───────── TOP-BAR + DESKTOP-NAV ─────────
+  console.log('\n[Top-Bar / Desktop-Nav]');
   click(doc.querySelector('.topbar-link'));
-  ok('Top-Bar-Shortcut → Dashboard', $('sc-dash').classList.contains('on'));
+  ok('Top-Bar-CTA → Profil', $('sc-lernende').classList.contains('on'));
+  const dnav = doc.querySelectorAll('.dnav-item');
+  ok('5 Desktop-Nav-Items', dnav.length === 5);
+  click(dnav[2]); // Betriebe
+  ok('Desktop-Nav → Betriebe aktiv', $('sc-betriebe').classList.contains('on'));
+  ok('Desktop-Nav-Item markiert', dnav[2].classList.contains('on'));
+  ok('Bottom-Nav spiegelt Desktop-Nav', doc.querySelectorAll('.bnav-item')[2].classList.contains('on'));
 
   // ───────── ERGEBNIS ─────────
   console.log('\n════════════════════════════');

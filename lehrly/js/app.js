@@ -15,8 +15,11 @@ function setNav(el) {
 }
 function navTo(name, index) {
   show(name);
-  const items = document.querySelectorAll('.bnav-item');
-  if (typeof index === 'number' && items[index]) setNav(items[index]);
+  if (typeof index !== 'number') return;
+  const bottom = document.querySelectorAll('.bnav-item');
+  if (bottom[index]) setNav(bottom[index]);
+  /* Desktop-Nav spiegeln */
+  document.querySelectorAll('.dnav-item').forEach((el, i) => el.classList.toggle('on', i === index));
 }
 function showPreise() { show('preise'); }
 
@@ -73,7 +76,7 @@ function openStelle(k) {
       <div class="c"><div class="l">Lohn Lj. 1</div><div class="v">CHF ${s.l}</div></div>
       <div class="c"><div class="l">Stellen</div><div class="v">${s.pl} Plätze</div></div>
       <div class="c"><div class="l">Mindest-Note</div><div class="v">Ø ${s.note}+</div></div>
-      <div class="c"><div class="l">Schnuppern</div><div class="v red">Möglich</div></div>
+      <div class="c"><div class="l">Schnuppern</div><div class="v acc">Möglich</div></div>
     </div>
     <div class="sec"><h5>Über die Stelle</h5><p>${s.d}</p></div>
     <div class="sec"><h5>Wir bieten</h5><ul>${s.b.map((x) => `<li>${x}</li>`).join('')}</ul></div>
@@ -97,7 +100,7 @@ function openProfil(name) {
     <div class="pdetail-top">
       <div class="mk">${pr.i}</div>
       <div style="flex:1"><div class="nm">${name}</div><div class="sb">${pr.beruf} · ${pr.sch} · ${pr.kan}</div>
-        <div class="pchips"><span class="pch">${pr.kan}</span><span class="pch">Aug 2025</span>${pr.sn !== 'Noch keine' ? '<span class="pch red">Schnupper-Erfahrung</span>' : ''}</div>
+        <div class="pchips"><span class="pch">${pr.kan}</span><span class="pch">Aug 2025</span>${pr.sn !== 'Noch keine' ? '<span class="pch acc">Schnupper-Erfahrung</span>' : ''}</div>
       </div>
       <div class="big">${pct}</div>
     </div>
