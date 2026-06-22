@@ -42,39 +42,42 @@ function tg(el) { el.classList.toggle('on'); }
 
 function runMatch(btn) {
   btn.disabled = true;
-  btn.textContent = '⏳ KI sucht...';
+  btn.textContent = 'Matching läuft …';
   setTimeout(() => {
-    btn.textContent = '🎯 3 Matches!';
-    btn.style.background = 'var(--mint)';
+    btn.textContent = '3 Matches gefunden';
     const p = $('match-list');
     if (p) {
       p.style.opacity = '0';
       setTimeout(() => { p.style.transition = 'opacity .5s'; p.style.opacity = '1'; }, 300);
     }
     setTimeout(() => {
-      btn.textContent = '✨ Matches finden!';
+      btn.textContent = 'Matches finden';
       btn.disabled = false;
-      btn.style.background = '';
     }, 2800);
   }, 1800);
 }
 
 /* ══ STELLEN ══ */
 const stellen = {
-  zkb: { e: '🏦', n: 'Kauffrau EFZ', co: 'ZKB · Zürich HB', l: '750', note: '4.5', pl: '4', d: 'Bei der ZKB lernst du alle Facetten des Bankwesens – Kundenberatung, Backoffice, Zahlungsverkehr.', a: ['Sek A, Ø mind. 4.5', 'Freude an Zahlen & Menschen', 'Teamfähigkeit'], b: ['MacBook während der Lehrzeit', 'GA & Lunch-Zuschuss', '70% Übernahmechance'] },
-  sbb: { e: '🚂', n: 'Kauffrau EFZ', co: 'SBB · Zürich HB', l: '730', note: '4.0', pl: '8', d: 'Spannende Ausbildung bei der grössten Arbeitgeberin der Schweiz in verschiedenen Abteilungen.', a: ['Abgeschlossene Schulpflicht', 'Interesse an Admin & Organisation', 'Pünktlichkeit'], b: ['GA für die gesamte Lehrzeit', 'Lehrlingslager & Events', 'Sehr gute Übernahmechancen'] },
-  sanitas: { e: '💊', n: 'Kauffrau EFZ – Kundenservice', co: 'Sanitas · Zürich City', l: '700', note: '4.5', pl: '2', d: 'Modernes Dienstleistungsunternehmen im Gesundheitsbereich mit Fokus auf Kundenkontakt.', a: ['Sek A, Ø mind. 4.5', 'Freude am Kundenkontakt', 'Kommunikationsstärke'], b: ['Modernes Büro in Zürich City', 'Homeoffice ab 2. Lehrjahr', 'Junges Team'] },
+  zkb: { mk: 'ZK', n: 'Kauffrau EFZ', co: 'ZKB · Zürich HB', l: '750', note: '4.5', pl: '4', d: 'Bei der ZKB lernst du alle Facetten des Bankwesens – Kundenberatung, Backoffice, Zahlungsverkehr.', a: ['Sek A, Ø mind. 4.5', 'Freude an Zahlen & Menschen', 'Teamfähigkeit'], b: ['MacBook während der Lehrzeit', 'GA & Lunch-Zuschuss', '70 % Übernahmechance'] },
+  sbb: { mk: 'SB', n: 'Kauffrau EFZ', co: 'SBB · Zürich HB', l: '730', note: '4.0', pl: '8', d: 'Spannende Ausbildung bei der grössten Arbeitgeberin der Schweiz in verschiedenen Abteilungen.', a: ['Abgeschlossene Schulpflicht', 'Interesse an Admin & Organisation', 'Pünktlichkeit'], b: ['GA für die gesamte Lehrzeit', 'Lehrlingslager & Events', 'Sehr gute Übernahmechancen'] },
+  sanitas: { mk: 'SA', n: 'Kauffrau EFZ – Kundenservice', co: 'Sanitas · Zürich City', l: '700', note: '4.5', pl: '2', d: 'Modernes Dienstleistungsunternehmen im Gesundheitsbereich mit Fokus auf Kundenkontakt.', a: ['Sek A, Ø mind. 4.5', 'Freude am Kundenkontakt', 'Kommunikationsstärke'], b: ['Modernes Büro in Zürich City', 'Homeoffice ab 2. Lehrjahr', 'Junges Team'] },
 };
 
 function openStelle(k) {
   const s = stellen[k] || stellen.zkb;
-  $('stelle-title-h').textContent = `${s.e} ${s.n}`;
+  $('stelle-title-h').textContent = s.n;
   $('stelle-body').innerHTML = `
-    <div class="stelle-banner"><div class="stlogo">${s.e}</div><div class="sttitle">${s.n}</div><div class="stco">${s.co}</div><div class="sttags"><span class="sttag">📅 Aug. 2025</span><span class="sttag">💰 CHF ${s.l}/Mt.</span><span class="sttag">⏱ 3 Jahre</span></div></div>
-    <div class="igrid"><div class="ibox"><div class="ibox-l">Lohn Lj.1</div><div class="ibox-v">CHF ${s.l}</div></div><div class="ibox"><div class="ibox-l">Stellen</div><div class="ibox-v">${s.pl} Plätze</div></div><div class="ibox"><div class="ibox-l">Mindest-Note</div><div class="ibox-v">Ø ${s.note}+</div></div><div class="ibox"><div class="ibox-l">Schnuppern</div><div class="ibox-v" style="color:var(--mint)">✓ Möglich</div></div></div>
-    <div class="ss"><h4>Über die Stelle</h4><p>${s.d}</p></div>
-    <div class="ss"><h4>Wir bieten</h4><ul>${s.b.map((x) => `<li>${x}</li>`).join('')}</ul></div>
-    <div class="ss"><h4>Du bringst mit</h4><ul>${s.a.map((x) => `<li>${x}</li>`).join('')}</ul></div>`;
+    <div class="st-banner"><span class="tag">${s.mk} · Lehrstelle</span><h4>${s.n}</h4><div class="co">${s.co}</div></div>
+    <div class="st-meta">
+      <div class="c"><div class="l">Lohn Lj. 1</div><div class="v">CHF ${s.l}</div></div>
+      <div class="c"><div class="l">Stellen</div><div class="v">${s.pl} Plätze</div></div>
+      <div class="c"><div class="l">Mindest-Note</div><div class="v">Ø ${s.note}+</div></div>
+      <div class="c"><div class="l">Schnuppern</div><div class="v red">Möglich</div></div>
+    </div>
+    <div class="sec"><h5>Über die Stelle</h5><p>${s.d}</p></div>
+    <div class="sec"><h5>Wir bieten</h5><ul>${s.b.map((x) => `<li>${x}</li>`).join('')}</ul></div>
+    <div class="sec"><h5>Du bringst mit</h5><ul>${s.a.map((x) => `<li>${x}</li>`).join('')}</ul></div>`;
   openM('mo-stelle');
 }
 
@@ -89,20 +92,23 @@ const profs = {
 function openProfil(name) {
   const pr = profs[name] || profs['Lena Müller'];
   const pct = pr.p;
+  const docIcon = '<svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>';
   $('profil-body').innerHTML = `
-    <div class="ptop-m">
-      <div class="pav-m">${pr.i}</div>
-      <div style="flex:1"><div class="pname-m">${name}</div><div class="psub-m">${pr.beruf} · ${pr.sch} · ${pr.kan}</div><div class="pchips"><span class="pch">📍 ${pr.kan}</span><span class="pch">📅 Aug. 2025</span>${pr.sn !== 'Noch keine' ? '<span class="pch gr">✓ Schnupper</span>' : ''}</div></div>
-      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;"><div class="pmring-m" style="--p:${pct}"><span class="pmn-m">${pct}%</span></div><div style="font-size:10px;color:var(--muted);margin-top:3px;">Match</div></div>
+    <div class="pdetail-top">
+      <div class="mk">${pr.i}</div>
+      <div style="flex:1"><div class="nm">${name}</div><div class="sb">${pr.beruf} · ${pr.sch} · ${pr.kan}</div>
+        <div class="pchips"><span class="pch">${pr.kan}</span><span class="pch">Aug 2025</span>${pr.sn !== 'Noch keine' ? '<span class="pch red">Schnupper-Erfahrung</span>' : ''}</div>
+      </div>
+      <div class="big">${pct}</div>
     </div>
-    <div style="background:var(--pale2);border-radius:10px;padding:13px;border:1px solid var(--border);margin-bottom:12px;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Noten</div>
-      ${[['Deutsch', pr.d], ['Mathe', pr.m], ['Englisch', pr.e], ['Französisch', pr.f]].map(([n, v]) => `<div class="nbar"><span class="nbl">${n}</span><div class="nbt"><div class="nbf" style="width:${(v / 6 * 100).toFixed(0)}%"></div></div><span class="nbv">${v}</span></div>`).join('')}
+    <div class="grades">
+      <h5 style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);margin-bottom:12px;">Noten</h5>
+      ${[['Deutsch', pr.d], ['Mathe', pr.m], ['Englisch', pr.e], ['Französisch', pr.f]].map(([n, v]) => `<div class="gbar"><span class="gl">${n}</span><div class="gt"><div class="gf" style="width:${(v / 6 * 100).toFixed(0)}%"></div></div><span class="gv">${v}</span></div>`).join('')}
     </div>
-    ${pr.st.length ? `<div style="background:var(--pale2);border-radius:10px;padding:13px;border:1px solid var(--border);margin-bottom:12px;"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Stärken</div><div class="tags">${pr.st.map((s) => `<span class="tag on" style="cursor:default">${s}</span>`).join('')}</div></div>` : ''}
-    <div style="background:var(--pale2);border-radius:10px;padding:13px;border:1px solid var(--border);margin-bottom:12px;"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Über mich</div><p style="font-size:13.5px;line-height:1.65;">${pr.mot}</p></div>
-    <div class="zdoc"><div class="zdi">📋</div><div><div class="zname">Zeugnis 2024</div><div class="zmeta">Sek ${pr.kan} · PDF</div></div><span class="zstatus">✓</span></div>
-    <div class="zdoc"><div class="zdi">📄</div><div><div class="zname">Lebenslauf</div><div class="zmeta">Lehrly CV</div></div><span class="zstatus">✓</span></div>`;
+    ${pr.st.length ? `<div class="sec"><h5>Stärken</h5><div class="tags">${pr.st.map((s) => `<span class="tag on" style="cursor:default">${s}</span>`).join('')}</div></div>` : ''}
+    <div class="sec"><h5>Über mich</h5><p>${pr.mot}</p></div>
+    <div class="doc"><div class="ic">${docIcon}</div><div style="flex:1"><div class="nm">Zeugnis 2024</div><div class="mt">Sek ${pr.kan} · PDF</div></div><span class="ok">OK</span></div>
+    <div class="doc"><div class="ic">${docIcon}</div><div style="flex:1"><div class="nm">Lebenslauf</div><div class="mt">Lehrly CV</div></div><span class="ok">OK</span></div>`;
   /* Merke aktuell geöffneten Kandidaten für "Nachricht senden" */
   $('mo-profil').dataset.candidate = name;
   openM('mo-profil');
@@ -148,8 +154,8 @@ function loadChatMsgs(key, nameOverride) {
   const first = name.split(' ')[0];
   const el = $('chat-msgs-view');
   el.innerHTML = msgs.map((m) => m.me
-    ? `<div><div class="msg me">${m.me}</div><div class="msg-time2 r">Ich – ${m.t}</div></div>`
-    : `<div><div class="msg them">${m.them}</div><div class="msg-time2">${first} – ${m.t}</div></div>`
+    ? `<div><div class="msg me">${m.me}</div><div class="mtime r">Ich · ${m.t}</div></div>`
+    : `<div><div class="msg them">${m.them}</div><div class="mtime">${first} · ${m.t}</div></div>`
   ).join('');
   el.scrollTop = el.scrollHeight;
 }
@@ -160,7 +166,7 @@ function sendMsg() {
   const el = $('chat-msgs-view');
   const d = document.createElement('div');
   const safe = inp.value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  d.innerHTML = `<div class="msg me">${safe}</div><div class="msg-time2 r">Jetzt</div>`;
+  d.innerHTML = `<div class="msg me">${safe}</div><div class="mtime r">Jetzt</div>`;
   el.appendChild(d);
   inp.value = '';
   el.scrollTop = el.scrollHeight;

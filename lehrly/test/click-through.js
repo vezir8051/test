@@ -80,27 +80,27 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
     ok('Nav-Item ' + s + ' markiert', nav[i].classList.contains('on'));
   });
 
-  // Top-Logo zurück zu Home
-  click(doc.querySelector('.top-logo'));
-  ok('Top-Logo → Home', $('sc-home').classList.contains('on'));
+  // Wordmark zurück zu Home
+  click(doc.querySelector('.wordmark'));
+  ok('Wordmark → Home', $('sc-home').classList.contains('on'));
 
   // ───────── HOME ─────────
   console.log('\n[Home]');
-  click(doc.querySelector('.hero-btn-p'));
+  click(doc.querySelector('.hero-cta .btn'));
   ok('Hero-Button → Profil', $('sc-lernende').classList.contains('on'));
   window.show('home');
-  click(doc.querySelector('.hero-btn-s'));
+  click(doc.querySelector('.hero-cta .btn.out'));
   ok('Hero-Sekundär → Preise', $('sc-preise').classList.contains('on'));
   window.show('home');
-  // Live-Cards öffnen Stelle
-  click(doc.querySelectorAll('.live-card')[0]);
-  ok('Live-Card öffnet Stelle-Modal', $('mo-stelle').classList.contains('open'));
+  // Match-Rows öffnen Stelle
+  click(doc.querySelectorAll('#sc-home .rows .row')[0]);
+  ok('Match-Row öffnet Stelle-Modal', $('mo-stelle').classList.contains('open'));
   ok('Stelle-Modal hat Inhalt', $('stelle-body').innerHTML.includes('Über die Stelle'));
   window.cM();
   ok('Modal geschlossen', !$('mo-stelle').classList.contains('open'));
-  // Feature-Cards
-  const feat = doc.querySelectorAll('#sc-home .content-pad .card');
-  click(feat[2]); // CV-Generator
+  // Feature-Zellen
+  const feat = doc.querySelectorAll('#sc-home .fgrid .fcell');
+  click(feat[2]); // Lebenslauf
   ok('Feature CV → CV-Modal offen', $('mo-cv').classList.contains('open'));
   window.cM();
 
@@ -115,25 +115,25 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
   click(doc.querySelector('#sc-lernende [onclick*="Foto"]'));
   ok('Foto-Upload zeigt Toast', $('toast') && $('toast').classList.contains('show'));
   // Matches finden Button
-  const matchBtn = doc.querySelector('#sc-lernende .btn.b-blue.b-lg');
+  const matchBtn = doc.querySelector('#sc-lernende .match-wrap .btn');
   click(matchBtn);
   ok('Match-Button disabled während Suche', matchBtn.disabled === true);
   await delay(2000);
   ok('Match-Button zeigt Ergebnis', /Matches/.test(matchBtn.textContent));
   await delay(2900);
   ok('Match-Button zurückgesetzt', matchBtn.disabled === false);
-  // Match-Karten öffnen Stellen
-  const mcards = doc.querySelectorAll('#match-list .mcard');
+  // Match-Rows öffnen Stellen
+  const mcards = doc.querySelectorAll('#match-list .row');
   ['zkb', 'sbb', 'sanitas'].forEach((k, i) => {
     click(mcards[i]);
-    ok('Match-Karte ' + i + ' öffnet Stelle', $('mo-stelle').classList.contains('open'));
+    ok('Match-Row ' + i + ' öffnet Stelle', $('mo-stelle').classList.contains('open'));
     window.cM();
   });
 
   // ───────── BETRIEBE ─────────
   console.log('\n[Betriebe / Kandidaten]');
   window.show('betriebe');
-  click($('mo-cv') && doc.querySelector('#sc-betriebe .btn.b-gold')); // + Stelle
+  click(doc.querySelector('#sc-betriebe .shead .btn')); // + Stelle
   ok('+ Stelle öffnet Inserat-Modal', $('mo-inserat').classList.contains('open'));
   window.cM();
   // Filter
@@ -156,21 +156,21 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('Profil enthält Noten', $('profil-body').innerHTML.includes('Noten'));
   ok('Profil merkt Kandidat', $('mo-profil').dataset.candidate === 'Lena Müller');
   // Einladen-Button im Profil
-  click(doc.querySelector('#mo-profil .btn.b-mint'));
+  click(doc.querySelector('#mo-profil .sheet-ft .btn'));
   ok('Profil → Schnupper-Einladung', $('mo-schnupper').classList.contains('open'));
   window.cM();
   // Nachricht senden aus Profil (Bugfix-Pfad)
   window.openProfil('Noah Keller');
-  click(doc.querySelector('#mo-profil .btn.b-blue'));
+  click(doc.querySelector('#mo-profil [onclick="messageCandidate()"]'));
   ok('Nachricht senden → Chat-View offen', $('sc-chat-view').classList.contains('on'));
   ok('Chat-Header zeigt Kandidat', $('chat-name-h').textContent === 'Noah Keller');
   ok('Chat-View hat Nachrichten', $('chat-msgs-view').children.length > 0);
   // Einladen direkt aus Karte
   window.show('betriebe');
-  click(doc.querySelector('#kandidaten-list .kcard .btn.b-mint'));
+  click(doc.querySelector('#kandidaten-list .kcard .kfoot .btn'));
   ok('Karten-Einladen öffnet Modal', $('mo-schnupper').classList.contains('open'));
   // Senden im Schnupper-Modal → Success
-  click(doc.querySelector('#mo-schnupper .btn.b-mint'));
+  click(doc.querySelector('#mo-schnupper .sheet-ft .btn'));
   ok('Schnupper Senden zeigt Success', $('s-sch').classList.contains('on'));
   await delay(2300);
   ok('Schnupper-Modal schliesst nach Senden', !$('mo-schnupper').classList.contains('open'));
@@ -178,14 +178,14 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
   // ───────── INSERAT senden ─────────
   console.log('\n[Inserat & Bewerbung]');
   window.openM('mo-inserat');
-  click(doc.querySelector('#mo-inserat .btn.b-gold'));
+  click(doc.querySelector('#mo-inserat .sheet-ft .btn'));
   ok('Inserat veröffentlichen → Success', $('s-ins').classList.contains('on'));
   await delay(2300);
   // Stelle → Bewerben → Bewerbung senden
   window.openStelle('zkb');
-  click(doc.querySelector('#mo-stelle .btn.b-blue'));
+  click(doc.querySelector('#mo-stelle .sheet-ft .btn'));
   ok('Stelle → Bewerbung-Modal', $('mo-bew').classList.contains('open'));
-  click(doc.querySelector('#mo-bew .btn.b-blue'));
+  click(doc.querySelector('#mo-bew .sheet-ft .btn'));
   ok('Bewerbung Senden → Success', $('s-bew').classList.contains('on'));
   await delay(2300);
 
@@ -220,23 +220,25 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
   // ───────── DASHBOARD ─────────
   console.log('\n[Dashboard]');
   window.show('dash');
-  click(doc.querySelector('#sc-dash .btn.b-gold')); // Lebenslauf
+  const dashActions = doc.querySelectorAll('#sc-dash .actions .btn');
+  ok('4 Dashboard-Aktionen', dashActions.length === 4);
+  click(dashActions[2]); // Lebenslauf
   ok('Dashboard → CV-Modal', $('mo-cv').classList.contains('open'));
   window.cM();
-  click(doc.querySelector('#sc-dash .card[onclick]')); // Preise-Link
+  click(dashActions[3]); // Preise
   ok('Dashboard → Preise', $('sc-preise').classList.contains('on'));
 
   // ───────── PREISE ─────────
   console.log('\n[Preise]');
-  const priceBtns = doc.querySelectorAll('#sc-preise .pc-btn-wrap button');
+  const priceBtns = doc.querySelectorAll('#sc-preise .plan .btn');
   ok('5 Preis-Buttons', priceBtns.length === 5);
-  priceBtns.forEach((b, i) => { click(b); });
+  priceBtns.forEach((b) => { click(b); });
   ok('Preis-Buttons zeigen Toast', $('toast').classList.contains('show'));
 
-  // ───────── TOP-NAV Dashboard-Shortcut ─────────
-  console.log('\n[Top-Nav]');
-  click(doc.querySelector('.top-logout'));
-  ok('Top-Nav-Shortcut → Dashboard', $('sc-dash').classList.contains('on'));
+  // ───────── TOP-BAR Dashboard-Shortcut ─────────
+  console.log('\n[Top-Bar]');
+  click(doc.querySelector('.topbar-link'));
+  ok('Top-Bar-Shortcut → Dashboard', $('sc-dash').classList.contains('on'));
 
   // ───────── ERGEBNIS ─────────
   console.log('\n════════════════════════════');
