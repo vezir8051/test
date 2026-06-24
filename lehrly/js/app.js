@@ -62,9 +62,9 @@ function runMatch(btn) {
 
 /* ══ STELLEN ══ */
 const stellen = {
-  zkb: { mk: 'ZK', n: 'Kauffrau EFZ', co: 'ZKB · Zürich HB', l: '750', note: '4.5', pl: '4', d: 'Bei der ZKB lernst du alle Facetten des Bankwesens – Kundenberatung, Backoffice, Zahlungsverkehr.', a: ['Sek A, Ø mind. 4.5', 'Freude an Zahlen & Menschen', 'Teamfähigkeit'], b: ['MacBook während der Lehrzeit', 'GA & Lunch-Zuschuss', '70 % Übernahmechance'] },
+  zkb: { mk: 'ZK', n: 'Kauffrau EFZ', co: 'ZKB · Zürich HB', l: '750', note: '4.5', pl: '4', d: 'Bei der ZKB lernst du alle Facetten des Bankwesens: Kundenberatung, Backoffice und Zahlungsverkehr.', a: ['Sek A, Ø mind. 4.5', 'Freude an Zahlen & Menschen', 'Teamfähigkeit'], b: ['MacBook während der Lehrzeit', 'GA & Lunch-Zuschuss', '70 % Übernahmechance'] },
   sbb: { mk: 'SB', n: 'Kauffrau EFZ', co: 'SBB · Zürich HB', l: '730', note: '4.0', pl: '8', d: 'Spannende Ausbildung bei der grössten Arbeitgeberin der Schweiz in verschiedenen Abteilungen.', a: ['Abgeschlossene Schulpflicht', 'Interesse an Admin & Organisation', 'Pünktlichkeit'], b: ['GA für die gesamte Lehrzeit', 'Lehrlingslager & Events', 'Sehr gute Übernahmechancen'] },
-  sanitas: { mk: 'SA', n: 'Kauffrau EFZ – Kundenservice', co: 'Sanitas · Zürich City', l: '700', note: '4.5', pl: '2', d: 'Modernes Dienstleistungsunternehmen im Gesundheitsbereich mit Fokus auf Kundenkontakt.', a: ['Sek A, Ø mind. 4.5', 'Freude am Kundenkontakt', 'Kommunikationsstärke'], b: ['Modernes Büro in Zürich City', 'Homeoffice ab 2. Lehrjahr', 'Junges Team'] },
+  sanitas: { mk: 'SA', n: 'Kauffrau EFZ Kundenservice', co: 'Sanitas · Zürich City', l: '700', note: '4.5', pl: '2', d: 'Modernes Dienstleistungsunternehmen im Gesundheitsbereich mit Fokus auf Kundenkontakt.', a: ['Sek A, Ø mind. 4.5', 'Freude am Kundenkontakt', 'Kommunikationsstärke'], b: ['Modernes Büro in Zürich City', 'Homeoffice ab 2. Lehrjahr', 'Junges Team'] },
 };
 
 function openStelle(k) {
@@ -131,7 +131,7 @@ const chatData = {
   zkb: [
     { them: 'Guten Tag! Wir haben Ihr Profil auf Lehrly.ch gesehen. Hätten Sie Interesse an einem Schnuppertag?', t: '14:28' },
     { me: 'Vielen Dank! Ich würde mich sehr freuen!', t: '14:30' },
-    { them: 'Perfekt! Mittwoch 14. Mai, 9–17 Uhr?', t: '14:32' },
+    { them: 'Perfekt! Mittwoch 14. Mai, 9 bis 17 Uhr?', t: '14:32' },
   ],
   sbb: [
     { them: 'Vielen Dank für Ihre Bewerbung!', t: '09:10' },

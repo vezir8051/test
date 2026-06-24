@@ -6,10 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lehrly">
-<meta name="description" content="Lehrly.ch — die Schweizer Lehrstellenplattform. Lernende und Betriebe, die zusammenpassen.">
+<meta name="description" content="Lehrly.ch, die Schweizer Lehrstellenplattform. Lernende und Betriebe, die zusammenpassen.">
 <meta name="theme-color" content="#FFFFFF">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230A0A0A'/><rect x='70' y='14' width='16' height='16' fill='%232563EB'/><text x='12' y='70' font-family='Helvetica,Arial' font-size='46' font-weight='800' fill='white'>L</text></svg>">
-<title>Lehrly.ch — Schweizer Lehrstellenplattform</title>
+<title>Lehrly.ch · Schweizer Lehrstellenplattform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -33,6 +33,8 @@
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/></symbol>
   <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 4h8l8 8-8 8-8-8z"/><circle cx="8.5" cy="8.5" r="1.3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
 </defs></svg>
 
 <!-- ══ MAIN ══ -->
@@ -63,12 +65,13 @@
 <!-- ══ HOME ══ -->
 <section id="sc-home" class="sc on">
   <div class="hero">
-    <span class="eyebrow acc">CH — Lehrstellenplattform</span>
+    <span class="eyebrow acc">Schweizer Lehrstellenplattform</span>
     <h1>Lehrstellen,<br>die <span class="acc">passen.</span></h1>
-    <p class="lead">Lehrly verbindet Lernende und Betriebe — direkt, ohne Umwege. Profil, Matching, Chat und Lebenslauf an einem Ort.</p>
+    <p class="lead">Lehrly verbindet Lernende und Betriebe direkt. Profil, Matching, Chat und Lebenslauf an einem Ort.</p>
+    <!-- removed em-dash separators; one accent locked to blue -->
     <div class="hero-cta">
       <button class="btn" onclick="navTo('lernende',1)">Profil erstellen <svg class="arrow"><use href="#i-arr"/></svg></button>
-      <button class="btn out" onclick="show('preise')">Preise</button>
+      <button class="btn out" onclick="show('preise')">Preise ansehen</button>
     </div>
   </div>
 
@@ -87,9 +90,9 @@
 
   <div class="lbar"><span class="eyebrow">Aktuelle Matches</span><a onclick="navTo('lernende',1)">Alle</a></div>
   <div class="rows">
-    <div class="row" onclick="openStelle('zkb')"><div class="mk acc">ZK</div><div class="bd"><div class="nm">ZKB — Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 750/Mt.</div></div><div class="score hi">96<small>MATCH</small></div></div>
-    <div class="row" onclick="openStelle('sbb')"><div class="mk fill">SB</div><div class="bd"><div class="nm">SBB — Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 730/Mt.</div></div><div class="score">89<small>MATCH</small></div></div>
-    <div class="row" onclick="openStelle('sanitas')"><div class="mk">SA</div><div class="bd"><div class="nm">Sanitas — City</div><div class="sb">Kauffrau EFZ · CHF 700/Mt.</div></div><div class="score">82<small>MATCH</small></div></div>
+    <div class="row" onclick="openStelle('zkb')"><div class="mk acc">ZK</div><div class="bd"><div class="nm">ZKB, Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 750/Mt.</div></div><div class="score hi">96<small>MATCH</small></div></div>
+    <div class="row" onclick="openStelle('sbb')"><div class="mk fill">SB</div><div class="bd"><div class="nm">SBB, Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 730/Mt.</div></div><div class="score">89<small>MATCH</small></div></div>
+    <div class="row" onclick="openStelle('sanitas')"><div class="mk">SA</div><div class="bd"><div class="nm">Sanitas, City</div><div class="sb">Kauffrau EFZ · CHF 700/Mt.</div></div><div class="score">82<small>MATCH</small></div></div>
   </div>
 
   <div class="lbar"><span class="eyebrow">Funktionen</span></div>
@@ -103,14 +106,14 @@
 
 <!-- ══ LERNENDE / PROFIL ══ -->
 <section id="sc-lernende" class="sc">
-  <div class="shead"><span class="eyebrow acc">Lernende</span><h2>Mein Profil</h2><p>Erfasse deine Angaben — das Matching findet passende Betriebe.</p></div>
+  <div class="shead"><span class="eyebrow acc">Lernende</span><h2>Mein Profil</h2><p>Erfasse deine Angaben. Das Matching findet passende Betriebe.</p></div>
   <div class="form">
     <div class="photo">
       <div class="ph" onclick="toast('Foto hochladen')"><svg><use href="#i-cam"/></svg></div>
       <div><div class="t">Foto hochladen</div><div class="d">+60 % mehr Anfragen.</div></div>
     </div>
 
-    <div class="subhead" data-n="01 ·">Angaben</div>
+    <div class="subhead" data-n="01">Angaben</div>
     <div class="grid2">
       <div class="field"><label>Vorname</label><input type="text" value="Lena"></div>
       <div class="field"><label>Nachname</label><input type="text" value="Müller"></div>
@@ -122,14 +125,14 @@
     <div class="field"><label>E-Mail</label><input type="email" value="lena.mueller@gmail.com" autocomplete="email"></div>
     <div class="field"><label>Telefon</label><input type="tel" value="079 123 45 67" autocomplete="tel"></div>
 
-    <div class="subhead" data-n="02 ·">Berufswunsch</div>
+    <div class="subhead" data-n="02">Berufswunsch</div>
     <div class="field"><label>Gewünschter Beruf</label><select><option selected>Kauffrau / Kaufmann EFZ</option><option>Informatiker/in EFZ</option><option>FaGe EFZ</option><option>Koch / Köchin EFZ</option><option>Mediamatiker/in EFZ</option></select></div>
     <div class="grid2">
       <div class="field"><label>Lehrstart</label><select><option selected>August 2025</option><option>August 2026</option></select></div>
       <div class="field"><label>Arbeitsweg</label><select><option>15 Min.</option><option selected>30 Min.</option><option>45 Min.</option></select></div>
     </div>
 
-    <div class="subhead" data-n="03 ·">Noten</div>
+    <div class="subhead" data-n="03">Noten</div>
     <div class="grid2">
       <div class="field"><label>Schultyp</label><select><option selected>Sek A</option><option>Sek B</option><option>Gym</option></select></div>
       <div class="field"><label>Ø Note</label><input type="number" value="5.3" min="1" max="6" step="0.1"></div>
@@ -143,17 +146,17 @@
       <div class="field"><label>Französisch</label><input type="number" value="4.5" min="1" max="6" step="0.5"></div>
     </div>
 
-    <div class="subhead" data-n="04 ·">Stärken</div>
+    <div class="subhead" data-n="04">Stärken</div>
     <div class="tags">
       <span class="tag on" onclick="tg(this)">Teamarbeit</span><span class="tag on" onclick="tg(this)">Zahlen</span><span class="tag on" onclick="tg(this)">Organisieren</span><span class="tag" onclick="tg(this)">Kreativität</span><span class="tag" onclick="tg(this)">Technik</span><span class="tag on" onclick="tg(this)">Kundenkontakt</span><span class="tag" onclick="tg(this)">Digital/IT</span><span class="tag on" onclick="tg(this)">Zuverlässigkeit</span>
     </div>
     <div class="field" style="margin-top:16px;"><label>Hobbys</label><input type="text" value="Volleyball, Lesen, Kochen"></div>
 
-    <div class="subhead" data-n="05 ·">Erfahrung</div>
+    <div class="subhead" data-n="05">Erfahrung</div>
     <div class="field"><label>Schnupperlehren</label><input type="text" value="Raiffeisenbank (3 Tage), Bäckerei (2 Tage)"></div>
     <div class="field"><label>Über mich</label><textarea>Ich bin motiviert, zuverlässig und teamfähig. Mein Ziel ist eine Lehrstelle als Kauffrau EFZ.</textarea></div>
 
-    <div class="subhead" data-n="06 ·">Dokumente</div>
+    <div class="subhead" data-n="06">Dokumente</div>
     <div class="upload" onclick="toast('Datei-Browser öffnet sich')"><div class="t">Zeugnisse hochladen</div><div class="d">PDF, JPG · max. 10 MB</div></div>
   </div>
 
@@ -214,9 +217,9 @@
 <section id="sc-chat" class="sc">
   <div class="shead"><span class="eyebrow acc">Nachrichten</span><h2>Chat</h2></div>
   <div class="clist">
-    <div class="citem on" onclick="openChat('zkb','ZKB HR — Sandra Meier')"><div class="cmk fill">ZK</div><div class="bd"><div class="cname">ZKB HR — Sandra Meier</div><div class="cprev">Wir würden Sie gerne einladen …</div></div><div><div class="ctime">14:32</div><div class="cunread"></div></div></div>
-    <div class="citem" onclick="openChat('sbb','SBB — Ausbildung')"><div class="cmk">SB</div><div class="bd"><div class="cname">SBB — Ausbildung</div><div class="cprev">Vielen Dank für Ihre Bewerbung</div></div><div class="ctime">09:15</div></div>
-    <div class="citem" onclick="openChat('sanitas','Sanitas — HR')"><div class="cmk">SA</div><div class="bd"><div class="cname">Sanitas — HR</div><div class="cprev">Haben Sie Interesse an einem …</div></div><div class="ctime">Gestern</div></div>
+    <div class="citem on" onclick="openChat('zkb','ZKB HR, Sandra Meier')"><div class="cmk fill">ZK</div><div class="bd"><div class="cname">ZKB HR, Sandra Meier</div><div class="cprev">Wir würden Sie gerne einladen …</div></div><div><div class="ctime">14:32</div><div class="cunread"></div></div></div>
+    <div class="citem" onclick="openChat('sbb','SBB Ausbildung')"><div class="cmk">SB</div><div class="bd"><div class="cname">SBB Ausbildung</div><div class="cprev">Vielen Dank für Ihre Bewerbung</div></div><div class="ctime">09:15</div></div>
+    <div class="citem" onclick="openChat('sanitas','Sanitas HR')"><div class="cmk">SA</div><div class="bd"><div class="cname">Sanitas HR</div><div class="cprev">Haben Sie Interesse an einem …</div></div><div class="ctime">Gestern</div></div>
   </div>
 </section>
 
@@ -253,8 +256,8 @@
   <div class="lbar"><span class="eyebrow">Aktivitäten</span></div>
   <div class="feed">
     <div class="fitem"><span class="dt"></span><span class="tx"><b>ZKB</b> hat dein Profil angesehen</span><span class="tm">14:32</span></div>
-    <div class="fitem"><span class="dt"></span><span class="tx">Neuer Match: <b>Sanitas — 82</b></span><span class="tm">12:15</span></div>
-    <div class="fitem"><span class="dt"></span><span class="tx"><b>SBB</b> — Schnupperlehre angeboten</span><span class="tm">09:30</span></div>
+    <div class="fitem"><span class="dt"></span><span class="tx">Neuer Match: <b>Sanitas, 82</b></span><span class="tm">12:15</span></div>
+    <div class="fitem"><span class="dt"></span><span class="tx"><b>SBB</b> bietet eine Schnupperlehre an</span><span class="tm">09:30</span></div>
     <div class="fitem"><span class="dt"></span><span class="tx">Profil <b>47×</b> aufgerufen diese Woche</span><span class="tm">Woche</span></div>
   </div>
   <div class="lbar"><span class="eyebrow">Schnellaktionen</span></div>
@@ -272,28 +275,28 @@
   <div class="plans">
     <div class="plan">
       <div class="plan-top"><div><div class="nm">Kostenlos</div><div class="ds">Lernende & Reinschnuppern</div></div><div class="pr free">CHF 0</div></div>
-      <div class="feats"><div class="feat"><span class="yes">+</span>3 Kandidaten/Mt.</div><div class="feat"><span class="yes">+</span>1 Inserat</div><div class="feat off"><span class="no">—</span>Matching</div></div>
+      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>3 Kandidaten/Mt.</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>1 Inserat</div><div class="feat off"><span class="no"><svg><use href="#i-minus"/></svg></span>Kein Matching</div></div>
       <button class="btn out full" onclick="toast('Kostenlos gestartet')">Kostenlos starten</button>
     </div>
     <div class="plan">
       <div class="plan-top"><div><div class="nm">Bronze</div><div class="ds">Kleine KMU</div></div><div class="pr"><sup>CHF</sup>49<span class="per">/Mt.</span></div></div>
-      <div class="feats"><div class="feat"><span class="yes">+</span>10 Kandidaten/Mt.</div><div class="feat"><span class="yes">+</span>3 Inserate</div><div class="feat"><span class="yes">+</span>Matching Basic</div></div>
+      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>10 Kandidaten/Mt.</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>3 Inserate</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Matching Basic</div></div>
       <button class="btn out full" onclick="toast('Bronze gewählt')">Bronze wählen</button>
     </div>
     <div class="plan">
       <div class="plan-top"><div><div class="nm">Silber</div><div class="ds">Wachsende Betriebe</div></div><div class="pr"><sup>CHF</sup>99<span class="per">/Mt.</span></div></div>
-      <div class="feats"><div class="feat"><span class="yes">+</span>30 Kandidaten/Mt.</div><div class="feat"><span class="yes">+</span>10 Inserate</div><div class="feat"><span class="yes">+</span>Vollständiges Matching</div><div class="feat"><span class="yes">+</span>Zeugnisse einsehen</div></div>
+      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>30 Kandidaten/Mt.</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>10 Inserate</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Vollständiges Matching</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Zeugnisse einsehen</div></div>
       <button class="btn full" onclick="toast('Silber gewählt')">Silber wählen</button>
     </div>
     <div class="plan hot">
       <div class="badge">Beliebtestes Paket</div>
       <div class="plan-top"><div><div class="nm">Gold</div><div class="ds">Aktiv suchende Betriebe</div></div><div class="pr"><sup>CHF</sup>189<span class="per">/Mt.</span></div></div>
-      <div class="feats"><div class="feat"><span class="yes">+</span>Unbegrenzte Kandidaten</div><div class="feat"><span class="yes">+</span>Unbegrenzte Inserate</div><div class="feat"><span class="yes">+</span>Priority-Listing Top 3</div><div class="feat"><span class="yes">+</span>Persönlicher Support</div></div>
+      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Unbegrenzte Kandidaten</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Unbegrenzte Inserate</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Priority-Listing Top 3</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Persönlicher Support</div></div>
       <button class="btn full" onclick="toast('Gold gewählt')">Gold wählen</button>
     </div>
     <div class="plan">
       <div class="plan-top"><div><div class="nm">Enterprise</div><div class="ds">Grossbetriebe & Ketten</div></div><div class="pr">Anfrage</div></div>
-      <div class="feats"><div class="feat"><span class="yes">+</span>Alles aus Gold</div><div class="feat"><span class="yes">+</span>Multi-Standorte</div><div class="feat"><span class="yes">+</span>API-Integration</div></div>
+      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Alles aus Gold</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Multi-Standorte</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>API-Integration</div></div>
       <button class="btn out full" onclick="toast('Kontaktanfrage gesendet')">Kontakt aufnehmen</button>
     </div>
   </div>
@@ -390,11 +393,11 @@
 <div class="mo" id="mo-cv">
   <div class="mo-overlay" onclick="cM()"></div>
   <div class="sheet">
-    <div class="sheet-hd"><h3>Lebenslauf — Lena Müller</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
+    <div class="sheet-hd"><h3>Lebenslauf, Lena Müller</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
     <div class="sheet-bd">
       <div class="cv">
         <div class="cv-hd"><div class="mk">LM</div><div><div class="nm">Lena Müller</div><div class="rl">Bewerberin · Kauffrau EFZ</div><div class="ct">lena.mueller@gmail.com · Zürich</div></div></div>
-        <div class="cv-sec"><h6>Ausbildung</h6><p><b>Sekundarschule A</b>, Zürich · 2022–2025 · Ø 5.3</p></div>
+        <div class="cv-sec"><h6>Ausbildung</h6><p><b>Sekundarschule A</b>, Zürich · 2022-2025 · Ø 5.3</p></div>
         <div class="cv-sec"><h6>Erfahrung</h6><p><b>Schnupperlehre</b> Raiffeisenbank · März 2024 · 3 Tage</p></div>
         <div class="cv-sec"><h6>Sprachen</h6><p>Deutsch (Muttersprache) · Englisch (B2) · Französisch (A2)</p></div>
         <div class="cv-ft">Erstellt mit Lehrly.ch · April 2025</div>
