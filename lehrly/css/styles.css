@@ -369,6 +369,7 @@ a,button,input,select,textarea,[tabindex],[onclick]{outline:none;}
 .chat-inp-wrap{position:fixed;bottom:calc(var(--nav) + var(--safe-bottom));left:0;right:0;
   background:var(--paper);border-top:1px solid var(--line);display:flex;max-width:var(--maxw);margin:0 auto;}
 .chat-inp{flex:1;height:50px;padding:0 16px;border:none;font-size:15px;background:var(--paper);outline:none;}
+.chat-inp::placeholder{color:var(--gray);opacity:1;}
 .chat-send2{width:54px;height:50px;border:none;border-left:1px solid var(--line);background:var(--accent);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .16s ease,transform .12s var(--ease-out);}
 .chat-send2:hover{background:var(--accent-d);}
 .chat-send2:active{transform:scale(.94);}

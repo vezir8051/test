@@ -104,8 +104,8 @@ function openProfil(name) {
       </div>
       <div class="big">${pct}</div>
     </div>
-    <div class="grades">
-      <h5 style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);margin-bottom:12px;">Noten</h5>
+    <div class="sec grades">
+      <h5>Noten</h5>
       ${[['Deutsch', pr.d], ['Mathe', pr.m], ['Englisch', pr.e], ['Französisch', pr.f]].map(([n, v]) => `<div class="gbar"><span class="gl">${n}</span><div class="gt"><div class="gf" style="width:${(v / 6 * 100).toFixed(0)}%"></div></div><span class="gv">${v}</span></div>`).join('')}
     </div>
     ${pr.st.length ? `<div class="sec"><h5>Stärken</h5><div class="tags">${pr.st.map((s) => `<span class="tag on" style="cursor:default">${s}</span>`).join('')}</div></div>` : ''}
