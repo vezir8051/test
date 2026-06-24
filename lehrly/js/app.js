@@ -218,6 +218,30 @@ window.cM = cM;
 window.docS = docS;
 window.toast = toast;
 
+/* ══ SCROLL-ENTRY: Rows/Cards faden mit Stagger ein (IntersectionObserver) ══
+   Guard: in Umgebungen ohne IO (jsdom) wird sofort sichtbar geschaltet. */
+(function scrollReveal() {
+  const targets = document.querySelectorAll('.rows .row, #kandidaten-list .kcard, .list-num .li, .metric, .plan, .fcell');
+  if (typeof IntersectionObserver !== 'function') {
+    targets.forEach((t) => t.classList.add('in'));
+    return;
+  }
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    targets.forEach((t) => { t.classList.add('reveal'); t.classList.add('in'); });
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        setTimeout(() => el.classList.add('in'), (i % 6) * 60);
+        io.unobserve(el);
+      }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+  targets.forEach((t) => { t.classList.add('reveal'); io.observe(t); });
+})();
+
 /* ══ A11Y: Tastatur-Bedienbarkeit für div/span-Elemente mit onclick ══
    Macht klickbare Nicht-Buttons fokussierbar (Tab) und mit Enter/Space auslösbar,
    ohne bestehende onclick-Handler/Selektoren zu verändern. */
