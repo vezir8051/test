@@ -148,7 +148,7 @@
       <div class="field"><label>Nachname</label><input type="text" value="Müller"></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>Geburtsdatum</label><input type="date" value="2008-03-14"></div>
+      <div class="field"><label>Geburtsdatum</label><input type="date" value="2009-08-20"></div>
       <div class="field"><label>Kanton</label><select><option>Zürich</option><option>Bern</option><option>Basel</option><option>Aargau</option><option>St. Gallen</option></select></div>
     </div>
     <div class="field"><label>E-Mail</label><input type="email" value="lena.mueller@gmail.com" autocomplete="email"></div>
@@ -215,10 +215,9 @@
   </div>
   <div id="kandidaten-list">
     <div class="kcard verified" data-tags="kv,note5,zurich" onclick="openProfil('Lena Müller')">
-      <span class="kverif stk" aria-label="Verifiziertes Profil"><svg width="40" height="40"><use href="#stk-verif"/></svg></span>
       <div class="khd"><div class="kmk acc">LM</div><div><div class="kname">Lena Müller</div><div class="ksub">16 J · ZÜRICH · SEK A</div></div><div class="kscore hi">96</div></div>
       <div class="kbody"><div class="kskills"><span class="kchip">Teamarbeit</span><span class="kchip">Zahlen</span><span class="kchip">Organisieren</span></div><div class="krow"><span class="l">Ø Zeugnis</span><span class="v">5.3</span></div><div class="krow"><span class="l">Verfügbar</span><span class="v">AUG 2025</span></div></div>
-      <div class="kfoot"><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Lena Müller')">Profil</button></div>
+      <div class="kfoot"><span class="kverif stk" aria-label="Verifiziertes Profil"><svg width="40" height="40"><use href="#stk-verif"/></svg></span><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Lena Müller')">Profil</button></div>
     </div>
     <div class="kcard" data-tags="kv,note5,zurich" onclick="openProfil('Noah Keller')">
       <div class="khd"><div class="kmk">NK</div><div><div class="kname">Noah Keller</div><div class="ksub">15 J · ZÜRICH · SEK A</div></div><div class="kscore">89</div></div>
@@ -247,7 +246,7 @@
 <section id="sc-chat" class="sc">
   <div class="shead"><span class="eyebrow acc">Nachrichten</span><h2>Chat</h2></div>
   <div class="clist">
-    <div class="citem on" onclick="openChat('zkb','ZKB HR, Sandra Meier')"><div class="cmk fill">ZK</div><div class="bd"><div class="cname">ZKB HR, Sandra Meier</div><div class="cprev">Wir würden Sie gerne einladen …</div></div><div><div class="ctime">14:32</div><div class="cunread"></div></div></div>
+    <div class="citem on unread" onclick="openChat('zkb','ZKB HR, Sandra Meier')"><div class="cmk fill">ZK</div><div class="bd"><div class="cname">ZKB HR, Sandra Meier</div><div class="cprev">Wir würden Sie gerne einladen …</div></div><div><div class="ctime">14:32</div><div class="cunread" aria-label="ungelesen"></div></div></div>
     <div class="citem" onclick="openChat('sbb','SBB Ausbildung')"><div class="cmk">SB</div><div class="bd"><div class="cname">SBB Ausbildung</div><div class="cprev">Vielen Dank für Ihre Bewerbung</div></div><div class="ctime">09:15</div></div>
     <div class="citem" onclick="openChat('sanitas','Sanitas HR')"><div class="cmk">SA</div><div class="bd"><div class="cname">Sanitas HR</div><div class="cprev">Haben Sie Interesse an einem …</div></div><div class="ctime">Gestern</div></div>
   </div>
@@ -263,7 +262,7 @@
     <div><div class="msg them">Guten Tag! Wir haben Ihr Profil auf Lehrly.ch gesehen und sind beeindruckt. Hätten Sie Interesse an einem Schnuppertag?</div><div class="mtime">ZKB · 14:28</div></div>
     <div><div class="msg me">Guten Tag! Vielen Dank. Ich würde mich sehr über einen Schnuppertag freuen!</div><div class="mtime r">Lena · 14:30</div></div>
     <div><div class="msg them">Perfekt. Wie wäre es mit Mittwoch, dem 14. Mai?</div><div class="mtime">ZKB · 14:32</div></div>
-    <div><div class="msg them typing" aria-label="schreibt"><i></i><i></i><i></i></div></div>
+    <div><div class="msg them typing" role="status" aria-live="polite" aria-label="schreibt …"><i></i><i></i><i></i></div></div>
   </div>
   <div class="chat-inp-wrap">
     <input class="chat-inp" type="text" placeholder="Nachricht schreiben …" id="chat-inp" onkeydown="if(event.key==='Enter')sendMsg()">
