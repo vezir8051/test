@@ -62,9 +62,9 @@ function runMatch(btn) {
 
 /* ══ STELLEN ══ */
 const stellen = {
-  zkb: { mk: 'ZK', n: 'Kauffrau EFZ', co: 'ZKB · Zürich HB', l: '750', note: '4.5', pl: '4', d: 'Bei der ZKB lernst du alle Facetten des Bankwesens – Kundenberatung, Backoffice, Zahlungsverkehr.', a: ['Sek A, Ø mind. 4.5', 'Freude an Zahlen & Menschen', 'Teamfähigkeit'], b: ['MacBook während der Lehrzeit', 'GA & Lunch-Zuschuss', '70 % Übernahmechance'] },
+  zkb: { mk: 'ZK', n: 'Kauffrau EFZ', co: 'ZKB · Zürich HB', l: '750', note: '4.5', pl: '4', d: 'Bei der ZKB lernst du alle Facetten des Bankwesens: Kundenberatung, Backoffice und Zahlungsverkehr.', a: ['Sek A, Ø mind. 4.5', 'Freude an Zahlen & Menschen', 'Teamfähigkeit'], b: ['MacBook während der Lehrzeit', 'GA & Lunch-Zuschuss', '70 % Übernahmechance'] },
   sbb: { mk: 'SB', n: 'Kauffrau EFZ', co: 'SBB · Zürich HB', l: '730', note: '4.0', pl: '8', d: 'Spannende Ausbildung bei der grössten Arbeitgeberin der Schweiz in verschiedenen Abteilungen.', a: ['Abgeschlossene Schulpflicht', 'Interesse an Admin & Organisation', 'Pünktlichkeit'], b: ['GA für die gesamte Lehrzeit', 'Lehrlingslager & Events', 'Sehr gute Übernahmechancen'] },
-  sanitas: { mk: 'SA', n: 'Kauffrau EFZ – Kundenservice', co: 'Sanitas · Zürich City', l: '700', note: '4.5', pl: '2', d: 'Modernes Dienstleistungsunternehmen im Gesundheitsbereich mit Fokus auf Kundenkontakt.', a: ['Sek A, Ø mind. 4.5', 'Freude am Kundenkontakt', 'Kommunikationsstärke'], b: ['Modernes Büro in Zürich City', 'Homeoffice ab 2. Lehrjahr', 'Junges Team'] },
+  sanitas: { mk: 'SA', n: 'Kauffrau EFZ Kundenservice', co: 'Sanitas · Zürich City', l: '700', note: '4.5', pl: '2', d: 'Modernes Dienstleistungsunternehmen im Gesundheitsbereich mit Fokus auf Kundenkontakt.', a: ['Sek A, Ø mind. 4.5', 'Freude am Kundenkontakt', 'Kommunikationsstärke'], b: ['Modernes Büro in Zürich City', 'Homeoffice ab 2. Lehrjahr', 'Junges Team'] },
 };
 
 function openStelle(k) {
@@ -104,8 +104,8 @@ function openProfil(name) {
       </div>
       <div class="big">${pct}</div>
     </div>
-    <div class="grades">
-      <h5 style="font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);margin-bottom:12px;">Noten</h5>
+    <div class="sec grades">
+      <h5>Noten</h5>
       ${[['Deutsch', pr.d], ['Mathe', pr.m], ['Englisch', pr.e], ['Französisch', pr.f]].map(([n, v]) => `<div class="gbar"><span class="gl">${n}</span><div class="gt"><div class="gf" style="width:${(v / 6 * 100).toFixed(0)}%"></div></div><span class="gv">${v}</span></div>`).join('')}
     </div>
     ${pr.st.length ? `<div class="sec"><h5>Stärken</h5><div class="tags">${pr.st.map((s) => `<span class="tag on" style="cursor:default">${s}</span>`).join('')}</div></div>` : ''}
@@ -131,7 +131,7 @@ const chatData = {
   zkb: [
     { them: 'Guten Tag! Wir haben Ihr Profil auf Lehrly.ch gesehen. Hätten Sie Interesse an einem Schnuppertag?', t: '14:28' },
     { me: 'Vielen Dank! Ich würde mich sehr freuen!', t: '14:30' },
-    { them: 'Perfekt! Mittwoch 14. Mai, 9–17 Uhr?', t: '14:32' },
+    { them: 'Perfekt! Mittwoch 14. Mai, 9 bis 17 Uhr?', t: '14:32' },
   ],
   sbb: [
     { them: 'Vielen Dank für Ihre Bewerbung!', t: '09:10' },
@@ -217,3 +217,26 @@ window.openM = openM;
 window.cM = cM;
 window.docS = docS;
 window.toast = toast;
+
+/* ══ A11Y: Tastatur-Bedienbarkeit für div/span-Elemente mit onclick ══
+   Macht klickbare Nicht-Buttons fokussierbar (Tab) und mit Enter/Space auslösbar,
+   ohne bestehende onclick-Handler/Selektoren zu verändern. */
+(function enhanceA11y() {
+  /* dekorative Inline-Icons aus dem Accessibility-Tree nehmen */
+  document.querySelectorAll('use[href^="#i-"]').forEach((u) => {
+    const svg = u.closest('svg');
+    if (svg) svg.setAttribute('aria-hidden', 'true');
+  });
+  const sel = '.row,.li,.fcell,.kcard,.fchip,.citem,.tag,.photo .ph,.upload';
+  document.querySelectorAll(sel).forEach((el) => {
+    if (el.closest('[id^="profil-body"]') || el.closest('[id^="stelle-body"]')) return;
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        el.click();
+      }
+    });
+  });
+})();
