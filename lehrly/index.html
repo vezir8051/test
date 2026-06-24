@@ -226,7 +226,7 @@
 <!-- ══ CHAT VIEW ══ -->
 <section id="sc-chat-view" class="sc">
   <div class="chat-top">
-    <button class="chat-back" onclick="navTo('chat',3)"><svg><use href="#i-back"/></svg></button>
+    <button class="chat-back" aria-label="Zurück" onclick="navTo('chat',3)"><svg><use href="#i-back"/></svg></button>
     <div class="chat-hi"><div class="nm" id="chat-name-h">ZKB HR</div><div class="st"><span class="st-dot"></span>Online</div></div>
   </div>
   <div class="msgs" id="chat-msgs-view">
@@ -236,7 +236,7 @@
   </div>
   <div class="chat-inp-wrap">
     <input class="chat-inp" type="text" placeholder="Nachricht schreiben …" id="chat-inp" onkeydown="if(event.key==='Enter')sendMsg()">
-    <button class="chat-send2" onclick="sendMsg()"><svg><use href="#i-send"/></svg></button>
+    <button class="chat-send2" aria-label="Senden" onclick="sendMsg()"><svg><use href="#i-send"/></svg></button>
   </div>
 </section>
 
@@ -305,10 +305,10 @@
 <!-- ══ MODALS ══ -->
 
 <!-- Stelle -->
-<div class="mo" id="mo-stelle">
+<div class="mo" id="mo-stelle" role="dialog" aria-modal="true">
   <div class="mo-overlay" onclick="cM()"></div>
   <div class="sheet">
-    <div class="sheet-hd"><h3 id="stelle-title-h">Stellenbeschrieb</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
+    <div class="sheet-hd"><h3 id="stelle-title-h">Stellenbeschrieb</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
     <div class="sheet-bd" id="stelle-body"></div>
     <div class="sheet-ft">
       <button class="btn full" onclick="cM();openM('mo-bew')">Jetzt bewerben <svg class="arrow"><use href="#i-arr"/></svg></button>
@@ -318,10 +318,10 @@
 </div>
 
 <!-- Profil -->
-<div class="mo" id="mo-profil">
+<div class="mo" id="mo-profil" role="dialog" aria-modal="true">
   <div class="mo-overlay" onclick="cM()"></div>
   <div class="sheet">
-    <div class="sheet-hd"><h3>Kandidaten-Profil</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
+    <div class="sheet-hd"><h3>Kandidaten-Profil</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
     <div class="sheet-bd" id="profil-body"></div>
     <div class="sheet-ft">
       <button class="btn full" onclick="cM();openM('mo-schnupper')">Zum Schnuppern einladen</button>
@@ -332,10 +332,10 @@
 </div>
 
 <!-- Schnupper -->
-<div class="mo" id="mo-schnupper">
+<div class="mo" id="mo-schnupper" role="dialog" aria-modal="true">
   <div class="mo-overlay" onclick="cM()"></div>
   <div class="sheet">
-    <div class="sheet-hd"><h3>Schnupper-Einladung</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
+    <div class="sheet-hd"><h3>Schnupper-Einladung</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
     <div class="sheet-bd">
       <div class="succ" id="s-sch">Einladung verschickt.</div>
       <div class="field"><label>Datum</label><input type="date" value="2025-05-14"></div>
@@ -351,10 +351,10 @@
 </div>
 
 <!-- Bewerbung -->
-<div class="mo" id="mo-bew">
+<div class="mo" id="mo-bew" role="dialog" aria-modal="true">
   <div class="mo-overlay" onclick="cM()"></div>
   <div class="sheet">
-    <div class="sheet-hd"><h3>Bewerbung senden</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
+    <div class="sheet-hd"><h3>Bewerbung senden</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
     <div class="sheet-bd">
       <div class="succ" id="s-bew">Bewerbung gesendet.</div>
       <div class="field"><label>Nachricht</label><textarea>Guten Tag! Ich bewerbe mich hiermit für eine Lehrstelle. Ich bin motiviert und freue mich auf Ihre Rückmeldung.</textarea></div>
@@ -368,10 +368,10 @@
 </div>
 
 <!-- Inserat -->
-<div class="mo" id="mo-inserat">
+<div class="mo" id="mo-inserat" role="dialog" aria-modal="true">
   <div class="mo-overlay" onclick="cM()"></div>
   <div class="sheet">
-    <div class="sheet-hd"><h3>Stelle ausschreiben</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
+    <div class="sheet-hd"><h3>Stelle ausschreiben</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
     <div class="sheet-bd">
       <div class="succ" id="s-ins">Inserat live auf lehrly.ch.</div>
       <div class="field"><label>Berufsbezeichnung</label><input type="text" placeholder="z. B. Kauffrau EFZ"></div>
@@ -390,10 +390,10 @@
 </div>
 
 <!-- CV -->
-<div class="mo" id="mo-cv">
+<div class="mo" id="mo-cv" role="dialog" aria-modal="true">
   <div class="mo-overlay" onclick="cM()"></div>
   <div class="sheet">
-    <div class="sheet-hd"><h3>Lebenslauf, Lena Müller</h3><button class="sheet-x" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
+    <div class="sheet-hd"><h3>Lebenslauf, Lena Müller</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
     <div class="sheet-bd">
       <div class="cv">
         <div class="cv-hd"><div class="mk">LM</div><div><div class="nm">Lena Müller</div><div class="rl">Bewerberin · Kauffrau EFZ</div><div class="ct">lena.mueller@gmail.com · Zürich</div></div></div>

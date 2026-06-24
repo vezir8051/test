@@ -217,3 +217,26 @@ window.openM = openM;
 window.cM = cM;
 window.docS = docS;
 window.toast = toast;
+
+/* ══ A11Y: Tastatur-Bedienbarkeit für div/span-Elemente mit onclick ══
+   Macht klickbare Nicht-Buttons fokussierbar (Tab) und mit Enter/Space auslösbar,
+   ohne bestehende onclick-Handler/Selektoren zu verändern. */
+(function enhanceA11y() {
+  /* dekorative Inline-Icons aus dem Accessibility-Tree nehmen */
+  document.querySelectorAll('use[href^="#i-"]').forEach((u) => {
+    const svg = u.closest('svg');
+    if (svg) svg.setAttribute('aria-hidden', 'true');
+  });
+  const sel = '.row,.li,.fcell,.kcard,.fchip,.citem,.tag,.photo .ph,.upload';
+  document.querySelectorAll(sel).forEach((el) => {
+    if (el.closest('[id^="profil-body"]') || el.closest('[id^="stelle-body"]')) return;
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        el.click();
+      }
+    });
+  });
+})();
