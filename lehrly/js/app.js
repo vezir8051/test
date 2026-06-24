@@ -50,8 +50,9 @@ function runMatch(btn) {
     btn.textContent = '3 Matches gefunden';
     const p = $('match-list');
     if (p) {
+      const rm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       p.style.opacity = '0';
-      setTimeout(() => { p.style.transition = 'opacity .5s'; p.style.opacity = '1'; }, 300);
+      setTimeout(() => { p.style.transition = rm ? 'none' : 'opacity .5s'; p.style.opacity = '1'; }, 300);
     }
     setTimeout(() => {
       btn.textContent = 'Matches finden';
@@ -192,12 +193,50 @@ function filterKandidaten(chip) {
 }
 
 /* ══ MODALS ══ */
-function openM(id) { const m = $(id); if (m) m.classList.add('open'); }
-function cM() { document.querySelectorAll('.mo').forEach((m) => m.classList.remove('open')); }
+let _moTrigger = null;       /* ausloesendes Element fuer Fokus-Rueckgabe */
+const FOCUSABLE = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])';
+
+function openM(id) {
+  const m = $(id);
+  if (!m) return;
+  _moTrigger = document.activeElement;
+  m.classList.add('open');
+  /* Hintergrund-Scroll sperren (Mobile-Bottom-Sheet) */
+  document.body.style.overflow = 'hidden';
+  /* Fokus ins Dialog setzen (erstes fokussierbares Element, i. d. R. .sheet-x) */
+  const sheet = m.querySelector('.sheet');
+  const first = sheet && (sheet.querySelector('.sheet-x') || sheet.querySelector(FOCUSABLE));
+  if (first) { try { first.focus(); } catch (e) { /* noop */ } }
+}
+
+function cM() {
+  let wasOpen = false;
+  document.querySelectorAll('.mo.open').forEach((m) => { wasOpen = true; m.classList.remove('open'); });
+  document.body.style.overflow = '';
+  /* Fokus auf das ausloesende Element zuruecksetzen */
+  if (wasOpen && _moTrigger && typeof _moTrigger.focus === 'function') {
+    try { _moTrigger.focus(); } catch (e) { /* noop */ }
+  }
+  _moTrigger = null;
+}
+
 function docS(id) { const e = $(id); if (e) e.classList.add('on'); setTimeout(cM, 2200); }
 
 /* close modal sheets when pressing Escape (desktop) */
-document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cM(); });
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') { cM(); return; }
+  /* einfacher Fokus-Trap innerhalb des offenen Sheets */
+  if (ev.key !== 'Tab') return;
+  const open = document.querySelector('.mo.open .sheet');
+  if (!open) return;
+  const items = Array.from(open.querySelectorAll(FOCUSABLE)).filter((el) => el.offsetParent !== null || el === document.activeElement);
+  if (!items.length) return;
+  const firstEl = items[0];
+  const lastEl = items[items.length - 1];
+  if (ev.shiftKey && document.activeElement === firstEl) { ev.preventDefault(); lastEl.focus(); }
+  else if (!ev.shiftKey && document.activeElement === lastEl) { ev.preventDefault(); firstEl.focus(); }
+  else if (!open.contains(document.activeElement)) { ev.preventDefault(); firstEl.focus(); }
+});
 
 /* expose for inline handlers */
 window.show = show;
@@ -217,6 +256,30 @@ window.openM = openM;
 window.cM = cM;
 window.docS = docS;
 window.toast = toast;
+
+/* ══ SCROLL-ENTRY: Rows/Cards faden mit Stagger ein (IntersectionObserver) ══
+   Guard: in Umgebungen ohne IO (jsdom) wird sofort sichtbar geschaltet. */
+(function scrollReveal() {
+  const targets = document.querySelectorAll('.rows .row, #kandidaten-list .kcard, .list-num .li, .metric, .plan, .fcell');
+  if (typeof IntersectionObserver !== 'function') {
+    targets.forEach((t) => t.classList.add('in'));
+    return;
+  }
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    targets.forEach((t) => { t.classList.add('reveal'); t.classList.add('in'); });
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        const el = e.target;
+        setTimeout(() => el.classList.add('in'), (i % 6) * 60);
+        io.unobserve(el);
+      }
+    });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+  targets.forEach((t) => { t.classList.add('reveal'); io.observe(t); });
+})();
 
 /* ══ A11Y: Tastatur-Bedienbarkeit für div/span-Elemente mit onclick ══
    Macht klickbare Nicht-Buttons fokussierbar (Tab) und mit Enter/Space auslösbar,

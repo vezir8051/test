@@ -7,12 +7,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lehrly">
 <meta name="description" content="Lehrly.ch, die Schweizer Lehrstellenplattform. Lernende und Betriebe, die zusammenpassen.">
-<meta name="theme-color" content="#FFFFFF">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230A0A0A'/><rect x='70' y='14' width='16' height='16' fill='%232563EB'/><text x='12' y='70' font-family='Helvetica,Arial' font-size='46' font-weight='800' fill='white'>L</text></svg>">
+<meta name="theme-color" content="#F3EEE3">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23191512'/><rect x='68' y='13' width='17' height='17' fill='%23E4FF36'/><text x='13' y='72' font-family='Helvetica,Arial' font-size='52' font-weight='800' fill='%23FCFAF4'>L</text></svg>">
 <title>Lehrly.ch · Schweizer Lehrstellenplattform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=general-sans@400,500,600,700&f[]=cabinet-grotesk@600,700&f[]=geist-mono@400,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -35,6 +34,36 @@
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 4h8l8 8-8 8-8-8z"/><circle cx="8.5" cy="8.5" r="1.3"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+</defs></svg>
+
+<!-- RISO STICKER DEFS (hauseigenes 2-Farb-Set, flach auf Papier, Tinten-Outline + ein Fill, leichter Misregister-Offset) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- Verifiziert-Siegel -->
+  <symbol id="stk-verif" viewBox="0 0 64 64">
+    <path d="M32 6l6.5 4.2 7.7-1 2.6 7.4 6.6 4.4-2.6 7.4 2.6 7.4-6.6 4.4-2.6 7.4-7.7-1L32 58l-6.5-4.2-7.7 1-2.6-7.4-6.6-4.4 2.6-7.4-2.6-7.4 6.6-4.4 2.6-7.4 7.7 1z" fill="#1B2FE0" transform="translate(1.4 1.4)" opacity=".9"/>
+    <path d="M32 6l6.5 4.2 7.7-1 2.6 7.4 6.6 4.4-2.6 7.4 2.6 7.4-6.6 4.4-2.6 7.4-7.7-1L32 58l-6.5-4.2-7.7 1-2.6-7.4-6.6-4.4 2.6-7.4-2.6-7.4 6.6-4.4 2.6-7.4 7.7 1z" fill="#FCFAF4" stroke="#191512" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M23 32.5l6 6L42 25" fill="none" stroke="#191512" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <!-- "Lehre gesichert"-Stempel -->
+  <symbol id="stk-secured" viewBox="0 0 64 64">
+    <rect x="11" y="11" width="42" height="42" rx="9" fill="#E4FF36" transform="translate(1.6 1.6)" opacity=".95"/>
+    <rect x="11" y="11" width="42" height="42" rx="9" fill="#FCFAF4" stroke="#191512" stroke-width="2.4"/>
+    <path d="M32 18l3.8 2.4 4.5-.5 1.5 4.3 3.9 2.6-1.5 4.3 1.5 4.3-3.9 2.6-1.5 4.3-4.5-.5L32 48l-3.8-2.4-4.5.5-1.5-4.3-3.9-2.6 1.5-4.3-1.5-4.3 3.9-2.6 1.5-4.3 4.5.5z" fill="#E4FF36" stroke="#191512" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M26 32l4 4 8-8.5" fill="none" stroke="#191512" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <!-- Erfolgs-Sticker (Bewerbung gesendet / Match) -->
+  <symbol id="stk-sent" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="24" fill="#1B2FE0" transform="translate(1.6 1.6)" opacity=".9"/>
+    <circle cx="32" cy="32" r="24" fill="#FCFAF4" stroke="#191512" stroke-width="2.4"/>
+    <path d="M16 32l9 9 22-21" fill="none" stroke="#1B2FE0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <!-- Kategorie-Mark (Beruf) -->
+  <symbol id="stk-cat" viewBox="0 0 64 64">
+    <path d="M14 22h36v24a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z" fill="#1B2FE0" transform="translate(1.4 1.4)" opacity=".88"/>
+    <path d="M14 22h36v24a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z" fill="#FCFAF4" stroke="#191512" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M24 22v-4a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v4" fill="none" stroke="#191512" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M14 33h36" stroke="#191512" stroke-width="2.4"/>
+  </symbol>
 </defs></svg>
 
 <!-- ══ MAIN ══ -->
@@ -70,15 +99,15 @@
     <p class="lead">Lehrly verbindet Lernende und Betriebe direkt. Profil, Matching, Chat und Lebenslauf an einem Ort.</p>
     <!-- removed em-dash separators; one accent locked to blue -->
     <div class="hero-cta">
-      <button class="btn" onclick="navTo('lernende',1)">Profil erstellen <svg class="arrow"><use href="#i-arr"/></svg></button>
+      <button class="btn hivis" onclick="navTo('lernende',1)">Profil erstellen <svg class="arrow"><use href="#i-arr"/></svg></button>
       <button class="btn out" onclick="show('preise')">Preise ansehen</button>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="n">12<span class="acc">'</span>400</div><div class="l">Lernende</div></div>
+    <div class="stat"><div class="n">12<span class="acc">'</span>400</div><div class="l">Lernende aktiv</div></div>
     <div class="stat"><div class="n">3<span class="acc">'</span>800</div><div class="l">Betriebe</div></div>
-    <div class="stat"><div class="n">91<span class="acc">%</span></div><div class="l">Erfolg</div></div>
+    <div class="stat"><div class="n">91<span class="acc">%</span></div><div class="l">Erfolgsquote</div></div>
   </div>
 
   <div class="lbar"><span class="eyebrow">So funktioniert's</span></div>
@@ -119,13 +148,13 @@
       <div class="field"><label>Nachname</label><input type="text" value="Müller"></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>Geburtsdatum</label><input type="date" value="2008-03-14"></div>
+      <div class="field"><label>Geburtsdatum</label><input type="date" value="2009-08-20"></div>
       <div class="field"><label>Kanton</label><select><option>Zürich</option><option>Bern</option><option>Basel</option><option>Aargau</option><option>St. Gallen</option></select></div>
     </div>
     <div class="field"><label>E-Mail</label><input type="email" value="lena.mueller@gmail.com" autocomplete="email"></div>
     <div class="field"><label>Telefon</label><input type="tel" value="079 123 45 67" autocomplete="tel"></div>
 
-    <div class="subhead" data-n="02">Berufswunsch</div>
+    <div class="subhead" data-n="02">Berufswunsch <span class="stk" style="margin-left:auto"><svg width="26" height="26"><use href="#stk-cat"/></svg></span></div>
     <div class="field"><label>Gewünschter Beruf</label><select><option selected>Kauffrau / Kaufmann EFZ</option><option>Informatiker/in EFZ</option><option>FaGe EFZ</option><option>Koch / Köchin EFZ</option><option>Mediamatiker/in EFZ</option></select></div>
     <div class="grid2">
       <div class="field"><label>Lehrstart</label><select><option selected>August 2025</option><option>August 2026</option></select></div>
@@ -161,7 +190,7 @@
   </div>
 
   <div class="match-wrap">
-    <button class="btn full" onclick="runMatch(this)">Matches finden</button>
+    <button class="btn hivis full" onclick="runMatch(this)">Matches finden</button>
     <div class="btn-note">Nur passende Betriebe sehen dein Profil.</div>
   </div>
 
@@ -185,13 +214,13 @@
     <div class="fchip" data-filter="zurich" onclick="filterKandidaten(this)">Zürich</div>
   </div>
   <div id="kandidaten-list">
-    <div class="kcard" data-tags="kv,note5,zurich" onclick="openProfil('Lena Müller')">
-      <div class="khd"><div class="kmk">LM</div><div><div class="kname">Lena Müller</div><div class="ksub">16 J · ZÜRICH · SEK A</div></div><div class="kscore hi">96</div></div>
+    <div class="kcard verified" data-tags="kv,note5,zurich" onclick="openProfil('Lena Müller')">
+      <div class="khd"><div class="kmk acc">LM</div><div><div class="kname">Lena Müller</div><div class="ksub">16 J · ZÜRICH · SEK A</div></div><div class="kscore hi">96</div></div>
       <div class="kbody"><div class="kskills"><span class="kchip">Teamarbeit</span><span class="kchip">Zahlen</span><span class="kchip">Organisieren</span></div><div class="krow"><span class="l">Ø Zeugnis</span><span class="v">5.3</span></div><div class="krow"><span class="l">Verfügbar</span><span class="v">AUG 2025</span></div></div>
-      <div class="kfoot"><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Lena Müller')">Profil</button></div>
+      <div class="kfoot"><span class="kverif stk" aria-label="Verifiziertes Profil"><svg width="40" height="40"><use href="#stk-verif"/></svg></span><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Lena Müller')">Profil</button></div>
     </div>
     <div class="kcard" data-tags="kv,note5,zurich" onclick="openProfil('Noah Keller')">
-      <div class="khd"><div class="kmk">NK</div><div><div class="kname">Noah Keller</div><div class="ksub">15 J · ZÜRICH · SEK A</div></div><div class="kscore hi">89</div></div>
+      <div class="khd"><div class="kmk">NK</div><div><div class="kname">Noah Keller</div><div class="ksub">15 J · ZÜRICH · SEK A</div></div><div class="kscore">89</div></div>
       <div class="kbody"><div class="kskills"><span class="kchip">Digital</span><span class="kchip">Analytisch</span><span class="kchip">Zahlen</span></div><div class="krow"><span class="l">Ø Zeugnis</span><span class="v">5.1</span></div><div class="krow"><span class="l">Verfügbar</span><span class="v">AUG 2025</span></div></div>
       <div class="kfoot"><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Noah Keller')">Profil</button></div>
     </div>
@@ -217,7 +246,7 @@
 <section id="sc-chat" class="sc">
   <div class="shead"><span class="eyebrow acc">Nachrichten</span><h2>Chat</h2></div>
   <div class="clist">
-    <div class="citem on" onclick="openChat('zkb','ZKB HR, Sandra Meier')"><div class="cmk fill">ZK</div><div class="bd"><div class="cname">ZKB HR, Sandra Meier</div><div class="cprev">Wir würden Sie gerne einladen …</div></div><div><div class="ctime">14:32</div><div class="cunread"></div></div></div>
+    <div class="citem on unread" onclick="openChat('zkb','ZKB HR, Sandra Meier')"><div class="cmk fill">ZK</div><div class="bd"><div class="cname">ZKB HR, Sandra Meier</div><div class="cprev">Wir würden Sie gerne einladen …</div></div><div><div class="ctime">14:32</div><div class="cunread" aria-label="ungelesen"></div></div></div>
     <div class="citem" onclick="openChat('sbb','SBB Ausbildung')"><div class="cmk">SB</div><div class="bd"><div class="cname">SBB Ausbildung</div><div class="cprev">Vielen Dank für Ihre Bewerbung</div></div><div class="ctime">09:15</div></div>
     <div class="citem" onclick="openChat('sanitas','Sanitas HR')"><div class="cmk">SA</div><div class="bd"><div class="cname">Sanitas HR</div><div class="cprev">Haben Sie Interesse an einem …</div></div><div class="ctime">Gestern</div></div>
   </div>
@@ -233,6 +262,7 @@
     <div><div class="msg them">Guten Tag! Wir haben Ihr Profil auf Lehrly.ch gesehen und sind beeindruckt. Hätten Sie Interesse an einem Schnuppertag?</div><div class="mtime">ZKB · 14:28</div></div>
     <div><div class="msg me">Guten Tag! Vielen Dank. Ich würde mich sehr über einen Schnuppertag freuen!</div><div class="mtime r">Lena · 14:30</div></div>
     <div><div class="msg them">Perfekt. Wie wäre es mit Mittwoch, dem 14. Mai?</div><div class="mtime">ZKB · 14:32</div></div>
+    <div><div class="msg them typing" role="status" aria-live="polite" aria-label="schreibt …"><i></i><i></i><i></i></div></div>
   </div>
   <div class="chat-inp-wrap">
     <input class="chat-inp" type="text" placeholder="Nachricht schreiben …" id="chat-inp" onkeydown="if(event.key==='Enter')sendMsg()">
@@ -246,6 +276,7 @@
   <div class="dash-id">
     <div class="mk">LM</div>
     <div><div class="nm">Lena Müller</div><div class="rl">LERNENDE · KAUFFRAU EFZ</div><div class="pr">Profil 91 % vollständig</div></div>
+    <span class="kstamp stk" aria-label="Lehre auf Kurs"><svg width="48" height="48"><use href="#stk-secured"/></svg></span>
   </div>
   <div class="metrics">
     <div class="metric"><div class="n">3</div><div class="l">Matches</div><div class="c">Heute neu</div></div>
@@ -292,7 +323,7 @@
       <div class="badge">Beliebtestes Paket</div>
       <div class="plan-top"><div><div class="nm">Gold</div><div class="ds">Aktiv suchende Betriebe</div></div><div class="pr"><sup>CHF</sup>189<span class="per">/Mt.</span></div></div>
       <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Unbegrenzte Kandidaten</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Unbegrenzte Inserate</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Priority-Listing Top 3</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Persönlicher Support</div></div>
-      <button class="btn full" onclick="toast('Gold gewählt')">Gold wählen</button>
+      <button class="btn hivis full" onclick="toast('Gold gewählt')">Gold wählen</button>
     </div>
     <div class="plan">
       <div class="plan-top"><div><div class="nm">Enterprise</div><div class="ds">Grossbetriebe & Ketten</div></div><div class="pr">Anfrage</div></div>
