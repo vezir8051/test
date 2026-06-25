@@ -1217,7 +1217,13 @@
   // — CHAT (zweispaltig) —
   var chatState = { activeId: null };
   views.chat = function (id) {
-    var convs = KONVERSATIONEN[App.role];
+    var convs = KONVERSATIONEN[App.role] || [];
+    if (convs.length === 0) {
+      return '<div class="container">' +
+        breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Nachrichten' }]) +
+        '<div class="empty-state chat-empty"><h3>Noch keine Konversationen</h3>' +
+        '<p class="muted">Sobald du eine Frage an einen Betrieb stellst, erscheint die Konversation hier.</p></div></div>';
+    }
     if (!chatState.activeId || !convs.filter(function (c) { return c.id === chatState.activeId; })[0]) {
       chatState.activeId = (id && convs.filter(function (c) { return c.id === id; })[0]) ? id : convs[0].id;
     }
@@ -1261,11 +1267,15 @@
     var log = $('chat-log');
     if (!log) return;
     var msgs = getChatMsgs(conv.id);
-    log.innerHTML = msgs.map(function (m) {
-      return '<div class="cm-row ' + (m.me ? 'right' : 'left') + '">' +
-        '<div class="bubble ' + (m.me ? 'me' : 'them') + '">' + esc(m.text) +
-        '<span class="cm-time tnum">' + esc(m.time) + (m.me ? ' · gesendet' : '') + '</span></div></div>';
-    }).join('');
+    if (msgs.length === 0) {
+      log.innerHTML = '<div class="chat-log-empty muted">Noch keine Nachrichten — schreibe die erste.</div>';
+    } else {
+      log.innerHTML = msgs.map(function (m) {
+        return '<div class="cm-row ' + (m.me ? 'right' : 'left') + '">' +
+          '<div class="bubble ' + (m.me ? 'me' : 'them') + '">' + esc(m.text) +
+          '<span class="cm-time tnum">' + esc(m.time) + (m.me ? ' · gesendet' : '') + '</span></div></div>';
+      }).join('');
+    }
     log.scrollTop = log.scrollHeight;
   }
 
@@ -1683,8 +1693,14 @@
 
       case 'goto-bewerben':
         e.preventDefault(); gotoRoute('bewerben', el.dataset.id); return true;
-      case 'ask-stelle':
-        e.preventDefault(); openStelleChat(el.dataset.id); toast('Frage an den Betrieb gestartet.', 'neutral'); return true;
+      case 'ask-stelle': {
+        e.preventDefault();
+        var askS = STELLEN.filter(function (x) { return x.id === el.dataset.id; })[0];
+        openStelleChat(el.dataset.id);
+        // Toast erst NACH dem Öffnen — Erfolg ist nun immer wahr (Stub angelegt).
+        toast(askS ? ('Frage an ' + askS.betrieb + ' gestartet.') : 'Frage an den Betrieb gestartet.', 'neutral');
+        return true;
+      }
       case 'bewerben-next': bewerbenNext(); return true;
       case 'bewerben-prev': bewerbenState.step = Math.max(1, bewerbenState.step - 1); renderBewerbenForm(); return true;
       case 'bewerben-goto': { var tgt = parseInt(el.dataset.step, 10) || 1; if (tgt < bewerbenState.step) { bewerbenState.step = tgt; renderBewerbenForm(); } return true; }
@@ -1952,19 +1968,47 @@
   }
   window.chatSend = chatSend;
 
-  // Kontextbezogene Konversation vorauswählen, dann in den Chat navigieren.
+  // Konversation für (role, partner) finden oder als Stub neu anlegen.
+  // Niemals stiller Fallback in eine fremde Konversation: existiert kein
+  // Partner-Match, wird ein eindeutiger Stub am Anfang der Liste eingefügt,
+  // damit der Chat-Header den korrekten Betrieb/Kandidaten + Kontext zeigt.
+  function ensureConv(id, partner, kontext) {
+    var convs = KONVERSATIONEN[App.role] || (KONVERSATIONEN[App.role] = []);
+    var byPartner = convs.filter(function (c) { return c.partner === partner; })[0];
+    if (byPartner) return byPartner.id;
+    var byId = convs.filter(function (c) { return c.id === id; })[0];
+    if (byId) return byId.id; // Schutz gegen doppeltes Anlegen
+    convs.unshift({
+      id: id, partner: partner, kontext: kontext, time: 'Jetzt',
+      preview: 'Neue Konversation — noch keine Nachrichten.', msgs: []
+    });
+    return id;
+  }
+  function ensureStelleConv(s) {
+    return ensureConv('c-' + s.id, s.betrieb, s.beruf);
+  }
+  function ensureKandConv(k) {
+    // Bei anonymen Profilen anonymisierte Kennung + Berufsfeld (kein Klarbezug).
+    return ensureConv('b-' + k.id, kandKey(k), k.freigegeben ? k.beruf : k.berufFeld);
+  }
+
+  // Kontextbezogene Konversation vorauswählen/anlegen, dann in den Chat navigieren.
   function openStelleChat(stelleId) {
     var s = STELLEN.filter(function (x) { return x.id === stelleId; })[0];
+    if (!s) return;
     var convs = KONVERSATIONEN[App.role] || [];
-    var match = s ? convs.filter(function (c) { return c.partner === s.betrieb; })[0] : null;
-    chatState.activeId = (match ? match.id : (convs[0] && convs[0].id)) || null;
+    var match = convs.filter(function (c) { return c.partner === s.betrieb; })[0];
+    chatState.activeId = match ? match.id : ensureStelleConv(s);
     gotoRoute('chat', chatState.activeId);
   }
   function openKandidatChat(kandId) {
     var k = KANDIDATEN.filter(function (x) { return x.id === kandId; })[0];
+    if (!k) return;
     var convs = KONVERSATIONEN[App.role] || [];
-    var match = k && k.freigegeben ? convs.filter(function (c) { return c.partner === k.name; })[0] : null;
-    chatState.activeId = (match ? match.id : (convs[0] && convs[0].id)) || null;
+    // Match nur über kandKey(k): bei anonymen Profilen nie über den Klarnamen.
+    var key = kandKey(k);
+    var match = convs.filter(function (c) { return c.partner === key; })[0];
+    chatState.activeId = match ? match.id : ensureKandConv(k);
     gotoRoute('chat', chatState.activeId);
   }
 
