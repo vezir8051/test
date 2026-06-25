@@ -277,6 +277,83 @@ async function go(route, param) {
   ok('Zurücksetzen entfernt Lehrbeginn-Filter', window.App.stellenFilters.lehrjahr === 'all' &&
     !qs('#active-chips .chip-active[data-key="lehrjahr"]') && qsa('#stellen-list .list-item').length === 6);
 
+  // ─── Merkliste: Merken-Aktion + "Nur gemerkte"-Toggle + Chip + Empty-State ───
+  console.log('\n[Stellen · Merkliste (merken / nur gemerkte / chip / leerzustand)]');
+  // Ausgangslage: nichts gemerkt
+  window.App.gemerkt.length = 0;
+  window.App.stellenFilters.nurGemerkt = false;
+  await go('stellen');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('Jede Stellenkarte hat einen Merken-Button', qsa('#stellen-list .merken-btn').length === 6);
+  ok('Merken-Button initial nicht gemerkt (aria-pressed=false)',
+    qs('#stellen-list .merken-btn').getAttribute('aria-pressed') === 'false' &&
+    !qs('#stellen-list .merken-btn').classList.contains('on'));
+  ok('"Nur gemerkte"-Toggle im Filter-Panel vorhanden',
+    !!qs('.filter-col .merken-toggle input[data-action="toggle-nur-gemerkt"]'));
+  ok('Merken-Toggle-Zähler startet bei 0', qs('.filter-col .merken-toggle .mt-count').textContent === '0');
+
+  // Eine Stelle merken → Karte zeigt "Gemerkt"-Status (grün), Klick navigiert NICHT
+  const merkBtnZkb = qs('#stellen-list .list-item-wrap .merken-btn[data-id="zkb-kauffrau"]');
+  click(merkBtnZkb);
+  await waitFor(() => window.App.gemerkt.indexOf('zkb-kauffrau') !== -1);
+  ok('Merken-Klick navigiert NICHT (bleibt auf Stellen)', window.App.route === 'stellen');
+  ok('Gemerkte Stelle im State', window.App.gemerkt.indexOf('zkb-kauffrau') !== -1 && window.App.gemerkt.length === 1);
+  ok('Merken-Toast bestätigt', /gemerkt/.test($('toast').textContent));
+  const merkBtnAfter = qs('#stellen-list .merken-btn[data-id="zkb-kauffrau"]');
+  ok('Gemerkte Karte zeigt on-Status (aria-pressed=true, Label "Gemerkt")',
+    merkBtnAfter.classList.contains('on') && merkBtnAfter.getAttribute('aria-pressed') === 'true' &&
+    /Gemerkt/.test(merkBtnAfter.textContent));
+  ok('Merken-Toggle-Zähler aktualisiert auf 1', qs('.filter-col .merken-toggle .mt-count').textContent === '1');
+
+  // Zweite Stelle merken
+  click(qs('#stellen-list .merken-btn[data-id="sbb-informatiker"]'));
+  await waitFor(() => window.App.gemerkt.length === 2);
+  ok('Zwei Stellen gemerkt', window.App.gemerkt.length === 2);
+
+  // "Nur gemerkte" aktivieren → genau die 2 gemerkten Stellen
+  const nurToggle = qs('.filter-col .merken-toggle input[data-action="toggle-nur-gemerkt"]');
+  click(nurToggle);
+  await waitFor(() => qsa('#stellen-list .list-item').length === 2);
+  ok('"Nur gemerkte" filtert auf 2 Treffer', window.App.stellenFilters.nurGemerkt === true && qsa('#stellen-list .list-item').length === 2);
+  const gemerktIds = qsa('#stellen-list .list-item').map((c) => c.dataset.id).sort();
+  ok('Gemerkte Liste enthält genau die 2 gemerkten Stellen',
+    JSON.stringify(gemerktIds) === JSON.stringify(['sbb-informatiker', 'zkb-kauffrau']));
+  ok('Entfernbarer Chip "Nur gemerkte" sichtbar',
+    !!qs('#active-chips .chip-active[data-action="clear-nur-gemerkt"]') &&
+    /Nur gemerkte/.test(qs('#active-chips .chip-active[data-action="clear-nur-gemerkt"]').textContent));
+
+  // Aus der gefilterten Liste heraus eine Stelle entmerken → fällt aus der Liste
+  click(qs('#stellen-list .merken-btn[data-id="sbb-informatiker"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 1);
+  ok('Entmerken in "Nur gemerkte" reduziert Liste auf 1', window.App.gemerkt.length === 1 && qsa('#stellen-list .list-item').length === 1);
+  ok('Entmerken-Toast bestätigt', /aus Merkliste entfernt/.test($('toast').textContent));
+
+  // Letzte gemerkte Stelle entfernen → eigener Merkliste-Empty-State
+  click(qs('#stellen-list .merken-btn[data-id="zkb-kauffrau"]'));
+  await waitFor(() => !!qs('#stellen-list .empty-merken'));
+  ok('Leere Merkliste zeigt eigenen Empty-State', !!qs('#stellen-list .empty-merken') && /Noch nichts gemerkt/.test($('stellen-list').textContent));
+  ok('Merkliste-Empty-State hat "Alle Lehrstellen anzeigen"-Aktion', !!qs('#stellen-list [data-action="show-all-stellen"]'));
+  // Empty-State-Aktion deaktiviert den Toggle wieder
+  click(qs('#stellen-list [data-action="show-all-stellen"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('"Alle Lehrstellen anzeigen" hebt nurGemerkt auf', window.App.stellenFilters.nurGemerkt === false && qsa('#stellen-list .list-item').length === 6);
+
+  // Chip-Entfernen-Pfad: erneut merken + Toggle, dann Chip wegklicken
+  click(qs('#stellen-list .merken-btn[data-id="zkb-kauffrau"]'));
+  await waitFor(() => window.App.gemerkt.length === 1);
+  click(qs('.filter-col .merken-toggle input[data-action="toggle-nur-gemerkt"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 1);
+  click(qs('#active-chips .chip-active[data-action="clear-nur-gemerkt"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('"Nur gemerkte"-Chip entfernen stellt volle Liste wieder her', window.App.stellenFilters.nurGemerkt === false && qsa('#stellen-list .list-item').length === 6);
+
+  // Reset-Filter setzt auch nurGemerkt zurück (gemerkte Stelle bleibt für Dashboard-Test bestehen)
+  click(qs('.filter-col .merken-toggle input[data-action="toggle-nur-gemerkt"]'));
+  await waitFor(() => window.App.stellenFilters.nurGemerkt === true);
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('Zurücksetzen hebt nurGemerkt auf', window.App.stellenFilters.nurGemerkt === false);
+
   // Inline-Suche (Live)
   typeInto($('stellen-q'), 'informatik');
   await waitFor(() => qsa('#stellen-list .list-item').length === 1);
@@ -382,6 +459,48 @@ async function go(route, param) {
   ok('Dashboard-H1 "Deine Übersicht"', /Deine Übersicht/.test($('view').textContent));
   ok('Metrik-Reihe (4 Kennzahlen)', qsa('.metric').length === 4);
   ok('Bewerbungs-Status-Liste zeigt Eintrag', qsa('.status-list li').length >= 1 && /Zürcher Kantonalbank/.test($('view').textContent));
+
+  // Merkliste-Block + echte "Gemerkte Lehrstellen"-Metrik (statt Mock "Treffer")
+  console.log('\n[Dashboard · Merkliste-Block]');
+  ok('Metrik "Gemerkte Lehrstellen" vorhanden (keine Mock-Treffer)',
+    qsa('.metric-label').some((l) => /Gemerkte Lehrstellen/.test(l.textContent)) &&
+    !qsa('.metric-label').some((l) => l.textContent.trim() === 'Treffer'));
+  const merkMetric = qsa('.metric').find((m) => /Gemerkte Lehrstellen/.test(m.textContent));
+  ok('Gemerkte-Metrik zeigt echten Wert (App.gemerkt.length)',
+    merkMetric.querySelector('.metric-num').textContent === String(window.App.gemerkt.length) &&
+    window.App.gemerkt.length === 1);
+  ok('Dashboard-Merkliste-Block vorhanden', !!qs('.dash-merkliste') && /Merkliste/.test(qs('.dash-merkliste').textContent));
+  ok('Merkliste-Block listet die gemerkte Stelle', qsa('.dash-merkliste .list .list-item').length === 1 &&
+    !!qs('.dash-merkliste .list-item[data-id="zkb-kauffrau"]'));
+  ok('Merkliste-Block hat "Alle gemerkten ansehen"-Link', !!qs('.dash-merkliste [data-show="gemerkt"]'));
+
+  // Ent-Merken DIREKT im Dashboard aktualisiert Block + Metrik live (R8-Fix gegen inkonsistenten Zustand)
+  click(qs('.dash-merkliste [data-action="toggle-merken"][data-id="zkb-kauffrau"]'));
+  await waitFor(() => window.App.gemerkt.indexOf('zkb-kauffrau') === -1);
+  ok('Ent-Merken im Dashboard rendert Block + Metrik neu (kein veralteter Zustand)',
+    !!qs('.dash-merkliste .empty-merken')
+    && qsa('.metric').find((m) => /Gemerkte Lehrstellen/.test(m.textContent)).querySelector('.metric-num').textContent === '0');
+  // wieder merken, damit die folgenden Assertions ihre Ausgangslage haben
+  window.App.gemerkt.push('zkb-kauffrau'); window.gotoRoute('dashboard');
+  await waitFor(() => qsa('.dash-merkliste .list-item[data-id="zkb-kauffrau"]').length === 1);
+
+  // Link "Alle gemerkten ansehen" → Stellen mit voraktiviertem nurGemerkt-Filter
+  click(qs('.dash-merkliste [data-show="gemerkt"]'));
+  await waitFor(() => window.App.route === 'stellen');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 1);
+  ok('"Alle gemerkten ansehen" öffnet gefilterte Stellenliste',
+    window.App.stellenFilters.nurGemerkt === true && qsa('#stellen-list .list-item').length === 1 &&
+    !!qs('#stellen-list .list-item[data-id="zkb-kauffrau"]'));
+  // Filter wieder leeren für saubere Folgezustände
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+
+  // Leere Merkliste → Dashboard zeigt eigenen Empty-State
+  window.App.gemerkt.length = 0;
+  window.App.stellenFilters.nurGemerkt = false;
+  await go('dashboard');
+  ok('Dashboard-Merkliste leer → Empty-State', !!qs('.dash-merkliste .empty-merken') &&
+    qsa('.metric').find((m) => /Gemerkte Lehrstellen/.test(m.textContent)).querySelector('.metric-num').textContent === '0');
 
   // ═════════════ PROFIL-FORMULAR ═════════════
   console.log('\n[Profil · Live-Sync · Stärken · Vollständigkeit]');

@@ -40,6 +40,7 @@
     route: 'start',
     param: null,
     matched: store.get('matched', false),
+    gemerkt: store.get('gemerkt', []),
     profile: store.get('profile', { vorname: '', nachname: '', kanton: '', beruf: '', plz: '' }),
     strengths: store.get('strengths', {}),
     schnupperErf: store.get('schnupperErf', ''),
@@ -48,7 +49,7 @@
     bewerbungen: store.get('bewerbungen', []),
     einladungen: store.get('einladungen', []),
     chats: {},                 // konversations-id -> [{me, text, time}]
-    stellenFilters: { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '' },
+    stellenFilters: { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '', nurGemerkt: false },
     poolFilters: { region: 'all', note: 'all', feld: 'all', q: '' }
   };
   window.App = App;
@@ -56,6 +57,7 @@
   function persist() {
     store.set('role', App.role);
     store.set('matched', App.matched);
+    store.set('gemerkt', App.gemerkt);
     store.set('profile', App.profile);
     store.set('strengths', App.strengths);
     store.set('schnupperErf', App.schnupperErf);
@@ -344,9 +346,35 @@
     return '<div class="skeleton" aria-hidden="true">' + rows + '</div>';
   }
 
+  // Merkliste: gemerkte Lehrstellen (Yousty-Muster, hier mit Bookmark statt Herz).
+  function istGemerkt(id) { return App.gemerkt.indexOf(id) !== -1; }
+  function merkenButton(s) {
+    var on = istGemerkt(s.id);
+    return '<button class="merken-btn' + (on ? ' on' : '') + '" type="button"' +
+      ' data-action="toggle-merken" data-id="' + s.id + '"' +
+      ' aria-pressed="' + (on ? 'true' : 'false') + '"' +
+      ' title="' + (on ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen') + '"' +
+      ' aria-label="' + esc(s.beruf) + ' bei ' + esc(s.betrieb) + (on ? ' aus Merkliste entfernen' : ' merken') + '">' +
+      '<svg class="ic" aria-hidden="true"><use href="#i-bookmark"></use></svg>' +
+      '<span class="merken-label">' + (on ? 'Gemerkt' : 'Merken') + '</span></button>';
+  }
+
+  // Merken-Buttons ausserhalb der Stellenliste (Start, Detail) in-place aktualisieren.
+  function updateMerkenButtons() {
+    qsa('.merken-btn').forEach(function (btn) {
+      var on = istGemerkt(btn.dataset.id);
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.setAttribute('title', on ? 'Aus Merkliste entfernen' : 'Zur Merkliste hinzufügen');
+      var lbl = btn.querySelector('.merken-label');
+      if (lbl) lbl.textContent = on ? 'Gemerkt' : 'Merken';
+    });
+  }
+
   // ───────────────────────── Listenkarten ─────────────────────────
   function stelleCard(s) {
-    return '<a class="list-item" data-route="stelle" data-id="' + s.id + '" href="#/stelle/' + s.id + '">' +
+    return '<div class="list-item-wrap">' +
+      '<a class="list-item" data-route="stelle" data-id="' + s.id + '" href="#/stelle/' + s.id + '">' +
       '<div class="li-main">' +
         '<h3 class="li-title">' + esc(s.beruf) + '</h3>' +
         '<div class="li-sub"><span class="li-betrieb">' + esc(s.betrieb) + '</span>' +
@@ -363,7 +391,9 @@
         '<span class="li-scorewrap"><span class="li-scorelabel">Match</span>' +
         '<span class="li-score tnum" aria-label="Match-Score ' + s.score + ' Prozent">' + s.score + '%</span></span>' +
         '<span class="li-go">Details <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></span>' +
-      '</div></a>';
+      '</div></a>' +
+      merkenButton(s) +
+    '</div>';
   }
 
   function kandidatCard(k) {
@@ -526,8 +556,15 @@
             '<span class="fo-count tnum" aria-hidden="true">' + c + '</span></label>';
         }).join('') + '</fieldset>';
     }
+    var nur = App.stellenFilters.nurGemerkt;
+    var merkToggle = '<label class="merken-toggle' + (nur ? ' on' : '') + '">' +
+      '<input type="checkbox" data-action="toggle-nur-gemerkt"' + (nur ? ' checked' : '') + '>' +
+      '<svg class="ic" aria-hidden="true"><use href="#i-bookmark"></use></svg>' +
+      '<span class="mt-label">Nur gemerkte</span>' +
+      '<span class="mt-count tnum" aria-hidden="true">' + App.gemerkt.length + '</span></label>';
     return '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
       '<button class="btn-text" data-action="reset-stellen-filter">Zurücksetzen</button></div>' +
+      merkToggle +
       group('Branche', 'branche', STELLEN_FILTER_OPTS.branche) +
       group('Region', 'region', STELLEN_FILTER_OPTS.region) +
       group('Lehrbeginn', 'lehrjahr', STELLEN_FILTER_OPTS.lehrjahr) +
@@ -536,6 +573,7 @@
 
   // Gemeinsame Filterbedingung (von filteredStellen UND den Facet-Countern genutzt).
   function stellenMatch(s, f) {
+    if (f.nurGemerkt && !istGemerkt(s.id)) return false;
     if (f.branche !== 'all' && s.branche !== f.branche) return false;
     if (f.region !== 'all' && s.region !== f.region) return false;
     if (f.typ !== 'all' && s.typ !== f.typ) return false;
@@ -575,6 +613,15 @@
     if (!holder) return;
     if (list.length === 0) {
       var sf = App.stellenFilters;
+      // Eigener, handlungsleitender Leerzustand fuer die Merkliste (0 gemerkte).
+      if (sf.nurGemerkt && App.gemerkt.length === 0) {
+        holder.innerHTML = '<div class="empty-state empty-merken"><h3>Noch nichts gemerkt</h3>' +
+          '<p class="muted">Tippe in der Liste auf <strong>Merken</strong>, um Lehrstellen zu sammeln und später in Ruhe zu vergleichen.</p>' +
+          '<button class="btn btn-primary" data-action="show-all-stellen">Alle Lehrstellen anzeigen</button></div>';
+        renderStellenChips();
+        renderStellenFacets();
+        return;
+      }
       var parts = [];
       if (sf.q) parts.push('„' + esc(sf.q) + '“');
       if (sf.branche !== 'all') parts.push(esc(stellenOptLabel('branche', sf.branche)));
@@ -595,8 +642,18 @@
     } else {
       holder.innerHTML = list.map(stelleCard).join('');
     }
+    renderStellenChips();
+    renderStellenFacets();
+  }
+
+  // Aktive Filter-Chips (inkl. entfernbarem "Nur gemerkte"-Chip).
+  function renderStellenChips() {
     var chips = [];
     var f = App.stellenFilters;
+    if (f.nurGemerkt) {
+      chips.push('<button class="chip-active" data-action="clear-nur-gemerkt" aria-label="Filter entfernen: Nur gemerkte">' +
+        'Nur gemerkte <svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>');
+    }
     var labels = { branche: 'Branche', region: 'Region', typ: 'Abschluss', lehrjahr: 'Lehrbeginn' };
     ['branche', 'region', 'lehrjahr', 'typ'].forEach(function (k) {
       if (f[k] !== 'all') chips.push('<button class="chip-active" data-action="clear-filter" data-key="' + k + '" aria-label="Filter entfernen: ' + esc(labels[k]) + ' ' + esc(stellenOptLabel(k, f[k])) + '">' +
@@ -604,7 +661,10 @@
     });
     var ac = $('active-chips');
     if (ac) ac.innerHTML = chips.join('');
-    // Facet-Counts im Filter-Panel IN-PLACE aktualisieren (Radio bleibt erhalten → kein Fokusverlust).
+  }
+
+  // Facet-Counts im Filter-Panel IN-PLACE aktualisieren (Radio bleibt erhalten → kein Fokusverlust).
+  function renderStellenFacets() {
     var fcol = qs('.filter-col');
     if (fcol) Array.prototype.forEach.call(fcol.querySelectorAll('.filter-opt'), function (opt) {
       var input = opt.querySelector('input[type="radio"]'); if (!input) return;
@@ -612,6 +672,15 @@
       var cnt = opt.querySelector('.fo-count'); if (cnt) cnt.textContent = c;
       opt.classList.toggle('is-empty', c === 0 && val !== 'all');
     });
+    // "Nur gemerkte"-Toggle (Anzahl + Zustand) synchron halten.
+    var mt = qs('.merken-toggle');
+    if (mt) {
+      var cb = mt.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = !!App.stellenFilters.nurGemerkt;
+      mt.classList.toggle('on', !!App.stellenFilters.nurGemerkt);
+      var mc = mt.querySelector('.mt-count');
+      if (mc) mc.textContent = App.gemerkt.length;
+    }
   }
 
   // — STELLEN-DETAIL —
@@ -1109,14 +1178,26 @@
     if (App.role === 'betrieb') return views.bDashboard();
     var metrics = [
       ['Offene Bewerbungen', App.bewerbungen.length || 0],
-      ['Treffer', App.matched ? 3 : 0],
+      ['Gemerkte Lehrstellen', App.gemerkt.length],
       ['Ungelesene Nachrichten', 2],
       ['Profil-Vollständigkeit', profilVollstaendigkeit() + '%']
     ];
+    var gemerkteStellen = App.gemerkt.map(function (id) {
+      return STELLEN.filter(function (x) { return x.id === id; })[0];
+    }).filter(Boolean);
     return '<div class="container">' +
       breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Übersicht' }]) +
       '<h1 class="page-h1">Deine Übersicht</h1>' +
       metricRow(metrics) +
+      '<section class="dash-block dash-merkliste"><div class="dash-block-head"><h2 class="detail-h2">Merkliste</h2>' +
+        (gemerkteStellen.length ? '<a class="link-arrow" data-route="stellen" data-show="gemerkt" href="#/stellen">Alle gemerkten ansehen <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></a>' : '') +
+        '</div>' +
+        (gemerkteStellen.length
+          ? '<div class="list">' + gemerkteStellen.map(stelleCard).join('') + '</div>'
+          : '<div class="empty-state empty-merken"><h3>Noch nichts gemerkt</h3>' +
+            '<p class="muted">Merke dir Lehrstellen über das <strong>Merken</strong>-Symbol in der Liste, um sie hier wiederzufinden.</p>' +
+            '<button class="btn btn-primary" data-route="stellen" data-action="goto-stellen">Stellen finden</button></div>') +
+      '</section>' +
       '<div class="dash-cols">' +
         '<section class="dash-block"><h2 class="detail-h2">Bewerbungs-Status</h2>' +
           (App.bewerbungen.length ? '<ul class="status-list">' + App.bewerbungen.map(function (b) {
@@ -1375,6 +1456,7 @@
     var routeEl = t.closest && t.closest('[data-route]');
     if (routeEl && routeEl.dataset.route) {
       if (routeEl.dataset.feld) App.stellenFilters.branche = mapFeldToBranche(routeEl.dataset.feld);
+      if (routeEl.dataset.show === 'gemerkt') App.stellenFilters.nurGemerkt = true;
       e.preventDefault();
       gotoRoute(routeEl.dataset.route, routeEl.dataset.id || null);
       return;
@@ -1402,10 +1484,33 @@
       case 'goto-cv': e.preventDefault(); gotoRoute('cv'); return true;
 
       case 'reset-stellen-filter':
-        App.stellenFilters = { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '' };
+        App.stellenFilters = { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '', nurGemerkt: false };
         gotoRoute('stellen'); return true;
       case 'clear-filter':
         App.stellenFilters[el.dataset.key] = 'all'; renderStellenResults(); return true;
+      case 'toggle-merken': {
+        e.preventDefault();
+        var mid = el.dataset.id;
+        var idx = App.gemerkt.indexOf(mid);
+        var nowOn;
+        if (idx === -1) { App.gemerkt.push(mid); nowOn = true; }
+        else { App.gemerkt.splice(idx, 1); nowOn = false; }
+        persist();
+        var s = STELLEN.filter(function (x) { return x.id === mid; })[0];
+        var titel = s ? s.beruf : 'Lehrstelle';
+        toast(nowOn ? '„' + titel + '" gemerkt.' : '„' + titel + '" aus Merkliste entfernt.', nowOn ? 'ok' : 'neutral');
+        if (App.route === 'stellen') renderStellenResults();
+        else if (App.route === 'dashboard') render(); // Merkliste-Block + Metrik konsistent halten
+        else updateMerkenButtons();
+        return true;
+      }
+      case 'toggle-nur-gemerkt':
+        App.stellenFilters.nurGemerkt = !App.stellenFilters.nurGemerkt;
+        renderStellenResults(); return true;
+      case 'clear-nur-gemerkt':
+        App.stellenFilters.nurGemerkt = false; renderStellenResults(); return true;
+      case 'show-all-stellen':
+        App.stellenFilters.nurGemerkt = false; renderStellenResults(); return true;
       case 'widen-stellen-region': {
         App.stellenFilters.region = 'all';
         var rr = qs('input[name="f-region"][value="all"]');
