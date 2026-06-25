@@ -1066,6 +1066,11 @@ button.step-node:focus-visible { outline: 2px solid var(--primary); outline-offs
   display: flex; flex-direction: column; gap: 12px;
   overflow-y: auto; background: var(--bg);
 }
+.chat-log-empty {
+  margin: auto; max-width: 36ch; text-align: center;
+  font-size: 14px; line-height: 1.5;
+}
+.chat-empty { margin-top: 24px; }
 .cm-row { display: flex; }
 .cm-row.right { justify-content: flex-end; }
 .bubble {

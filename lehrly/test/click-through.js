@@ -473,11 +473,13 @@ async function go(route, param) {
     && !/verifizierter Lehrbetrieb/.test($('view').textContent));
   await go('stelle', 'zkb-kauffrau');
 
-  // Frage stellen → Chat + Toast
+  // Frage stellen → Chat + Toast (ZKB hat bestehende Konversation → Match-Pfad)
   click(qs('[data-action="ask-stelle"]'));
   await waitFor(() => window.App.route === 'chat');
   ok('"Frage stellen" → Chat', window.App.route === 'chat');
-  ok('Toast nach Frage stellen', /Frage an den Betrieb/.test($('toast').textContent));
+  ok('Toast nennt konkreten Betrieb (ZKB-Match)', /Frage an Zürcher Kantonalbank gestartet\./.test($('toast').textContent));
+  ok('ZKB-Frage öffnet die ZKB-Konversation (kein Fallback)',
+    /Zürcher Kantonalbank/.test($('chat-head').textContent) && !!qs('.conv.active[data-conv="c-zkb"]'));
 
   // zurück zu Detail → bewerben
   await go('stelle', 'zkb-kauffrau');
@@ -742,6 +744,49 @@ async function go(route, param) {
   ok('XSS-Payload als Text escaped', /&lt;img/.test(meBubbles[meBubbles.length - 1].innerHTML));
   ok('XSS-Handler nicht ausgeführt', window.__xss === 0);
 
+  // ═════════════ CHAT-KONTEXT · Frage ohne bestehende Konversation (kein Fallback) ═════════════
+  console.log('\n[Chat-Kontext · Lernende · neue Stub-Konversation statt ZKB-Fallback]');
+  const convCountBefore = qsa('.conv').length;
+  // Bosch Polymechaniker hat KEINE bestehende Konversation → es darf NICHT auf ZKB fallen.
+  await go('stelle', 'bosch-poly');
+  click(qs('[data-action="ask-stelle"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('Frage (Bosch) → Chat', window.App.route === 'chat');
+  ok('Aktive Konversation ist NICHT ZKB-Fallback',
+    !/Zürcher Kantonalbank/.test($('chat-head').textContent) && !qs('.conv.active[data-conv="c-zkb"]'));
+  ok('Chat-Header zeigt korrekten Betrieb (Bosch Schweiz)', /Bosch Schweiz/.test($('chat-head').textContent));
+  ok('Chat-Header zeigt Stellenkontext (Beruf)', /Polymechaniker/.test($('chat-head').textContent));
+  ok('Aktive Konversation hat partner = s.betrieb', /Bosch Schweiz/.test(qs('.conv.active .conv-name').textContent));
+  ok('Neue Konversation in der Liste vorhanden', qsa('.conv').length === convCountBefore + 1 && !!qs('.conv[data-conv="c-bosch-poly"]'));
+  ok('Toast nennt Bosch Schweiz', /Frage an Bosch Schweiz gestartet\./.test($('toast').textContent));
+  // Neue Konversation mit msgs:[] → Empty-State im chat-log
+  ok('Neue Konversation zeigt Empty-State im chat-log', !!qs('#chat-log .chat-log-empty') &&
+    /Noch keine Nachrichten/.test($('chat-log').textContent));
+  // Senden funktioniert auch in der frischen Konversation (inkl. XSS-Escape)
+  typeInto($('chat-inp'), 'Guten Tag, ich interessiere mich für die Lehrstelle.');
+  submit(qs('[data-action="chat-send"]'));
+  await waitFor(() => qsa('#chat-log .bubble.me').length === 1);
+  ok('Senden in neuer Konversation hängt Bubble an', qsa('#chat-log .bubble.me').length === 1 && !qs('#chat-log .chat-log-empty'));
+  window.__xss2 = 0;
+  typeInto($('chat-inp'), '<img src=x onerror="window.__xss2=1">');
+  submit(qs('[data-action="chat-send"]'));
+  await waitFor(() => qsa('#chat-log .bubble.me').length === 2);
+  ok('XSS-Escape bleibt in neuer Konversation intakt', qsa('#chat-log img').length === 0 && window.__xss2 === 0);
+  // Kein doppeltes Anlegen: erneut dieselbe Stelle-Frage stellen → gleiche id reaktiviert
+  const convCountAfter = qsa('.conv').length;
+  await go('stelle', 'bosch-poly');
+  click(qs('[data-action="ask-stelle"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('Erneute Bosch-Frage legt KEINE zweite Konversation an',
+    qsa('.conv').length === convCountAfter && qsa('.conv[data-conv="c-bosch-poly"]').length === 1);
+  ok('Erneute Frage reaktiviert dieselbe Konversation', !!qs('.conv.active[data-conv="c-bosch-poly"]'));
+  // Coop EBA: zweite kontextlose Stelle → eigene neue Konversation (Header zeigt Coop)
+  await go('stelle', 'coop-eba');
+  click(qs('[data-action="ask-stelle"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('Coop-Frage öffnet eigene Coop-Konversation (kein ZKB-Fallback)',
+    /Coop Genossenschaft/.test($('chat-head').textContent) && !!qs('.conv.active[data-conv="c-coop-eba"]'));
+
   // ═════════════ PREISE ═════════════
   console.log('\n[Preise]');
   await go('preise');
@@ -853,6 +898,44 @@ async function go(route, param) {
   click(qs('[data-action="msg-kandidat"]'));
   await waitFor(() => window.App.route === 'chat');
   ok('"Nachricht senden" → Betriebs-Chat', window.App.route === 'chat' && qsa('.conv').length === 2);
+
+  // Anonymer Kandidat (Sara K., freigegeben=false) → kein Lena-M.-Fallback, keine Klarname-Leak
+  console.log('\n[Chat-Kontext · Betrieb · anonymer Kandidat · kandKey statt Fallback]');
+  const bConvBefore = qsa('.conv').length;
+  await go('kandidat', 'k-sara');
+  click(qs('[data-action="msg-kandidat"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('Anonymer Kandidat → Chat', window.App.route === 'chat');
+  ok('Aktive Konversation ist NICHT Lena M. (kein Fallback)',
+    !/Lena M\./.test($('chat-head').textContent) && !qs('.conv.active[data-conv="b-lena"]'));
+  ok('Header zeigt anonymisierte Kennung (kandKey)', /S\. \(anonymisiert\)/.test($('chat-head').textContent));
+  ok('Listentitel der aktiven Konversation = kandKey', /S\. \(anonymisiert\)/.test(qs('.conv.active .conv-name').textContent));
+  ok('Kein Klarname "Sara K." im Chat-DOM (Anonymität gewahrt)',
+    !/Sara K\./.test($('chat-head').textContent) && !/Sara K\./.test(qs('.conv.active').textContent));
+  ok('Header zeigt Berufsfeld (kein Klarbezug) statt konkretem Beruf', /Gesundheit \/ Pflege/.test($('chat-head').textContent));
+  ok('Neue anonyme Konversation in der Liste vorhanden',
+    qsa('.conv').length === bConvBefore + 1 && !!qs('.conv[data-conv="b-k-sara"]'));
+  ok('Anonyme Konversation zeigt Empty-State im chat-log', !!qs('#chat-log .chat-log-empty'));
+  // Senden in der anonymen Konversation funktioniert (Anonymität bleibt, Bubble erscheint)
+  typeInto($('chat-inp'), 'Guten Tag, wir würden Sie gerne kennenlernen.');
+  submit(qs('[data-action="chat-send"]'));
+  await waitFor(() => qsa('#chat-log .bubble.me').length === 1);
+  ok('Senden an anonymen Kandidaten hängt Bubble an', qsa('#chat-log .bubble.me').length === 1);
+  // Kein doppeltes Anlegen bei erneutem Klick
+  const bConvAfter = qsa('.conv').length;
+  await go('kandidat', 'k-sara');
+  click(qs('[data-action="msg-kandidat"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('Erneuter Klick legt KEINE zweite anonyme Konversation an',
+    qsa('.conv').length === bConvAfter && qsa('.conv[data-conv="b-k-sara"]').length === 1 &&
+    !!qs('.conv.active[data-conv="b-k-sara"]'));
+  // Zweiter anonymer Kandidat (Tim R.) → eigene Konversation, ebenfalls anonymisiert
+  await go('kandidat', 'k-tim');
+  click(qs('[data-action="msg-kandidat"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('Zweiter anonymer Kandidat → eigene anonyme Konversation',
+    /T\. \(anonymisiert\)/.test($('chat-head').textContent) && !!qs('.conv.active[data-conv="b-k-tim"]') &&
+    !/Tim R\./.test(qs('.conv.active').textContent));
 
   // ═════════════ STELLE AUSSCHREIBEN ═════════════
   console.log('\n[Stelle ausschreiben · Betriebsprofil · Inserat]');
