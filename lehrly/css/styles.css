@@ -824,9 +824,10 @@ a.list-item:hover .li-go .ic { transform: translateX(2px); }
 .step-form { margin-top: 4px; }
 
 /* ── Stepper (nummerierte Schritte mit Fortschritt) ── */
+.stepper-progress { font-size: var(--fs-small); color: var(--muted); margin: 16px 0 8px; }
 .stepper {
   display: flex; gap: 0; flex-wrap: wrap;
-  margin: 16px 0 24px;
+  margin: 0 0 24px;
   border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--surface); overflow: hidden;
 }
@@ -848,6 +849,10 @@ a.list-item:hover .li-go .ic { transform: translateX(2px); }
 .step-node.current .step-num { background: var(--primary); color: #fff; border-color: var(--primary); }
 .step-node.done { color: var(--text); }
 .step-node.done .step-num { background: var(--success); color: #fff; border-color: var(--success); }
+button.step-node { font-family: inherit; font-size: var(--fs-small); text-align: left; background: var(--surface); cursor: pointer; width: auto; }
+button.step-node.done:hover { background: var(--primary-soft); }
+button.step-node:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.step-node[aria-disabled="true"] { cursor: default; }
 
 .step-actions {
   display: flex; gap: 12px; flex-wrap: wrap;

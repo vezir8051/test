@@ -423,6 +423,12 @@ async function go(route, param) {
   click(qs('[data-action="goto-bewerben"]'));
   await waitFor(() => window.App.route === 'bewerben');
   ok('Bewerben-Stepper Step 1', !!qs('#bewerben-stepper .step-node.current') && /Profil prüfen/.test($('bewerben-stepper').textContent));
+  // ARIA-Fortschritt + Stepper-Semantik
+  ok('Stepper hat aria-label', $('bewerben-stepper').getAttribute('aria-label') === 'Bewerbungs-Fortschritt');
+  ok('Fortschritts-Label "Schritt 1 von 4 · Profil prüfen"', /Schritt\s*1\s*von\s*4\s*·\s*Profil prüfen/.test($('bewerben-progress').textContent));
+  ok('Aktueller Schritt hat aria-current="step"', qs('#bewerben-stepper .step-node.current').getAttribute('aria-current') === 'step');
+  ok('Zukunfts-Schritte aria-disabled (nicht klickbar)', qsa('#bewerben-stepper [aria-disabled="true"]').length === 3);
+  ok('Step 1 hat keinen klickbaren done-Knoten', !qs('#bewerben-stepper button.step-node'));
   // Step 1 → 2
   click(qs('[data-action="bewerben-next"]'));
   await waitFor(() => !!$('bw-motivation'));
@@ -440,8 +446,18 @@ async function go(route, param) {
   click(qs('[data-action="bewerben-next"]'));
   await waitFor(() => !!qs('[data-action="submit-bewerbung"]'));
   ok('Step 4 (Absenden) aktiv', !!qs('[data-action="submit-bewerbung"]') && /Zürcher Kantonalbank/.test($('bewerben-form').textContent));
-  // Zurück-Navigation prüfen
-  click(qs('[data-action="bewerben-prev"]'));
+  // Stepper-Direktsprung: in Step 4 sind die 3 abgeschlossenen Schritte klickbare Buttons
+  ok('Drei klickbare done-Knoten in Step 4', qsa('#bewerben-stepper button.step-node.done[data-action="bewerben-goto"]').length === 3);
+  ok('Fortschritts-Label zeigt Schritt 4', /Schritt\s*4\s*von\s*4\s*·\s*Absenden/.test($('bewerben-progress').textContent));
+  // Direktsprung zurück zu Schritt 2 (Motivation) per Stepper
+  click(qs('#bewerben-stepper button[data-step="2"]'));
+  await waitFor(() => !!$('bw-motivation'));
+  ok('Stepper-Direktsprung führt zu Step 2', window.App && $('bw-motivation') && /Schritt\s*2\s*von\s*4/.test($('bewerben-progress').textContent));
+  ok('Motivation bleibt nach Direktsprung erhalten', /Bankberuf/.test($('bw-motivation').value));
+  // Vorwärts-Sprung im Stepper ist nicht möglich (Validierung bleibt geschützt)
+  ok('Kein Vorwärts-Sprung-Button für Step 3/4 im Stepper', !qs('#bewerben-stepper button[data-step="3"]') && !qs('#bewerben-stepper button[data-step="4"]'));
+  // wieder bis Step 4 vor (validiert)
+  click(qs('[data-action="bewerben-next"]'));
   await waitFor(() => /Unterlagen/.test($('bewerben-form').textContent));
   ok('Zurück führt zu Step 3', /Unterlagen/.test($('bewerben-form').textContent));
   click(qs('[data-action="bewerben-next"]'));
