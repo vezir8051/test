@@ -657,6 +657,15 @@ async function go(route, param) {
   // Speichern
   click(qs('[data-action="save-profil"]'));
   ok('Profil speichern → Toast', /Profil gesichert/.test($('toast').textContent));
+  // Enter-Submit des Profil-Formulars (data-action="profil-form") teilt denselben Pfad
+  typeInto(qs('[data-field="vorname"]'), 'Lena');
+  $('toast').textContent = '';
+  submit(qs('#form-steckbrief'));
+  await delay(0);
+  ok('Profil-Enter-Submit → Toast "Profil gesichert."', $('toast').textContent === 'Profil gesichert.');
+  ok('Profil-Enter-Submit → Toast ist role=status', $('toast').getAttribute('role') === 'status');
+  ok('Profil-Enter-Submit erhält Feldwert (kein Reset/Datenverlust)',
+    qs('[data-field="vorname"]').value === 'Lena' && window.App.profile.vorname === 'Lena');
   // Upload-Dokument
   click(qs('[data-action="upload-doc"]'));
   ok('Dokument-Upload → Toast', /Dokument hochgeladen/.test($('toast').textContent));
@@ -951,6 +960,14 @@ async function go(route, param) {
   ok('Betriebs-Vollständigkeit steigt', $('betrieb-pct').textContent !== bp0 && $('betrieb-pct').textContent === '100%');
   click(qs('[data-action="save-betrieb"]'));
   ok('Betriebsprofil speichern → Toast', /Betriebsprofil gespeichert/.test($('toast').textContent));
+  // Enter-Submit des Betriebs-Formulars (data-action="betrieb-form") teilt denselben Pfad
+  typeInto(qs('[data-bfield="firma"]'), 'Beispiel GmbH');
+  $('toast').textContent = '';
+  submit(qs('#form-betrieb'));
+  await delay(0);
+  ok('Betrieb-Enter-Submit → Toast mit Firmenname',
+    /Betriebsprofil gespeichert/.test($('toast').textContent) && /Beispiel GmbH/.test($('toast').textContent));
+  ok('Betrieb-Enter-Submit → Betriebs-Pct aktualisiert', $('betrieb-pct').textContent === '100%');
   // Inserat ohne Beruf blockt
   ok('Inserat-Empty-State initial sichtbar', $('inserat-empty') && $('inserat-empty').hidden === false);
   const insVorher = window.App.inserate.length;
@@ -968,12 +985,34 @@ async function go(route, param) {
   ok('Veröffentlicht-Toast', /veröffentlicht/.test($('toast').textContent));
   ok('Inserat-Felder zurückgesetzt', qs('[data-ifield="beruf"]').value === '');
 
+  // ── Enter-Submit des Inserat-Formulars (data-action="inserat-form") teilt denselben Pfad ──
+  // Leeres Berufsbild → Fehlermeldung sichtbar, kein neues Inserat
+  const insVorSubmit = window.App.inserate.length;
+  submit(qs('#form-inserat'));
+  await delay(0);
+  ok('Inserat-Enter-Submit ohne Berufsbild blockt',
+    window.App.inserate.length === insVorSubmit && qsa('#inserat-list .list-item').length === insVorSubmit);
+  ok('Inserat-Enter-Submit zeigt Feld-Fehler #inserat-beruf-err',
+    $('inserat-beruf-err') && $('inserat-beruf-err').hidden === false);
+  ok('Inserat-Enter-Submit ohne Berufsbild → Berufsbild-Toast', /Berufsbild angeben/.test($('toast').textContent));
+  // Berufsbild füllen → erneut Enter-Submit → Inserat erscheint, Felder zurückgesetzt
+  typeInto(qs('[data-ifield="beruf"]'), 'Kauffrau/Kaufmann EFZ');
+  $('toast').textContent = '';
+  submit(qs('#form-inserat'));
+  await waitFor(() => qsa('#inserat-list .list-item').length === insVorSubmit + 1);
+  ok('Inserat-Enter-Submit veröffentlicht erscheint in Liste',
+    qsa('#inserat-list .list-item').length === insVorSubmit + 1 && /Kauffrau\/Kaufmann EFZ/.test($('inserat-list').textContent));
+  ok('Inserat-Enter-Submit → Empty-State versteckt', $('inserat-empty').hidden === true);
+  ok('Inserat-Enter-Submit → Felder zurückgesetzt', qs('[data-ifield="beruf"]').value === '');
+  ok('Inserat-Enter-Submit → Fehler #inserat-beruf-err wieder versteckt', $('inserat-beruf-err').hidden === true);
+  ok('Inserat-Enter-Submit → Veröffentlicht-Toast', /veröffentlicht/.test($('toast').textContent));
+
   // ═════════════ BETRIEB-DASHBOARD / PIPELINE ═════════════
   console.log('\n[Pipeline · Betrieb-Dashboard]');
   await go('dashboard');
   ok('Pipeline-H1 vorhanden', /Pipeline-Übersicht/.test($('view').textContent));
   ok('Pipeline-Metriken (4)', qsa('.metric').length === 4);
-  ok('Veröffentlichte Stellen zählt Inserat', /1/.test(qsa('.metric .metric-num')[0].textContent));
+  ok('Veröffentlichte Stellen zählt Inserate', qsa('.metric .metric-num')[0].textContent.trim() === String(window.App.inserate.length) && window.App.inserate.length === 2);
   ok('Kandidaten-Status-Liste', qsa('.status-list li').length === 4);
 
   // ═════════════ 404 / NOTFOUND ═════════════
