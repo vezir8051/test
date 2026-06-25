@@ -7,444 +7,102 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lehrly">
 <meta name="description" content="Lehrly.ch, die Schweizer Lehrstellenplattform. Lernende und Betriebe, die zusammenpassen.">
-<meta name="theme-color" content="#F3EEE3">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23191512'/><rect x='68' y='13' width='17' height='17' fill='%23E4FF36'/><text x='13' y='72' font-family='Helvetica,Arial' font-size='52' font-weight='800' fill='%23FCFAF4'>L</text></svg>">
+<meta name="theme-color" content="#0E1116">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230E1116'/><circle cx='50' cy='50' r='22' fill='none' stroke='%233DDC97' stroke-width='9'/><text x='50' y='66' text-anchor='middle' font-family='Helvetica,Arial' font-size='44' font-weight='800' fill='%23E8ECF2'>L</text></svg>">
 <title>Lehrly.ch · Schweizer Lehrstellenplattform</title>
-<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
-<link href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=general-sans@400,500,600,700&f[]=cabinet-grotesk@600,700&f[]=geist-mono@400,500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-<!-- SVG ICON DEFS -->
+<!-- ════════════════════════════════════════════════════════════════
+     SVG ICON DEFS (Monoline) + dock-vermerk Stempel-Pfade
+     ════════════════════════════════════════════════════════════════ -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 9.5V20h14V9.5"/></symbol>
-  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol>
-  <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18"/><path d="M8 7h2M8 11h2M8 15h2M14 7h2M14 11h2M14 15h2"/></symbol>
-  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
-  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></symbol>
-  <symbol id="i-arr" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-steckbrief" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></symbol>
+  <symbol id="i-profil" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+  <symbol id="i-unterlagen" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-treffer" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-gespraeche" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-cockpit" viewBox="0 0 24 24"><path d="M4 13a8 8 0 0116 0"/><path d="M12 13l4-3"/></symbol>
+  <symbol id="i-betrieb" viewBox="0 0 24 24"><path d="M4 21V8l8-4 8 4v13"/><path d="M9 21v-6h6v6"/></symbol>
+  <symbol id="i-ausschreiben" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-pool" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-pipeline" viewBox="0 0 24 24"><path d="M4 7h16M4 12h11M4 17h6"/></symbol>
+  <symbol id="i-cmd" viewBox="0 0 24 24"><path d="M9 6a2 2 0 10-2 2h10a2 2 0 10-2-2v10a2 2 0 102-2H7a2 2 0 10 2 2z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
-  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12h15M12 5l7 7-7 7"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
-  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M3 7h4l2-2h6l2 2h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></symbol>
-  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></symbol>
-  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/></symbol>
-  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></symbol>
-  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M4 4h8l8 8-8 8-8-8z"/><circle cx="8.5" cy="8.5" r="1.3"/></symbol>
-  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></symbol>
-  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-tarif" viewBox="0 0 24 24"><path d="M4 8h16v9H4z"/><path d="M4 12h16"/></symbol>
 </defs></svg>
 
-<!-- RISO STICKER DEFS (hauseigenes 2-Farb-Set, flach auf Papier, Tinten-Outline + ein Fill, leichter Misregister-Offset) -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-  <!-- Verifiziert-Siegel -->
-  <symbol id="stk-verif" viewBox="0 0 64 64">
-    <path d="M32 6l6.5 4.2 7.7-1 2.6 7.4 6.6 4.4-2.6 7.4 2.6 7.4-6.6 4.4-2.6 7.4-7.7-1L32 58l-6.5-4.2-7.7 1-2.6-7.4-6.6-4.4 2.6-7.4-2.6-7.4 6.6-4.4 2.6-7.4 7.7 1z" fill="#1B2FE0" transform="translate(1.4 1.4)" opacity=".9"/>
-    <path d="M32 6l6.5 4.2 7.7-1 2.6 7.4 6.6 4.4-2.6 7.4 2.6 7.4-6.6 4.4-2.6 7.4-7.7-1L32 58l-6.5-4.2-7.7 1-2.6-7.4-6.6-4.4 2.6-7.4-2.6-7.4 6.6-4.4 2.6-7.4 7.7 1z" fill="#FCFAF4" stroke="#191512" stroke-width="2.4" stroke-linejoin="round"/>
-    <path d="M23 32.5l6 6L42 25" fill="none" stroke="#191512" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
-  </symbol>
-  <!-- "Lehre gesichert"-Stempel -->
-  <symbol id="stk-secured" viewBox="0 0 64 64">
-    <rect x="11" y="11" width="42" height="42" rx="9" fill="#E4FF36" transform="translate(1.6 1.6)" opacity=".95"/>
-    <rect x="11" y="11" width="42" height="42" rx="9" fill="#FCFAF4" stroke="#191512" stroke-width="2.4"/>
-    <path d="M32 18l3.8 2.4 4.5-.5 1.5 4.3 3.9 2.6-1.5 4.3 1.5 4.3-3.9 2.6-1.5 4.3-4.5-.5L32 48l-3.8-2.4-4.5.5-1.5-4.3-3.9-2.6 1.5-4.3-1.5-4.3 3.9-2.6 1.5-4.3 4.5.5z" fill="#E4FF36" stroke="#191512" stroke-width="2.2" stroke-linejoin="round"/>
-    <path d="M26 32l4 4 8-8.5" fill="none" stroke="#191512" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-  </symbol>
-  <!-- Erfolgs-Sticker (Bewerbung gesendet / Match) -->
-  <symbol id="stk-sent" viewBox="0 0 64 64">
-    <circle cx="32" cy="32" r="24" fill="#1B2FE0" transform="translate(1.6 1.6)" opacity=".9"/>
-    <circle cx="32" cy="32" r="24" fill="#FCFAF4" stroke="#191512" stroke-width="2.4"/>
-    <path d="M16 32l9 9 22-21" fill="none" stroke="#1B2FE0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  </symbol>
-  <!-- Kategorie-Mark (Beruf) -->
-  <symbol id="stk-cat" viewBox="0 0 64 64">
-    <path d="M14 22h36v24a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z" fill="#1B2FE0" transform="translate(1.4 1.4)" opacity=".88"/>
-    <path d="M14 22h36v24a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z" fill="#FCFAF4" stroke="#191512" stroke-width="2.4" stroke-linejoin="round"/>
-    <path d="M24 22v-4a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v4" fill="none" stroke="#191512" stroke-width="2.4" stroke-linejoin="round"/>
-    <path d="M14 33h36" stroke="#191512" stroke-width="2.4"/>
-  </symbol>
-</defs></svg>
+<!-- ════════════════════════════════════════════════════════════════
+     APP-SHELL — persistentes CSS-Grid [rail | canvas], kein Toggling
+     ════════════════════════════════════════════════════════════════ -->
+<div id="shell" class="shell" data-role="lernende">
 
-<!-- ══ MAIN ══ -->
-<div id="main" class="show">
-
-<!-- TOP BAR -->
-<header class="topbar">
-  <div class="wordmark" onclick="navTo('home',0)">Lehrly<span class="dot"></span><span class="tld">.ch</span></div>
-  <nav class="dnav">
-    <button class="dnav-item on" onclick="navTo('home',0)">Start</button>
-    <button class="dnav-item" onclick="navTo('lernende',1)">Profil</button>
-    <button class="dnav-item" onclick="navTo('betriebe',2)">Betriebe</button>
-    <button class="dnav-item" onclick="navTo('chat',3)">Chat</button>
-    <button class="dnav-item" onclick="navTo('dash',4)">Dashboard</button>
-  </nav>
-  <button class="topbar-link" onclick="navTo('lernende',1)">Profil erstellen</button>
-</header>
-
-<!-- BOTTOM NAV -->
-<nav class="botnav">
-  <button class="bnav-item on" onclick="navTo('home',0)"><svg><use href="#i-home"/></svg><span class="bnav-label">Start</span></button>
-  <button class="bnav-item" onclick="navTo('lernende',1)"><svg><use href="#i-user"/></svg><span class="bnav-label">Profil</span></button>
-  <button class="bnav-item" onclick="navTo('betriebe',2)"><svg><use href="#i-building"/></svg><span class="bnav-label">Betriebe</span></button>
-  <button class="bnav-item" onclick="navTo('chat',3)"><svg><use href="#i-chat"/></svg><span class="bnav-label">Chat</span><span class="bnav-dot"></span></button>
-  <button class="bnav-item" onclick="navTo('dash',4)"><svg><use href="#i-grid"/></svg><span class="bnav-label">Dashboard</span></button>
-</nav>
-
-<!-- ══ HOME ══ -->
-<section id="sc-home" class="sc on">
-  <div class="hero">
-    <span class="eyebrow acc">Schweizer Lehrstellenplattform</span>
-    <h1>Lehrstellen,<br>die <span class="acc">passen.</span></h1>
-    <p class="lead">Lehrly verbindet Lernende und Betriebe direkt. Profil, Matching, Chat und Lebenslauf an einem Ort.</p>
-    <!-- removed em-dash separators; one accent locked to blue -->
-    <div class="hero-cta">
-      <button class="btn hivis" onclick="navTo('lernende',1)">Profil erstellen <svg class="arrow"><use href="#i-arr"/></svg></button>
-      <button class="btn out" onclick="show('preise')">Preise ansehen</button>
-    </div>
-  </div>
-
-  <div class="stats">
-    <div class="stat"><div class="n">12<span class="acc">'</span>400</div><div class="l">Lernende aktiv</div></div>
-    <div class="stat"><div class="n">3<span class="acc">'</span>800</div><div class="l">Betriebe</div></div>
-    <div class="stat"><div class="n">91<span class="acc">%</span></div><div class="l">Erfolgsquote</div></div>
-  </div>
-
-  <div class="lbar"><span class="eyebrow">So funktioniert's</span></div>
-  <div class="list-num">
-    <div class="li" onclick="navTo('lernende',1)"><span class="idx">01</span><div><div class="ti">Profil erstellen</div><div class="de">Angaben, Noten und Stärken erfassen.</div></div><svg class="arrow"><use href="#i-arr"/></svg></div>
-    <div class="li" onclick="navTo('lernende',1)"><span class="idx">02</span><div><div class="ti">Betriebe finden</div><div class="de">Das Matching schlägt passende Stellen vor.</div></div><svg class="arrow"><use href="#i-arr"/></svg></div>
-    <div class="li" onclick="navTo('betriebe',2)"><span class="idx">03</span><div><div class="ti">Direkt bewerben</div><div class="de">Schnuppern, chatten, bewerben.</div></div><svg class="arrow"><use href="#i-arr"/></svg></div>
-  </div>
-
-  <div class="lbar"><span class="eyebrow">Aktuelle Matches</span><a onclick="navTo('lernende',1)">Alle</a></div>
-  <div class="rows">
-    <div class="row" onclick="openStelle('zkb')"><div class="mk acc">ZK</div><div class="bd"><div class="nm">ZKB, Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 750/Mt.</div></div><div class="score hi">96<small>MATCH</small></div></div>
-    <div class="row" onclick="openStelle('sbb')"><div class="mk fill">SB</div><div class="bd"><div class="nm">SBB, Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 730/Mt.</div></div><div class="score">89<small>MATCH</small></div></div>
-    <div class="row" onclick="openStelle('sanitas')"><div class="mk">SA</div><div class="bd"><div class="nm">Sanitas, City</div><div class="sb">Kauffrau EFZ · CHF 700/Mt.</div></div><div class="score">82<small>MATCH</small></div></div>
-  </div>
-
-  <div class="lbar"><span class="eyebrow">Funktionen</span></div>
-  <div class="fgrid">
-    <div class="fcell" onclick="navTo('lernende',1)"><svg><use href="#i-target"/></svg><div class="t">Matching</div><div class="d">Passende Betriebe automatisch.</div></div>
-    <div class="fcell" onclick="navTo('chat',3)"><svg><use href="#i-chat"/></svg><div class="t">Chat</div><div class="d">Direkt mit dem Betrieb.</div></div>
-    <div class="fcell" onclick="openM('mo-cv')"><svg><use href="#i-file"/></svg><div class="t">Lebenslauf</div><div class="d">Automatisch generiert.</div></div>
-    <div class="fcell" onclick="show('preise')"><svg><use href="#i-tag"/></svg><div class="t">Preise</div><div class="d">Für Lernende gratis.</div></div>
-  </div>
-</section>
-
-<!-- ══ LERNENDE / PROFIL ══ -->
-<section id="sc-lernende" class="sc">
-  <div class="shead"><span class="eyebrow acc">Lernende</span><h2>Mein Profil</h2><p>Erfasse deine Angaben. Das Matching findet passende Betriebe.</p></div>
-  <div class="form">
-    <div class="photo">
-      <div class="ph" onclick="toast('Foto hochladen')"><svg><use href="#i-cam"/></svg></div>
-      <div><div class="t">Foto hochladen</div><div class="d">+60 % mehr Anfragen.</div></div>
-    </div>
-
-    <div class="subhead" data-n="01">Angaben</div>
-    <div class="grid2">
-      <div class="field"><label>Vorname</label><input type="text" value="Lena"></div>
-      <div class="field"><label>Nachname</label><input type="text" value="Müller"></div>
-    </div>
-    <div class="grid2">
-      <div class="field"><label>Geburtsdatum</label><input type="date" value="2009-08-20"></div>
-      <div class="field"><label>Kanton</label><select><option>Zürich</option><option>Bern</option><option>Basel</option><option>Aargau</option><option>St. Gallen</option></select></div>
-    </div>
-    <div class="field"><label>E-Mail</label><input type="email" value="lena.mueller@gmail.com" autocomplete="email"></div>
-    <div class="field"><label>Telefon</label><input type="tel" value="079 123 45 67" autocomplete="tel"></div>
-
-    <div class="subhead" data-n="02">Berufswunsch <span class="stk" style="margin-left:auto"><svg width="26" height="26"><use href="#stk-cat"/></svg></span></div>
-    <div class="field"><label>Gewünschter Beruf</label><select><option selected>Kauffrau / Kaufmann EFZ</option><option>Informatiker/in EFZ</option><option>FaGe EFZ</option><option>Koch / Köchin EFZ</option><option>Mediamatiker/in EFZ</option></select></div>
-    <div class="grid2">
-      <div class="field"><label>Lehrstart</label><select><option selected>August 2025</option><option>August 2026</option></select></div>
-      <div class="field"><label>Arbeitsweg</label><select><option>15 Min.</option><option selected>30 Min.</option><option>45 Min.</option></select></div>
-    </div>
-
-    <div class="subhead" data-n="03">Noten</div>
-    <div class="grid2">
-      <div class="field"><label>Schultyp</label><select><option selected>Sek A</option><option>Sek B</option><option>Gym</option></select></div>
-      <div class="field"><label>Ø Note</label><input type="number" value="5.3" min="1" max="6" step="0.1"></div>
-    </div>
-    <div class="grid2">
-      <div class="field"><label>Deutsch</label><input type="number" value="5.5" min="1" max="6" step="0.5"></div>
-      <div class="field"><label>Mathematik</label><input type="number" value="5.0" min="1" max="6" step="0.5"></div>
-    </div>
-    <div class="grid2">
-      <div class="field"><label>Englisch</label><input type="number" value="5.5" min="1" max="6" step="0.5"></div>
-      <div class="field"><label>Französisch</label><input type="number" value="4.5" min="1" max="6" step="0.5"></div>
-    </div>
-
-    <div class="subhead" data-n="04">Stärken</div>
-    <div class="tags">
-      <span class="tag on" onclick="tg(this)">Teamarbeit</span><span class="tag on" onclick="tg(this)">Zahlen</span><span class="tag on" onclick="tg(this)">Organisieren</span><span class="tag" onclick="tg(this)">Kreativität</span><span class="tag" onclick="tg(this)">Technik</span><span class="tag on" onclick="tg(this)">Kundenkontakt</span><span class="tag" onclick="tg(this)">Digital/IT</span><span class="tag on" onclick="tg(this)">Zuverlässigkeit</span>
-    </div>
-    <div class="field" style="margin-top:16px;"><label>Hobbys</label><input type="text" value="Volleyball, Lesen, Kochen"></div>
-
-    <div class="subhead" data-n="05">Erfahrung</div>
-    <div class="field"><label>Schnupperlehren</label><input type="text" value="Raiffeisenbank (3 Tage), Bäckerei (2 Tage)"></div>
-    <div class="field"><label>Über mich</label><textarea>Ich bin motiviert, zuverlässig und teamfähig. Mein Ziel ist eine Lehrstelle als Kauffrau EFZ.</textarea></div>
-
-    <div class="subhead" data-n="06">Dokumente</div>
-    <div class="upload" onclick="toast('Datei-Browser öffnet sich')"><div class="t">Zeugnisse hochladen</div><div class="d">PDF, JPG · max. 10 MB</div></div>
-  </div>
-
-  <div class="match-wrap">
-    <button class="btn hivis full" onclick="runMatch(this)">Matches finden</button>
-    <div class="btn-note">Nur passende Betriebe sehen dein Profil.</div>
-  </div>
-
-  <div class="lbar"><span class="eyebrow">Deine Matches</span><span class="eyebrow acc">03</span></div>
-  <div class="rows" id="match-list">
-    <div class="row" onclick="openStelle('zkb')"><div class="mk acc">ZK</div><div class="bd"><div class="nm">ZKB, Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 750/Mt.</div></div><div class="score hi">96<small>MATCH</small></div></div>
-    <div class="row" onclick="openStelle('sbb')"><div class="mk fill">SB</div><div class="bd"><div class="nm">SBB, Zürich HB</div><div class="sb">Kauffrau EFZ · CHF 730/Mt.</div></div><div class="score">89<small>MATCH</small></div></div>
-    <div class="row" onclick="openStelle('sanitas')"><div class="mk">SA</div><div class="bd"><div class="nm">Sanitas, City</div><div class="sb">Kauffrau EFZ · CHF 700/Mt.</div></div><div class="score">82<small>MATCH</small></div></div>
-  </div>
-</section>
-
-<!-- ══ BETRIEBE ══ -->
-<section id="sc-betriebe" class="sc">
-  <div class="shead"><div class="shead-row"><div><span class="eyebrow acc">Betriebe</span><h2>Kandidaten</h2></div><button class="btn sm" onclick="openM('mo-inserat')">+ Stelle</button></div><p>47 neue Profile heute.</p></div>
-  <div class="filters">
-    <div class="fchip on" data-filter="all" onclick="filterKandidaten(this)">Alle</div>
-    <div class="fchip" data-filter="kv" onclick="filterKandidaten(this)">KV</div>
-    <div class="fchip" data-filter="informatik" onclick="filterKandidaten(this)">Informatik</div>
-    <div class="fchip" data-filter="fage" onclick="filterKandidaten(this)">FaGe</div>
-    <div class="fchip" data-filter="note5" onclick="filterKandidaten(this)">Note 5+</div>
-    <div class="fchip" data-filter="zurich" onclick="filterKandidaten(this)">Zürich</div>
-  </div>
-  <div id="kandidaten-list">
-    <div class="kcard verified" data-tags="kv,note5,zurich" onclick="openProfil('Lena Müller')">
-      <div class="khd"><div class="kmk acc">LM</div><div><div class="kname">Lena Müller</div><div class="ksub">16 J · ZÜRICH · SEK A</div></div><div class="kscore hi">96</div></div>
-      <div class="kbody"><div class="kskills"><span class="kchip">Teamarbeit</span><span class="kchip">Zahlen</span><span class="kchip">Organisieren</span></div><div class="krow"><span class="l">Ø Zeugnis</span><span class="v">5.3</span></div><div class="krow"><span class="l">Verfügbar</span><span class="v">AUG 2025</span></div></div>
-      <div class="kfoot"><span class="kverif stk" aria-label="Verifiziertes Profil"><svg width="40" height="40"><use href="#stk-verif"/></svg></span><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Lena Müller')">Profil</button></div>
-    </div>
-    <div class="kcard" data-tags="kv,note5,zurich" onclick="openProfil('Noah Keller')">
-      <div class="khd"><div class="kmk">NK</div><div><div class="kname">Noah Keller</div><div class="ksub">15 J · ZÜRICH · SEK A</div></div><div class="kscore">89</div></div>
-      <div class="kbody"><div class="kskills"><span class="kchip">Digital</span><span class="kchip">Analytisch</span><span class="kchip">Zahlen</span></div><div class="krow"><span class="l">Ø Zeugnis</span><span class="v">5.1</span></div><div class="krow"><span class="l">Verfügbar</span><span class="v">AUG 2025</span></div></div>
-      <div class="kfoot"><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Noah Keller')">Profil</button></div>
-    </div>
-    <div class="kcard" data-tags="kv,zurich" onclick="openProfil('Sara Brunner')">
-      <div class="khd"><div class="kmk">SB</div><div><div class="kname">Sara Brunner</div><div class="ksub">16 J · ZÜRICH · SEK A</div></div><div class="kscore">85</div></div>
-      <div class="kbody"><div class="kskills"><span class="kchip">Kundenkontakt</span><span class="kchip">Kreativität</span></div><div class="krow"><span class="l">Ø Zeugnis</span><span class="v">4.9</span></div><div class="krow"><span class="l">Verfügbar</span><span class="v">AUG 2025</span></div></div>
-      <div class="kfoot"><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Sara Brunner')">Profil</button></div>
-    </div>
-    <div class="kcard" data-tags="kv" onclick="openProfil('Tim Wenger')">
-      <div class="khd"><div class="kmk">TW</div><div><div class="kname">Tim Wenger</div><div class="ksub">15 J · WINTERTHUR · SEK A</div></div><div class="kscore">78</div></div>
-      <div class="kbody"><div class="kskills"><span class="kchip">Organisieren</span><span class="kchip">Teamarbeit</span></div><div class="krow"><span class="l">Ø Zeugnis</span><span class="v">4.7</span></div><div class="krow"><span class="l">Verfügbar</span><span class="v">AUG 2025</span></div></div>
-      <div class="kfoot"><button class="btn" onclick="event.stopPropagation();openM('mo-schnupper')">Einladen</button><button class="btn out" onclick="event.stopPropagation();openProfil('Tim Wenger')">Profil</button></div>
-    </div>
-  </div>
-  <div class="empty" id="kandidaten-empty" hidden>
-    <svg><use href="#i-search"/></svg>
-    <h3>Keine Kandidaten</h3>
-    <p>Für diesen Filter gibt es aktuell keine Profile.</p>
-  </div>
-</section>
-
-<!-- ══ CHAT LIST ══ -->
-<section id="sc-chat" class="sc">
-  <div class="shead"><span class="eyebrow acc">Nachrichten</span><h2>Chat</h2></div>
-  <div class="clist">
-    <div class="citem on unread" onclick="openChat('zkb','ZKB HR, Sandra Meier')"><div class="cmk fill">ZK</div><div class="bd"><div class="cname">ZKB HR, Sandra Meier</div><div class="cprev">Wir würden Sie gerne einladen …</div></div><div><div class="ctime">14:32</div><div class="cunread" aria-label="ungelesen"></div></div></div>
-    <div class="citem" onclick="openChat('sbb','SBB Ausbildung')"><div class="cmk">SB</div><div class="bd"><div class="cname">SBB Ausbildung</div><div class="cprev">Vielen Dank für Ihre Bewerbung</div></div><div class="ctime">09:15</div></div>
-    <div class="citem" onclick="openChat('sanitas','Sanitas HR')"><div class="cmk">SA</div><div class="bd"><div class="cname">Sanitas HR</div><div class="cprev">Haben Sie Interesse an einem …</div></div><div class="ctime">Gestern</div></div>
-  </div>
-</section>
-
-<!-- ══ CHAT VIEW ══ -->
-<section id="sc-chat-view" class="sc">
-  <div class="chat-top">
-    <button class="chat-back" aria-label="Zurück" onclick="navTo('chat',3)"><svg><use href="#i-back"/></svg></button>
-    <div class="chat-hi"><div class="nm" id="chat-name-h">ZKB HR</div><div class="st"><span class="st-dot"></span>Online</div></div>
-  </div>
-  <div class="msgs" id="chat-msgs-view">
-    <div><div class="msg them">Guten Tag! Wir haben Ihr Profil auf Lehrly.ch gesehen und sind beeindruckt. Hätten Sie Interesse an einem Schnuppertag?</div><div class="mtime">ZKB · 14:28</div></div>
-    <div><div class="msg me">Guten Tag! Vielen Dank. Ich würde mich sehr über einen Schnuppertag freuen!</div><div class="mtime r">Lena · 14:30</div></div>
-    <div><div class="msg them">Perfekt. Wie wäre es mit Mittwoch, dem 14. Mai?</div><div class="mtime">ZKB · 14:32</div></div>
-    <div><div class="msg them typing" role="status" aria-live="polite" aria-label="schreibt …"><i></i><i></i><i></i></div></div>
-  </div>
-  <div class="chat-inp-wrap">
-    <input class="chat-inp" type="text" placeholder="Nachricht schreiben …" id="chat-inp" onkeydown="if(event.key==='Enter')sendMsg()">
-    <button class="chat-send2" aria-label="Senden" onclick="sendMsg()"><svg><use href="#i-send"/></svg></button>
-  </div>
-</section>
-
-<!-- ══ DASHBOARD ══ -->
-<section id="sc-dash" class="sc">
-  <div class="shead"><span class="eyebrow acc">Übersicht</span><h2>Dashboard</h2></div>
-  <div class="dash-id">
-    <div class="mk">LM</div>
-    <div><div class="nm">Lena Müller</div><div class="rl">LERNENDE · KAUFFRAU EFZ</div><div class="pr">Profil 91 % vollständig</div></div>
-    <span class="kstamp stk" aria-label="Lehre auf Kurs"><svg width="48" height="48"><use href="#stk-secured"/></svg></span>
-  </div>
-  <div class="metrics">
-    <div class="metric"><div class="n">3</div><div class="l">Matches</div><div class="c">Heute neu</div></div>
-    <div class="metric"><div class="n">47</div><div class="l">Profilaufrufe</div><div class="c">+12 heute</div></div>
-    <div class="metric"><div class="n">2</div><div class="l">Bewerbungen</div><div class="c">Gesendet</div></div>
-    <div class="metric"><div class="n">91%</div><div class="l">Profil-Stärke</div><div class="c">Foto fehlt</div></div>
-  </div>
-  <div class="lbar"><span class="eyebrow">Aktivitäten</span></div>
-  <div class="feed">
-    <div class="fitem"><span class="dt"></span><span class="tx"><b>ZKB</b> hat dein Profil angesehen</span><span class="tm">14:32</span></div>
-    <div class="fitem"><span class="dt"></span><span class="tx">Neuer Match: <b>Sanitas, 82</b></span><span class="tm">12:15</span></div>
-    <div class="fitem"><span class="dt"></span><span class="tx"><b>SBB</b> bietet eine Schnupperlehre an</span><span class="tm">09:30</span></div>
-    <div class="fitem"><span class="dt"></span><span class="tx">Profil <b>47×</b> aufgerufen diese Woche</span><span class="tm">Woche</span></div>
-  </div>
-  <div class="lbar"><span class="eyebrow">Schnellaktionen</span></div>
-  <div class="actions">
-    <button class="btn" onclick="navTo('lernende',1)">Profil bearbeiten <svg class="arrow"><use href="#i-arr"/></svg></button>
-    <button class="btn" onclick="navTo('lernende',1)">Neue Matches finden <svg class="arrow"><use href="#i-arr"/></svg></button>
-    <button class="btn" onclick="openM('mo-cv')">Lebenslauf ansehen <svg class="arrow"><use href="#i-arr"/></svg></button>
-    <button class="btn" onclick="show('preise')">Preise ansehen <svg class="arrow"><use href="#i-arr"/></svg></button>
-  </div>
-</section>
-
-<!-- ══ PREISE ══ -->
-<section id="sc-preise" class="sc">
-  <div class="shead"><span class="eyebrow acc">Preise</span><h2>Pakete</h2><p>Für Lernende immer kostenlos.</p></div>
-  <div class="plans">
-    <div class="plan">
-      <div class="plan-top"><div><div class="nm">Kostenlos</div><div class="ds">Lernende & Reinschnuppern</div></div><div class="pr free">CHF 0</div></div>
-      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>3 Kandidaten/Mt.</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>1 Inserat</div><div class="feat off"><span class="no"><svg><use href="#i-minus"/></svg></span>Kein Matching</div></div>
-      <button class="btn out full" onclick="toast('Kostenlos gestartet')">Kostenlos starten</button>
-    </div>
-    <div class="plan">
-      <div class="plan-top"><div><div class="nm">Bronze</div><div class="ds">Kleine KMU</div></div><div class="pr"><sup>CHF</sup>49<span class="per">/Mt.</span></div></div>
-      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>10 Kandidaten/Mt.</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>3 Inserate</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Matching Basic</div></div>
-      <button class="btn out full" onclick="toast('Bronze gewählt')">Bronze wählen</button>
-    </div>
-    <div class="plan">
-      <div class="plan-top"><div><div class="nm">Silber</div><div class="ds">Wachsende Betriebe</div></div><div class="pr"><sup>CHF</sup>99<span class="per">/Mt.</span></div></div>
-      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>30 Kandidaten/Mt.</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>10 Inserate</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Vollständiges Matching</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Zeugnisse einsehen</div></div>
-      <button class="btn full" onclick="toast('Silber gewählt')">Silber wählen</button>
-    </div>
-    <div class="plan hot">
-      <div class="badge">Beliebtestes Paket</div>
-      <div class="plan-top"><div><div class="nm">Gold</div><div class="ds">Aktiv suchende Betriebe</div></div><div class="pr"><sup>CHF</sup>189<span class="per">/Mt.</span></div></div>
-      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Unbegrenzte Kandidaten</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Unbegrenzte Inserate</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Priority-Listing Top 3</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Persönlicher Support</div></div>
-      <button class="btn hivis full" onclick="toast('Gold gewählt')">Gold wählen</button>
-    </div>
-    <div class="plan">
-      <div class="plan-top"><div><div class="nm">Enterprise</div><div class="ds">Grossbetriebe & Ketten</div></div><div class="pr">Anfrage</div></div>
-      <div class="feats"><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Alles aus Gold</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>Multi-Standorte</div><div class="feat"><span class="yes"><svg><use href="#i-check"/></svg></span>API-Integration</div></div>
-      <button class="btn out full" onclick="toast('Kontaktanfrage gesendet')">Kontakt aufnehmen</button>
-    </div>
-  </div>
-</section>
-
-<!-- ══ MODALS ══ -->
-
-<!-- Stelle -->
-<div class="mo" id="mo-stelle" role="dialog" aria-modal="true">
-  <div class="mo-overlay" onclick="cM()"></div>
-  <div class="sheet">
-    <div class="sheet-hd"><h3 id="stelle-title-h">Stellenbeschrieb</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
-    <div class="sheet-bd" id="stelle-body"></div>
-    <div class="sheet-ft">
-      <button class="btn full" onclick="cM();openM('mo-bew')">Jetzt bewerben <svg class="arrow"><use href="#i-arr"/></svg></button>
-      <button class="btn out full" onclick="cM()">Schliessen</button>
-    </div>
-  </div>
-</div>
-
-<!-- Profil -->
-<div class="mo" id="mo-profil" role="dialog" aria-modal="true">
-  <div class="mo-overlay" onclick="cM()"></div>
-  <div class="sheet">
-    <div class="sheet-hd"><h3>Kandidaten-Profil</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
-    <div class="sheet-bd" id="profil-body"></div>
-    <div class="sheet-ft">
-      <button class="btn full" onclick="cM();openM('mo-schnupper')">Zum Schnuppern einladen</button>
-      <button class="btn out full" onclick="messageCandidate()">Nachricht senden</button>
-      <button class="btn out full" onclick="cM()">Schliessen</button>
-    </div>
-  </div>
-</div>
-
-<!-- Schnupper -->
-<div class="mo" id="mo-schnupper" role="dialog" aria-modal="true">
-  <div class="mo-overlay" onclick="cM()"></div>
-  <div class="sheet">
-    <div class="sheet-hd"><h3>Schnupper-Einladung</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
-    <div class="sheet-bd">
-      <div class="succ" id="s-sch">Einladung verschickt.</div>
-      <div class="field"><label>Datum</label><input type="date" value="2025-05-14"></div>
-      <div class="field"><label>Uhrzeit</label><select><option>08:00 Uhr</option><option selected>09:00 Uhr</option></select></div>
-      <div class="field"><label>Ansprechperson</label><input type="text" value="Sandra Meier, HR-Leiterin"></div>
-      <div class="field"><label>Nachricht</label><textarea>Guten Tag! Wir laden Sie herzlich zu einem Schnuppertag ein.</textarea></div>
-    </div>
-    <div class="sheet-ft">
-      <button class="btn full" onclick="docS('s-sch')">Senden</button>
-      <button class="btn out full" onclick="cM()">Abbrechen</button>
-    </div>
-  </div>
-</div>
-
-<!-- Bewerbung -->
-<div class="mo" id="mo-bew" role="dialog" aria-modal="true">
-  <div class="mo-overlay" onclick="cM()"></div>
-  <div class="sheet">
-    <div class="sheet-hd"><h3>Bewerbung senden</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
-    <div class="sheet-bd">
-      <div class="succ" id="s-bew">Bewerbung gesendet.</div>
-      <div class="field"><label>Nachricht</label><textarea>Guten Tag! Ich bewerbe mich hiermit für eine Lehrstelle. Ich bin motiviert und freue mich auf Ihre Rückmeldung.</textarea></div>
-      <div class="field"><label>Schnuppertermin</label><input type="date" value="2025-05-20"></div>
-    </div>
-    <div class="sheet-ft">
-      <button class="btn full" onclick="docS('s-bew')">Senden</button>
-      <button class="btn out full" onclick="cM()">Abbrechen</button>
-    </div>
-  </div>
-</div>
-
-<!-- Inserat -->
-<div class="mo" id="mo-inserat" role="dialog" aria-modal="true">
-  <div class="mo-overlay" onclick="cM()"></div>
-  <div class="sheet">
-    <div class="sheet-hd"><h3>Stelle ausschreiben</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
-    <div class="sheet-bd">
-      <div class="succ" id="s-ins">Inserat live auf lehrly.ch.</div>
-      <div class="field"><label>Berufsbezeichnung</label><input type="text" placeholder="z. B. Kauffrau EFZ"></div>
-      <div class="field"><label>Standort</label><input type="text" placeholder="z. B. Zürich HB"></div>
-      <div class="grid2">
-        <div class="field"><label>Lehrstart</label><select><option>August 2025</option><option>August 2026</option></select></div>
-        <div class="field"><label>Lohn (CHF)</label><input type="number" placeholder="700"></div>
-      </div>
-      <div class="field"><label>Beschrieb</label><textarea placeholder="Beschreibe die Stelle …"></textarea></div>
-    </div>
-    <div class="sheet-ft">
-      <button class="btn full" onclick="docS('s-ins')">Veröffentlichen</button>
-      <button class="btn out full" onclick="cM()">Abbrechen</button>
-    </div>
-  </div>
-</div>
-
-<!-- CV -->
-<div class="mo" id="mo-cv" role="dialog" aria-modal="true">
-  <div class="mo-overlay" onclick="cM()"></div>
-  <div class="sheet">
-    <div class="sheet-hd"><h3>Lebenslauf, Lena Müller</h3><button class="sheet-x" aria-label="Schliessen" onclick="cM()"><svg><use href="#i-x"/></svg></button></div>
-    <div class="sheet-bd">
-      <div class="cv">
-        <div class="cv-hd"><div class="mk">LM</div><div><div class="nm">Lena Müller</div><div class="rl">Bewerberin · Kauffrau EFZ</div><div class="ct">lena.mueller@gmail.com · Zürich</div></div></div>
-        <div class="cv-sec"><h6>Ausbildung</h6><p><b>Sekundarschule A</b>, Zürich · 2022-2025 · Ø 5.3</p></div>
-        <div class="cv-sec"><h6>Erfahrung</h6><p><b>Schnupperlehre</b> Raiffeisenbank · März 2024 · 3 Tage</p></div>
-        <div class="cv-sec"><h6>Sprachen</h6><p>Deutsch (Muttersprache) · Englisch (B2) · Französisch (A2)</p></div>
-        <div class="cv-ft">Erstellt mit Lehrly.ch · April 2025</div>
+  <!-- ── RAIL (immer sichtbar): Stations-/Fortschrittsschiene ── -->
+  <aside id="rail" class="rail" aria-label="Laufbahn-Schiene">
+    <div class="rail-head">
+      <a class="wordmark" data-action="home" href="#" aria-label="Lehrly Startstation">
+        <span class="wm-ring"></span><span class="wm-text">Lehrly</span>
+      </a>
+      <!-- Rollen-Kippschalter (radiogroup — kein tablist ohne tabpanel) -->
+      <div id="role-switch" class="role-switch" role="radiogroup" aria-label="Rolle wählen">
+        <button class="role-opt" data-role="lernende" data-short="L" role="radio" aria-checked="true"><span class="ro-text">Lernende</span></button>
+        <button class="role-opt" data-role="betrieb" data-short="B" role="radio" aria-checked="false"><span class="ro-text">Betrieb</span></button>
+        <span class="role-thumb" aria-hidden="true"></span>
       </div>
     </div>
-    <div class="sheet-ft">
-      <button class="btn full" onclick="toast('PDF wird heruntergeladen')">PDF herunterladen</button>
-      <button class="btn out full" onclick="cM()">Schliessen</button>
+
+    <!-- Stations-Knoten werden von app.js gerendert -->
+    <nav id="rail-stations" class="rail-stations" aria-label="Stationen"></nav>
+
+    <div class="rail-foot">
+      <button id="rail-cmd" class="rail-cmd" data-action="commander" aria-label="Kommando-Palette öffnen">
+        <svg class="ic" aria-hidden="true"><use href="#i-cmd"></use></svg>
+        <span class="rc-label">Befehl</span><kbd class="rc-kbd">⌘K</kbd>
+      </button>
+      <button id="rail-tarife" class="rail-tarife" data-action="pane" data-pane="tarife" aria-label="Pakete und Tarife">
+        <svg class="ic" aria-hidden="true"><use href="#i-tarif"></use></svg>
+        <span>Pakete</span>
+      </button>
     </div>
+  </aside>
+
+  <!-- ── CANVAS: durchgehend scrollender Stationen-Strom ── -->
+  <main id="canvas" class="canvas" tabindex="-1">
+    <div id="stations" class="stations"></div>
+  </main>
+
+  <!-- ── PANE-STACK (global): einschiebende Stack-Panes ── -->
+  <div id="pane-stack" class="pane-stack" aria-hidden="true"></div>
+  <div id="pane-scrim" class="pane-scrim" data-action="pop-pane" hidden></div>
+
+</div>
+
+<!-- ── COMMANDER (Overlay, Cmd-K) ── -->
+<div id="commander" class="commander" hidden>
+  <div class="cmd-scrim" data-action="close-commander"></div>
+  <div class="cmd-box" role="dialog" aria-modal="true" aria-label="Kommando-Palette">
+    <div class="cmd-search">
+      <svg class="ic" aria-hidden="true"><use href="#i-cmd"></use></svg>
+      <input id="cmd-input" class="cmd-input" type="text" placeholder="Objekt oder Aktion suchen …" autocomplete="off"
+             role="combobox" aria-expanded="true" aria-controls="cmd-results" aria-autocomplete="list"
+             aria-activedescendant="" aria-label="Befehl suchen">
+      <kbd class="cmd-esc">Esc</kbd>
+    </div>
+    <div id="cmd-results" class="cmd-results" role="listbox" aria-label="Treffer"></div>
   </div>
 </div>
 
-</div><!-- /main -->
+<!-- ── dock-vermerk Toast (andockende Sprech-Pille) ── -->
+<div id="vermerk" class="vermerk" role="status" aria-live="polite" hidden></div>
 
 <script src="js/app.js"></script>
-<!-- Agentation (visuelles Agent-Feedback), self-contained Bundle, nur aktiv mit ?annotate -->
 <script src="vendor/agentation.bundle.js" defer></script>
 </body>
 </html>
