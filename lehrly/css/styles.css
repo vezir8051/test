@@ -1192,6 +1192,9 @@ button.step-node:focus-visible { outline: 2px solid var(--primary); outline-offs
 }
 /* Empfohlener Tarif: duenner Blau-Rahmen (keine Schatten, kein Layout-Shift) */
 .tarif-col.hot { border-color: var(--primary); border-width: 2px; padding: 23px; }
+/* Gewaehlter Tarif: dezente Gruen-Markierung (positiver Status) */
+.tarif-col.chosen { border-color: #C9E2D3; border-width: 2px; padding: 23px; background: var(--success-soft); }
+.tarif-col.hot.chosen { border-color: var(--success); }
 .tarif-empf {
   position: absolute; top: -11px; left: 24px;
   background: var(--primary); color: #fff;

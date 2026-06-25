@@ -51,7 +51,10 @@
     chats: {},                 // konversations-id -> [{me, text, time}]
     stellenFilters: { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '', nurGemerkt: false },
     poolFilters: { region: 'all', note: 'all', feld: 'all', q: '' },
-    savedSearches: store.get('savedSearches', [])
+    savedSearches: store.get('savedSearches', []),
+    freigabeAnfragen: store.get('freigabeAnfragen', {}),
+    chosenPlan: store.get('chosenPlan', null),
+    docsUploaded: store.get('docsUploaded', {})
   };
   // Defensiv: aeltere gespeicherte Profile ohne noten-Feld auffuellen.
   App.profile.noten = App.profile.noten || { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
@@ -69,6 +72,9 @@
     store.set('bewerbungen', App.bewerbungen);
     store.set('einladungen', App.einladungen);
     store.set('savedSearches', App.savedSearches);
+    store.set('freigabeAnfragen', App.freigabeAnfragen);
+    store.set('chosenPlan', App.chosenPlan);
+    store.set('docsUploaded', App.docsUploaded);
   }
 
   // ───────────────────────── Daten ─────────────────────────
@@ -943,15 +949,26 @@
 
       '<section id="sec-dokumente" class="profil-sec"><h2 class="detail-h2">Dokumente</h2>' +
         '<div class="doc-list">' +
-          '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><span>Lebenslauf</span><span class="dl-state ok">hochgeladen</span></div>' +
-          '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><span>Schulzeugnis</span><span class="dl-state ok">geprüft</span></div>' +
-          '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><span>Motivationsschreiben</span><span class="dl-state open">offen</span><button class="btn-text" data-action="upload-doc">Hochladen</button></div>' +
+          docLine('lebenslauf', 'Lebenslauf') +
+          docLine('schulzeugnis', 'Schulzeugnis') +
+          docLine('motivation', 'Motivationsschreiben') +
         '</div>' +
         '<p class="hint hint-trust"><svg class="ic" aria-hidden="true"><use href="#i-shield"></use></svg> Nur du und von dir freigegebene Betriebe sehen diese Daten.</p>' +
         '<div class="profil-actions"><button class="btn btn-primary" data-action="save-profil">Profil speichern</button>' +
           '<button class="btn btn-outline" data-route="cv" data-action="goto-cv">Lebenslauf-Vorschau</button></div>' +
       '</section></div>';
   };
+
+  function docLine(docKey, label) {
+    var done = !!App.docsUploaded[docKey];
+    return '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>' +
+      '<span>' + esc(label) + '</span>' +
+      (done
+        ? '<span class="dl-state ok">hochgeladen</span>'
+        : '<span class="dl-state open">offen</span>' +
+          '<button class="btn-text" data-action="upload-doc" data-doc="' + esc(docKey) + '">Hochladen</button>') +
+      '</div>';
+  }
 
   function field(name, label, val, req) {
     return '<label class="field"><span class="field-label">' + esc(label) + (req ? ' <em class="req">*</em>' : '') + '</span>' +
@@ -1154,7 +1171,9 @@
 
     var primCta = frei
       ? '<button class="btn btn-primary btn-block" data-action="open-schnupper" data-id="' + k.id + '" data-key="' + esc(key) + '">Zum Schnuppern einladen</button>'
-      : '<button class="btn btn-primary btn-block" data-action="request-freigabe" data-id="' + k.id + '" data-key="' + esc(key) + '">Freigabe anfragen</button>';
+      : (App.freigabeAnfragen[k.id]
+        ? '<button class="btn btn-primary btn-block" disabled>Freigabe angefragt - ausstehend</button>'
+        : '<button class="btn btn-primary btn-block" data-action="request-freigabe" data-id="' + k.id + '" data-key="' + esc(key) + '">Freigabe anfragen</button>');
 
     return '<div class="container">' +
       breadcrumb([{ route: 'kandidaten', label: 'Kandidaten suchen' }, { label: name }]) +
@@ -1425,7 +1444,8 @@
         '<span class="frei-tag">kostenlos</span></div></div>' +
       '<h2 class="sec-h">Für Betriebe</h2>' +
       '<div class="tarif-grid">' + betriebPlans.map(function (p) {
-        return '<div class="tarif-col' + (p.hot ? ' hot' : '') + '">' +
+        var chosen = App.chosenPlan === p.name;
+        return '<div class="tarif-col' + (p.hot ? ' hot' : '') + (chosen ? ' chosen' : '') + '">' +
           (p.hot ? '<span class="tarif-empf">empfohlen</span>' : '') +
           '<h3 class="tarif-name">' + esc(p.name) + '</h3>' +
           '<div class="tarif-preis"><span class="tp-num tnum">' + esc(p.preis) + '</span>' +
@@ -1433,7 +1453,9 @@
           '<ul class="tarif-feats">' + p.feats.map(function (f) {
             return '<li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>' + esc(f) + '</li>';
           }).join('') + '</ul>' +
-          '<button class="btn ' + (p.hot ? 'btn-primary' : 'btn-outline') + ' btn-block" data-action="choose-plan" data-plan="' + esc(p.name) + '">Wählen</button>' +
+          (chosen
+            ? '<button class="btn btn-primary btn-block" disabled>Aktueller Plan</button>'
+            : '<button class="btn ' + (p.hot ? 'btn-primary' : 'btn-outline') + ' btn-block" data-action="choose-plan" data-plan="' + esc(p.name) + '">Wählen</button>') +
         '</div>';
       }).join('') + '</div></div>';
   };
@@ -1751,8 +1773,14 @@
       case 'save-profil':
       case 'save-steckbrief':
         persist(); updateVollstand(); toast('Profil gesichert.', 'ok'); return true;
-      case 'upload-doc':
-        toast('Dokument hochgeladen.', 'ok'); return true;
+      case 'upload-doc': {
+        var docKey = el.dataset.doc;
+        if (docKey && !App.docsUploaded[docKey]) {
+          App.docsUploaded[docKey] = true; persist(); render();
+          toast('Dokument hochgeladen.', 'ok');
+        }
+        return true;
+      }
       case 'cv-print':
         try { window.print(); } catch (er) {} toast('Lebenslauf bereit zum Drucken.', 'ok'); return true;
 
@@ -1797,8 +1825,11 @@
         renderPoolResults(); return true;
       }
       case 'open-schnupper': openSchnupper(el.dataset.key); return true;
-      case 'request-freigabe':
+      case 'request-freigabe': {
+        var freiId = el.dataset.id;
+        if (freiId) { App.freigabeAnfragen[freiId] = true; persist(); render(); }
         toast((el.dataset.key || 'Kandidat/in') + ': Freigabe angefragt.', 'ok'); return true;
+      }
       case 'submit-schnupper': submitSchnupper(); return true;
       case 'close-schnupper': closeSchnupper(); return true;
       case 'msg-kandidat':
@@ -1811,6 +1842,7 @@
         renderChatConversation(); return true;
 
       case 'choose-plan':
+        App.chosenPlan = el.dataset.plan || null; persist(); render();
         toast('Paket „' + (el.dataset.plan || '') + '" gewählt.', 'ok'); return true;
 
       case 'consent-accept':
