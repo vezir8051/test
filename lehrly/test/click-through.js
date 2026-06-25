@@ -1036,6 +1036,104 @@ async function go(route, param) {
   ok('Inserat-Enter-Submit → Fehler #inserat-beruf-err wieder versteckt', $('inserat-beruf-err').hidden === true);
   ok('Inserat-Enter-Submit → Veröffentlicht-Toast', /veröffentlicht/.test($('toast').textContent));
 
+  // ── Status-Pill: aktiver Zustand "veröffentlicht" ist grün (ok), nicht grau (pending) ──
+  console.log('\n[Inserat · Status-Pill · Plural · Beschreibung · Entfernen/Bearbeiten]');
+  ok('Veröffentlicht-Pill nutzt status-pill ok (grün)',
+    qsa('#inserat-list .status-pill.ok').length >= 1 &&
+    /veröffentlicht/.test(qs('#inserat-list .status-pill.ok').textContent) &&
+    qsa('#inserat-list .status-pill.pending').length === 0);
+
+  // ── Plural-Fix + Beschreibung: dritte Stelle mit 1 Platz + Beschreibung (inkl. XSS-Escape) ──
+  const insVorPlural = window.App.inserate.length;
+  typeInto(qs('[data-ifield="beruf"]'), 'Maurer/in EBA');
+  typeInto(qs('[data-ifield="plaetze"]'), '1');
+  typeInto(qs('[data-ifield="beginn"]'), 'August 2026');
+  typeInto(qs('[data-ifield="beschreibung"]'), 'Aufgaben <b>vor Ort</b> & Anforderungen');
+  click(qs('[data-action="publish-inserat"]'));
+  await waitFor(() => qsa('#inserat-list .list-item').length === insVorPlural + 1);
+  const maurerCard = qsa('#inserat-list .list-item').find((c) => /Maurer\/in EBA/.test(c.textContent));
+  ok('Plural-Fix: "1" Platz → Singular "1 Platz" (nicht "1 Plätze")',
+    qs('.chip-static', maurerCard).textContent.trim() === '1 Platz');
+  ok('Beschreibung wird im Inserat angezeigt (li-desc)',
+    !!qs('.li-desc', maurerCard) && /Aufgaben/.test(qs('.li-desc', maurerCard).textContent));
+  ok('Beschreibung ist XSS-escaped (kein roher <b>-Tag)',
+    !qs('.li-desc b', maurerCard) && /<b>vor Ort<\/b>/.test(qs('.li-desc', maurerCard).textContent));
+  ok('Beschreibung ins Inserat-Objekt übernommen',
+    /^Aufgaben/.test(window.App.inserate[window.App.inserate.length - 1].beschreibung));
+  ok('Beschreibung-Feld nach Veröffentlichen geleert', qs('[data-ifield="beschreibung"]').value === '');
+
+  // ── Plural-Fix bei mehreren Plätzen: "3" → "3 Plätze" ──
+  typeInto(qs('[data-ifield="beruf"]'), 'Logistiker/in EFZ');
+  typeInto(qs('[data-ifield="plaetze"]'), '3');
+  click(qs('[data-action="publish-inserat"]'));
+  await waitFor(() => qsa('#inserat-list .list-item').length === insVorPlural + 2);
+  const logiCard = qsa('#inserat-list .list-item').find((c) => /Logistiker\/in EFZ/.test(c.textContent));
+  ok('Plural-Fix: "3" Plätze → "3 Plätze"', qs('.chip-static', logiCard).textContent.trim() === '3 Plätze');
+
+  // ── Plural-Fix bei leerem Plätze-Feld: Default "1 Platz" ──
+  typeInto(qs('[data-ifield="beruf"]'), 'Gärtner/in EFZ');
+  typeInto(qs('[data-ifield="plaetze"]'), '');
+  click(qs('[data-action="publish-inserat"]'));
+  await waitFor(() => qsa('#inserat-list .list-item').length === insVorPlural + 3);
+  const gartCard = qsa('#inserat-list .list-item').find((c) => /Gärtner\/in EFZ/.test(c.textContent));
+  ok('Plural-Fix: leeres Plätze-Feld → Default "1 Platz"',
+    qs('.chip-static', gartCard).textContent.trim() === '1 Platz');
+
+  // ── Aktions-Buttons je Eintrag (Sackgasse beheben): Bearbeiten + Entfernen mit aria-label ──
+  ok('Jeder Inserat-Eintrag hat eine Aktionszeile (li-actions)',
+    qsa('#inserat-list .list-item .li-actions').length === window.App.inserate.length);
+  ok('Jeder Eintrag hat Entfernen- + Bearbeiten-Button',
+    qsa('#inserat-list [data-action="remove-inserat"]').length === window.App.inserate.length &&
+    qsa('#inserat-list [data-action="edit-inserat"]').length === window.App.inserate.length);
+  ok('Aktions-Buttons tragen berufsbezogenes aria-label',
+    qsa('#inserat-list [data-action="remove-inserat"]').some((b) => /Maurer\/in EBA entfernen/.test(b.getAttribute('aria-label'))));
+
+  // ── Bearbeiten: Felder zurück ins Formular, Eintrag aus Liste; erneutes Veröffentlichen legt korrigierte Version an ──
+  const gartIdx = qsa('#inserat-list .list-item').findIndex((c) => /Gärtner\/in EFZ/.test(c.textContent));
+  const insVorEdit = window.App.inserate.length;
+  click(qsa('#inserat-list [data-action="edit-inserat"]')[gartIdx]);
+  await waitFor(() => window.App.inserate.length === insVorEdit - 1);
+  ok('Bearbeiten füllt Berufsbild-Feld', qs('[data-ifield="beruf"]').value === 'Gärtner/in EFZ');
+  ok('Bearbeiten entfernt Eintrag aus Liste', window.App.inserate.length === insVorEdit - 1 &&
+    !qsa('#inserat-list .list-item').some((c) => /Gärtner\/in EFZ/.test(c.textContent)));
+  ok('Bearbeiten-Toast bestätigt', /zum Bearbeiten geladen/.test($('toast').textContent));
+  // korrigierten Beruf veröffentlichen
+  typeInto(qs('[data-ifield="beruf"]'), 'Gärtner/in EFZ (Garten- und Landschaftsbau)');
+  click(qs('[data-action="publish-inserat"]'));
+  await waitFor(() => window.App.inserate.length === insVorEdit);
+  ok('Erneutes Veröffentlichen legt korrigierte Version an',
+    qsa('#inserat-list .list-item').some((c) => /Garten- und Landschaftsbau/.test(c.textContent)));
+
+  // ── Entfernen: Eintrag verschwindet, persist greift; bis auf 2 (Ausgangslage für Dashboard) zurückbauen ──
+  while (window.App.inserate.length > 2) {
+    const before = window.App.inserate.length;
+    const removedBeruf = window.App.inserate[window.App.inserate.length - 1].beruf;
+    click(qsa('#inserat-list [data-action="remove-inserat"]')[before - 1]);
+    await waitFor(() => window.App.inserate.length === before - 1);
+    ok('Entfernen reduziert Liste (' + removedBeruf + ')',
+      window.App.inserate.length === before - 1 &&
+      qsa('#inserat-list .list-item').length === before - 1);
+  }
+  ok('Entfernen persistiert (localStorage spiegelt App.inserate)',
+    JSON.parse(window.localStorage.getItem('lehrly:inserate')).length === window.App.inserate.length);
+
+  // ── Empty-State kehrt nach Entfernen des letzten Eintrags zurück ──
+  const insSnapshot = window.App.inserate.slice();
+  while (window.App.inserate.length > 0) {
+    const before = window.App.inserate.length;
+    click(qs('#inserat-list [data-action="remove-inserat"]'));
+    await waitFor(() => window.App.inserate.length === before - 1);
+  }
+  ok('Nach Entfernen des letzten Eintrags erscheint Empty-State wieder',
+    window.App.inserate.length === 0 && $('inserat-empty').hidden === false &&
+    qsa('#inserat-list .list-item').length === 0);
+  // Ausgangslage (2 Inserate) für den Dashboard-Test wiederherstellen
+  insSnapshot.forEach((i) => window.App.inserate.push(i));
+  window.gotoRoute('ausschreiben');
+  await waitFor(() => qsa('#inserat-list .list-item').length === 2);
+  ok('Ausgangslage wiederhergestellt (2 Inserate, kein Empty-State)',
+    window.App.inserate.length === 2 && $('inserat-empty').hidden === true);
+
   // ═════════════ BETRIEB-DASHBOARD / PIPELINE ═════════════
   console.log('\n[Pipeline · Betrieb-Dashboard]');
   await go('dashboard');
