@@ -562,13 +562,29 @@
       '<svg class="ic" aria-hidden="true"><use href="#i-bookmark"></use></svg>' +
       '<span class="mt-label">Nur gemerkte</span>' +
       '<span class="mt-count tnum" aria-hidden="true">' + App.gemerkt.length + '</span></label>';
-    return '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
-      '<button class="btn-text" data-action="reset-stellen-filter">Zurücksetzen</button></div>' +
-      merkToggle +
-      group('Branche', 'branche', STELLEN_FILTER_OPTS.branche) +
-      group('Region', 'region', STELLEN_FILTER_OPTS.region) +
-      group('Lehrbeginn', 'lehrjahr', STELLEN_FILTER_OPTS.lehrjahr) +
-      group('Abschluss', 'typ', STELLEN_FILTER_OPTS.typ);
+    var n = activeStellenFilterCount();
+    return '<button class="filter-toggle" type="button" data-action="toggle-filter-panel" aria-expanded="false" aria-controls="filter-body">' +
+        '<svg class="ic" aria-hidden="true"><use href="#i-tag"></use></svg>' +
+        '<span class="ft-label">Filter</span>' +
+        '<span class="ft-count tnum" aria-hidden="true">' + (n ? n : '') + '</span>' +
+        '<svg class="ic ft-chevron" aria-hidden="true"><use href="#i-arrow"></use></svg></button>' +
+      '<div class="filter-body" id="filter-body">' +
+        '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
+        '<button class="btn-text" data-action="reset-stellen-filter">Zurücksetzen</button></div>' +
+        merkToggle +
+        group('Branche', 'branche', STELLEN_FILTER_OPTS.branche) +
+        group('Region', 'region', STELLEN_FILTER_OPTS.region) +
+        group('Lehrbeginn', 'lehrjahr', STELLEN_FILTER_OPTS.lehrjahr) +
+        group('Abschluss', 'typ', STELLEN_FILTER_OPTS.typ) +
+      '</div>';
+  }
+
+  // Anzahl aktiver Stellen-Filter (für den Mobile-Trigger-Badge).
+  function activeStellenFilterCount() {
+    var f = App.stellenFilters, n = 0;
+    ['branche', 'region', 'typ', 'lehrjahr'].forEach(function (k) { if (f[k] !== 'all') n++; });
+    if (f.nurGemerkt) n++;
+    return n;
   }
 
   // Gemeinsame Filterbedingung (von filteredStellen UND den Facet-Countern genutzt).
@@ -680,6 +696,11 @@
       mt.classList.toggle('on', !!App.stellenFilters.nurGemerkt);
       var mc = mt.querySelector('.mt-count');
       if (mc) mc.textContent = App.gemerkt.length;
+    }
+    // Trigger-Badge (Anzahl aktiver Filter) IN-PLACE aktualisieren.
+    if (fcol) {
+      var ftc = fcol.querySelector('.ft-count');
+      if (ftc) { var n = activeStellenFilterCount(); ftc.textContent = n ? n : ''; }
     }
   }
 
@@ -936,11 +957,26 @@
             '<span class="fo-count tnum" aria-hidden="true">' + c + '</span></label>';
         }).join('') + '</fieldset>';
     }
-    return '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
-      '<button class="btn-text" data-action="reset-pool-filter">Zurücksetzen</button></div>' +
-      group('Region', 'region', POOL_FILTER_OPTS.region) +
-      group('Berufsfeld', 'feld', POOL_FILTER_OPTS.feld) +
-      group('Noten', 'note', POOL_FILTER_OPTS.note);
+    var n = activePoolFilterCount();
+    return '<button class="filter-toggle" type="button" data-action="toggle-filter-panel" aria-expanded="false" aria-controls="filter-body">' +
+        '<svg class="ic" aria-hidden="true"><use href="#i-tag"></use></svg>' +
+        '<span class="ft-label">Filter</span>' +
+        '<span class="ft-count tnum" aria-hidden="true">' + (n ? n : '') + '</span>' +
+        '<svg class="ic ft-chevron" aria-hidden="true"><use href="#i-arrow"></use></svg></button>' +
+      '<div class="filter-body" id="filter-body">' +
+        '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
+        '<button class="btn-text" data-action="reset-pool-filter">Zurücksetzen</button></div>' +
+        group('Region', 'region', POOL_FILTER_OPTS.region) +
+        group('Berufsfeld', 'feld', POOL_FILTER_OPTS.feld) +
+        group('Noten', 'note', POOL_FILTER_OPTS.note) +
+      '</div>';
+  }
+
+  // Anzahl aktiver Pool-Filter (für den Mobile-Trigger-Badge).
+  function activePoolFilterCount() {
+    var f = App.poolFilters, n = 0;
+    ['region', 'feld', 'note'].forEach(function (k) { if (f[k] !== 'all') n++; });
+    return n;
   }
 
   // Gemeinsame Filterbedingung (von filteredPool UND den Facet-Countern genutzt).
@@ -1008,6 +1044,11 @@
       var cnt = opt.querySelector('.fo-count'); if (cnt) cnt.textContent = c;
       opt.classList.toggle('is-empty', c === 0 && val !== 'all');
     });
+    // Trigger-Badge (Anzahl aktiver Filter) IN-PLACE aktualisieren.
+    if (fcol) {
+      var ftc = fcol.querySelector('.ft-count');
+      if (ftc) { var pn = activePoolFilterCount(); ftc.textContent = pn ? pn : ''; }
+    }
   }
 
   // — KANDIDAT-PROFIL —
@@ -1493,6 +1534,15 @@
       case 'hero-search': return false;
       case 'goto-stellen': e.preventDefault(); gotoRoute('stellen'); return true;
       case 'goto-cv': e.preventDefault(); gotoRoute('cv'); return true;
+
+      case 'toggle-filter-panel': {
+        var fcol = el.closest('.filter-col');
+        if (fcol) {
+          var open = fcol.classList.toggle('is-open');
+          el.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        return true;
+      }
 
       case 'reset-stellen-filter':
         App.stellenFilters = { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '', nurGemerkt: false };
