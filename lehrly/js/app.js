@@ -41,7 +41,7 @@
     param: null,
     matched: store.get('matched', false),
     gemerkt: store.get('gemerkt', []),
-    profile: store.get('profile', { vorname: '', nachname: '', kanton: '', beruf: '', plz: '' }),
+    profile: store.get('profile', { vorname: '', nachname: '', kanton: '', beruf: '', plz: '', noten: { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' } }),
     strengths: store.get('strengths', {}),
     schnupperErf: store.get('schnupperErf', ''),
     betrieb: store.get('betrieb', { firma: '', branche: '', ort: '' }),
@@ -53,6 +53,8 @@
     poolFilters: { region: 'all', note: 'all', feld: 'all', q: '' },
     savedSearches: store.get('savedSearches', [])
   };
+  // Defensiv: aeltere gespeicherte Profile ohne noten-Feld auffuellen.
+  App.profile.noten = App.profile.noten || { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
   window.App = App;
 
   function persist() {
@@ -306,13 +308,44 @@
   }
 
   function zeugnisStrip(noten) {
+    // Nur Faecher mit gueltiger Zahl rendern (toFixed-Guard gegen leere/ungueltige Werte).
+    var rows = noten.map(function (n) {
+      var v = parseFloat(n[1]);
+      if (isNaN(v)) return '';
+      var w = Math.round((v / 6) * 100);
+      return '<div class="zrow"><span class="zfach">' + esc(n[0]) + '</span>' +
+        '<span class="ztrack"><i style="width:' + w + '%"></i></span>' +
+        '<span class="znote tnum">' + v.toFixed(1) + '</span></div>';
+    }).filter(function (r) { return r; }).join('');
+    if (!rows) return '<p class="muted">Noch keine Noten erfasst.</p>';
     return '<div class="zeugnis-strip">' +
       '<div class="zeugnis-skala">CH-Notenskala 1–6 · 6 = beste Note</div>' +
-      noten.map(function (n) {
-        var w = Math.round((n[1] / 6) * 100);
-        return '<div class="zrow"><span class="zfach">' + esc(n[0]) + '</span>' +
-          '<span class="ztrack"><i style="width:' + w + '%"></i></span>' +
-          '<span class="znote tnum">' + n[1].toFixed(1) + '</span></div>';
+      rows + '</div>';
+  }
+
+  // Faecher-Definition (Schluessel im noten-Objekt -> Anzeige-Label).
+  var NOTEN_FAECHER = [
+    ['deutsch', 'Deutsch'],
+    ['mathematik', 'Mathematik'],
+    ['franzoesisch', 'Französisch'],
+    ['englisch', 'Englisch']
+  ];
+
+  // Gemeinsamer Render fuer Profil & Lebenslauf aus den echten Profil-Noten.
+  function notenStripFromProfile() {
+    var n = (App.profile && App.profile.noten) || {};
+    return zeugnisStrip(NOTEN_FAECHER.map(function (f) { return [f[1], n[f[0]]]; }));
+  }
+
+  // Eingabefelder fuer den Profil-Abschnitt 'Noten' (vier number-Inputs, CH-Skala).
+  function notenInputs() {
+    var n = (App.profile && App.profile.noten) || {};
+    return '<p class="hint">CH-Notenskala 1.0–6.0 · 6 = beste Note. Trag deine echten Zeugnisnoten ein.</p>' +
+      '<div class="form-grid">' +
+      NOTEN_FAECHER.map(function (f) {
+        return '<label class="field"><span class="field-label">' + esc(f[1]) + '</span>' +
+          '<input class="input" type="number" step="0.1" min="1" max="6" inputmode="decimal" ' +
+          'data-nfield="' + f[0] + '" value="' + esc(n[f[0]] || '') + '" placeholder="z.B. 5.0"></label>';
       }).join('') + '</div>';
   }
 
@@ -898,7 +931,7 @@
           }).join('') + '</select></label></section>' +
 
       '<section id="sec-noten" class="profil-sec"><h2 class="detail-h2">Noten</h2>' +
-        zeugnisStrip([['Deutsch', 5.0], ['Mathematik', 5.5], ['Französisch', 4.8], ['Englisch', 5.5]]) + '</section>' +
+        notenInputs() + '</section>' +
 
       '<section id="sec-staerken" class="profil-sec"><h2 class="detail-h2">Stärken</h2>' +
         '<p class="hint">Wähle, was dich auszeichnet.</p>' +
@@ -954,7 +987,7 @@
         '<section class="cv-block"><h3>Schnupper-Erfahrung</h3>' +
           '<p>' + esc(App.schnupperErf || 'Noch keine Angabe.') + '</p></section>' +
         '<section class="cv-block"><h3>Schulnoten</h3>' +
-          zeugnisStrip([['Deutsch', 5.0], ['Mathematik', 5.5], ['Französisch', 4.8], ['Englisch', 5.5]]) + '</section>' +
+          notenStripFromProfile() + '</section>' +
       '</div></div>';
   };
 
@@ -1775,6 +1808,10 @@
   document.addEventListener('input', function (e) {
     var t = e.target;
     if (t.dataset && t.dataset.field) { App.profile[t.dataset.field] = t.value; updateVollstand(); }
+    if (t.dataset && t.dataset.nfield) {
+      App.profile.noten = App.profile.noten || { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
+      App.profile.noten[t.dataset.nfield] = t.value;
+    }
     if (t.dataset && t.dataset.snfield === 'schnupper') { App.schnupperErf = t.value; updateVollstand(); }
     if (t.dataset && t.dataset.bfield) { App.betrieb[t.dataset.bfield] = t.value; updateBetriebPct(); }
     if (t.id === 'bw-motivation') {
