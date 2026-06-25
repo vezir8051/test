@@ -1765,6 +1765,9 @@
     }
     if (act === 'chat-send') { e.preventDefault(); chatSend(); return; }
     if (act === 'schnupper-form') { e.preventDefault(); submitSchnupper(); return; }
+    if (act === 'profil-form') { e.preventDefault(); persist(); updateVollstand(); toast('Profil gesichert.', 'ok'); return; }
+    if (act === 'betrieb-form') { e.preventDefault(); persist(); updateBetriebPct(); toast('Betriebsprofil gespeichert: ' + (App.betrieb.firma || 'Betrieb') + '.', 'ok'); return; }
+    if (act === 'inserat-form') { e.preventDefault(); publishInserat(); return; }
     if (act) e.preventDefault();
   });
 
