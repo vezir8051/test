@@ -373,6 +373,48 @@ async function go(route, param) {
   await waitFor(() => qsa('#stellen-list .list-item').length === 6);
   ok('Zurücksetzen hebt nurGemerkt auf', window.App.stellenFilters.nurGemerkt === false);
 
+  // ─── Gespeicherte Suche / Job-Alert (Saved Search) ───
+  console.log('\n[Stellen · Gespeicherte Suche / Job-Alert]');
+  window.App.savedSearches.length = 0;
+  await go('stellen');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('Save-Search-Leiste vorhanden (nur Lernende)', !!qs('#save-search-bar'));
+  ok('Leiste zeigt "Suche speichern"-Button', !!qs('#save-search-bar [data-action="save-search"]') &&
+    /Suche speichern/.test(qs('#save-search-bar').textContent));
+  ok('Leiste zeigt Benachrichtigungs-Hinweis', /Wird bei neuen Treffern benachrichtigt/.test(qs('#save-search-bar').textContent));
+  // Filter setzen, dann Suche speichern
+  changeTo(qs('input[data-filter-key="branche"][value="it"]'), 'it');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 1);
+  ok('Vor dem Speichern noch nicht gespeichert', !!qs('#save-search-bar [data-action="save-search"]'));
+  click(qs('#save-search-bar [data-action="save-search"]'));
+  await waitFor(() => window.App.savedSearches.length === 1);
+  ok('Suche gespeichert im State (mit branche=it)', window.App.savedSearches.length === 1 &&
+    window.App.savedSearches[0].filters.branche === 'it');
+  ok('Speichern erzeugt menschenlesbares Label', /Informatik/.test(window.App.savedSearches[0].label));
+  ok('Gespeicherte Suche persistiert in localStorage',
+    JSON.parse(window.localStorage.getItem('lehrly:savedSearches')).length === 1);
+  ok('Speichern-Toast bestätigt Job-Alert', /benachrichtigen/.test($('toast').textContent));
+  ok('Leiste zeigt nach Speichern "Suche gespeichert" + Entfernen-Button',
+    /Suche gespeichert/.test(qs('#save-search-bar').textContent) &&
+    !!qs('#save-search-bar [data-action="remove-search"]') &&
+    !qs('#save-search-bar [data-action="save-search"]'));
+  ok('Gespeicherter Status nutzt Erfolgs-Grün (is-saved)', !!qs('#save-search-bar .ss-status.is-saved'));
+  // Identische Filterkombination → erneut als gespeichert erkannt (kein Duplikat)
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  changeTo(qs('input[data-filter-key="branche"][value="it"]'), 'it');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 1);
+  ok('Identische Filterkombination wird als bereits gespeichert erkannt',
+    !!qs('#save-search-bar [data-action="remove-search"]') && !qs('#save-search-bar [data-action="save-search"]'));
+  // Entfernen
+  click(qs('#save-search-bar [data-action="remove-search"]'));
+  await waitFor(() => window.App.savedSearches.length === 0);
+  ok('Entfernen löscht gespeicherte Suche', window.App.savedSearches.length === 0 &&
+    !!qs('#save-search-bar [data-action="save-search"]'));
+  ok('Entfernen-Toast bestätigt', /Suche entfernt/.test($('toast').textContent));
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+
   // Inline-Suche (Live)
   typeInto($('stellen-q'), 'informatik');
   await waitFor(() => qsa('#stellen-list .list-item').length === 1);
@@ -536,6 +578,28 @@ async function go(route, param) {
   await go('dashboard');
   ok('Dashboard-Merkliste leer → Empty-State', !!qs('.dash-merkliste .empty-merken') &&
     qsa('.metric').find((m) => /Gemerkte Lehrstellen/.test(m.textContent)).querySelector('.metric-num').textContent === '0');
+
+  // Gespeicherte Suchen auf dem Dashboard
+  console.log('\n[Dashboard · Gespeicherte Suchen]');
+  window.App.savedSearches.length = 0;
+  await go('dashboard');
+  ok('Dashboard-Block "Gespeicherte Suchen" vorhanden', !!qs('.dash-saved') && /Gespeicherte Suchen/.test(qs('.dash-saved').textContent));
+  ok('Leerzustand verweist auf Stellensuche', !!qs('.dash-saved [data-action="goto-stellen"]') &&
+    /benachrichtigt/.test(qs('.dash-saved').textContent));
+  // Eine Suche speichern, dann auf Dashboard prüfen
+  window.App.savedSearches.push({ id: 'banken|all|all|all|', filters: { branche: 'banken', region: 'all', typ: 'all', lehrjahr: 'all', q: '' }, label: 'Banken / Finanz', ts: Date.now() });
+  await go('dashboard');
+  ok('Gespeicherte Suche wird auf Dashboard gelistet', qsa('.dash-saved .saved-search-item').length === 1 &&
+    /Banken \/ Finanz/.test(qs('.dash-saved').textContent));
+  ok('Dashboard-Eintrag zeigt "E-Mail-Abo aktiv"', /E-Mail-Abo aktiv/.test(qs('.dash-saved').textContent));
+  // Klick öffnet Stellen mit gesetztem Filter
+  click(qs('.dash-saved .saved-search-item[data-id="banken|all|all|all|"]'));
+  await waitFor(() => window.App.route === 'stellen');
+  ok('Klick auf gespeicherte Suche öffnet Stellen mit Filter',
+    window.App.route === 'stellen' && window.App.stellenFilters.branche === 'banken');
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  window.App.savedSearches.length = 0;
 
   // ═════════════ PROFIL-FORMULAR ═════════════
   console.log('\n[Profil · Live-Sync · Stärken · Vollständigkeit]');

@@ -656,6 +656,36 @@ a.list-item:hover .li-go .ic { transform: translateX(2px); }
 /* Aktive Filter-Chips (entfernbar, blau gefuellt) */
 .active-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .active-chips:empty { display: none; }
+
+/* Gespeicherte Suche / Job-Alert: schmale, ruhige Aktionszeile */
+.save-search-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  font-size: var(--fs-label); margin-bottom: 16px;
+}
+.save-search-bar:empty { display: none; }
+.save-search-bar .btn-text { display: inline-flex; align-items: center; gap: 5px; }
+.save-search-bar .ss-status { display: inline-flex; align-items: center; gap: 5px; }
+.save-search-bar .ss-status.muted { color: var(--muted); }
+.save-search-bar .ss-status.is-saved { color: var(--success); font-weight: 600; }
+.save-search-bar .ss-status.is-saved .ic { color: var(--success); }
+
+/* Gespeicherte Suchen auf dem Dashboard */
+.saved-search-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.saved-search-item {
+  width: 100%; text-align: left; background: none; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 10px 14px; font: inherit;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  transition: border-color var(--t-fast) var(--ease);
+}
+.saved-search-item:hover { border-color: var(--primary); }
+.saved-search-item .ssi-label { font-weight: 600; color: var(--text); }
+.saved-search-item .ssi-hint {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: var(--fs-label); color: var(--success); white-space: nowrap;
+}
+.saved-search-item .ssi-hint .ic { color: var(--success); }
 .chip-active {
   display: inline-flex; align-items: center; gap: 5px;
   background: var(--primary); color: #fff;
