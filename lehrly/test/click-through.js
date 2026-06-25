@@ -178,7 +178,7 @@ async function go(route, param) {
   // ═════════════ STELLEN-SUCHE + FILTER-SPALTE ═════════════
   console.log('\n[Stellen-Suche · Filter-Spalte · Treffer]');
   await go('stellen');
-  ok('Linke Filter-Spalte vorhanden', !!qs('.filter-col') && qsa('.filter-group').length === 3);
+  ok('Linke Filter-Spalte vorhanden', !!qs('.filter-col') && qsa('.filter-group').length === 4);
   await waitFor(() => qsa('#stellen-list .list-item').length > 0);
   const allCount = qsa('#stellen-list .list-item').length;
   ok('Alle 6 Stellen gelistet', allCount === 6);
@@ -243,6 +243,39 @@ async function go(route, param) {
   click(qs('#active-chips .chip-active[data-key="typ"]'));
   await waitFor(() => qsa('#stellen-list .list-item').length === 6);
   ok('Filter komplett zurück → 6 Treffer', qsa('#stellen-list .list-item').length === 6);
+
+  // ─── Lehrbeginn-Filter (Lehrstart-Jahr 2026/2027) ───
+  console.log('\n[Stellen-Filter · Lehrbeginn (Kohorten 2026/2027)]');
+  ok('Vierte Filtergruppe "Lehrbeginn" vorhanden',
+    qsa('.filter-col .filter-group .filter-h').some((l) => /Lehrbeginn/.test(l.textContent)));
+  ok('Lehrbeginn-Optionen 2026 + 2027 vorhanden',
+    !!qs('.filter-col input[data-filter-key="lehrjahr"][value="2026"]') &&
+    !!qs('.filter-col input[data-filter-key="lehrjahr"][value="2027"]'));
+  ok('Facet-Count "Alle Jahrgänge" = 6',
+    qs('.filter-col input[data-filter-key="lehrjahr"][value="all"]').closest('.filter-opt').querySelector('.fo-count').textContent === '6');
+  ok('Facet-Count Lehrstart 2027 = 2',
+    qs('.filter-col input[data-filter-key="lehrjahr"][value="2027"]').closest('.filter-opt').querySelector('.fo-count').textContent === '2');
+  ok('Facet-Count Lehrstart 2026 = 4',
+    qs('.filter-col input[data-filter-key="lehrjahr"][value="2026"]').closest('.filter-opt').querySelector('.fo-count').textContent === '4');
+  // Lehrstart 2027 wählen → nur die 2 Stellen mit lehrjahr 2027 (usz-fage, bosch-poly)
+  changeTo(qs('input[data-filter-key="lehrjahr"][value="2027"]'), '2027');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 2);
+  ok('Lehrstart 2027 → 2 Treffer', qsa('#stellen-list .list-item').length === 2);
+  const lj2027Ids = qsa('#stellen-list .list-item').map((c) => c.dataset.id).sort();
+  ok('Lehrstart 2027 listet usz-fage + bosch-poly',
+    JSON.stringify(lj2027Ids) === JSON.stringify(['bosch-poly', 'usz-fage']));
+  ok('Treffer-Zähler aktualisiert auf 2 Lehrstellen', /2 Lehrstellen/.test($('stellen-count').textContent));
+  // Entfernbarer Chip "Lehrbeginn: Lehrstart 2027"
+  const ljChip = qs('#active-chips .chip-active[data-key="lehrjahr"]');
+  ok('Entfernbarer Chip "Lehrbeginn: Lehrstart 2027"', !!ljChip && /Lehrbeginn: Lehrstart 2027/.test(ljChip.textContent));
+  // Facet-Counts der anderen Gruppen passen sich an (Banken nur 2026 → 0 unter 2027)
+  ok('Facet-Count Branche=Banken unter 2027 = 0',
+    qs('.filter-col input[data-filter-key="branche"][value="banken"]').closest('.filter-opt').querySelector('.fo-count').textContent === '0');
+  // Reset entfernt den Lehrbeginn-Filter wieder
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('Zurücksetzen entfernt Lehrbeginn-Filter', window.App.stellenFilters.lehrjahr === 'all' &&
+    !qs('#active-chips .chip-active[data-key="lehrjahr"]') && qsa('#stellen-list .list-item').length === 6);
 
   // Inline-Suche (Live)
   typeInto($('stellen-q'), 'informatik');

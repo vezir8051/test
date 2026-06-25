@@ -48,7 +48,7 @@
     bewerbungen: store.get('bewerbungen', []),
     einladungen: store.get('einladungen', []),
     chats: {},                 // konversations-id -> [{me, text, time}]
-    stellenFilters: { branche: 'all', region: 'all', typ: 'all', sort: 'score', q: '', ort: '' },
+    stellenFilters: { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '' },
     poolFilters: { region: 'all', note: 'all', feld: 'all', q: '' }
   };
   window.App = App;
@@ -67,32 +67,32 @@
 
   // ───────────────────────── Daten ─────────────────────────
   var STELLEN = [
-    { id: 'zkb-kauffrau', beruf: 'Kauffrau/Kaufmann EFZ', betrieb: 'Zürcher Kantonalbank', betriebKurz: 'ZKB', ort: 'Zürich', region: 'zurich', branche: 'banken', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 92,
+    { id: 'zkb-kauffrau', beruf: 'Kauffrau/Kaufmann EFZ', betrieb: 'Zürcher Kantonalbank', betriebKurz: 'ZKB', ort: 'Zürich', region: 'zurich', branche: 'banken', typ: 'efz', pensum: '100%', beginn: 'August 2026', lehrjahr: '2026', score: 92,
       grund: 'passt zu Berufswunsch, Region Zürich (Pendeldistanz kurz) und deinem Anforderungsprofil',
       beschreibung: 'Eine kaufmännische Grundbildung im Bankumfeld mit Einblick in Beratung, Zahlungsverkehr und Backoffice. Du arbeitest in einem strukturierten Lehrbetrieb mit klarer Begleitung.',
       anforderungen: ['Abgeschlossene Sekundarschule (Niveau A/E)', 'Freude an Kontakt mit Menschen', 'Sorgfältige, zuverlässige Arbeitsweise', 'Gute Deutsch- und Mathematik-Noten'],
       bietet: ['Strukturierte Ausbildung mit Praxisbegleitung', 'Überbetriebliche Kurse', 'Übernahmechancen nach dem Abschluss'], loehne: [800, 1000, 1200], verifiziert: true },
-    { id: 'sbb-informatiker', beruf: 'Informatiker/in EFZ', betrieb: 'SBB AG', betriebKurz: 'SBB', ort: 'Bern', region: 'bern', branche: 'it', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 87,
+    { id: 'sbb-informatiker', beruf: 'Informatiker/in EFZ', betrieb: 'SBB AG', betriebKurz: 'SBB', ort: 'Bern', region: 'bern', branche: 'it', typ: 'efz', pensum: '100%', beginn: 'August 2026', lehrjahr: '2026', score: 87,
       grund: 'passt zu IT-Berufswunsch und gewählten Stärken (logisches Denken)',
       beschreibung: 'Fachrichtung Applikationsentwicklung in einem grossen Schweizer Infrastruktur-Betrieb. Du lernst moderne Entwicklung im Team und arbeitest an echten Projekten mit.',
       anforderungen: ['Logisch-analytisches Denken', 'Interesse an Technik und Programmierung', 'Gute Mathematik-Noten', 'Teamfähigkeit'],
       bietet: ['Moderne Entwicklungsumgebung', 'Mentoring durch erfahrene Fachleute', 'Jobticket / ÖV-Vergünstigung', 'Lehrabschluss mit Perspektive'], loehne: [750, 950, 1150], verifiziert: true },
-    { id: 'usz-fage', beruf: 'Fachfrau/Fachmann Gesundheit EFZ', betrieb: 'UniversitätsSpital Zürich', betriebKurz: 'USZ', ort: 'Zürich', region: 'zurich', branche: 'gesundheit', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 78,
+    { id: 'usz-fage', beruf: 'Fachfrau/Fachmann Gesundheit EFZ', betrieb: 'UniversitätsSpital Zürich', betriebKurz: 'USZ', ort: 'Zürich', region: 'zurich', branche: 'gesundheit', typ: 'efz', pensum: '100%', beginn: 'August 2027', lehrjahr: '2027', score: 78,
       grund: 'passt zu Region Zürich und sozialem Stärkenprofil',
       beschreibung: 'Eine vielseitige Ausbildung in Pflege und Betreuung im Spitalumfeld. Du übernimmst Verantwortung und arbeitest eng mit dem Pflegeteam.',
       anforderungen: ['Einfühlungsvermögen und Belastbarkeit', 'Zuverlässigkeit', 'Bereitschaft für Schichtarbeit', 'Gute Deutschkenntnisse'],
       bietet: ['Begleitete Praxisausbildung', 'Vielseitige Einsätze', 'Interne Weiterbildungen', 'Sicherer Lehrbetrieb'], loehne: [760, 990, 1320], verifiziert: false },
-    { id: 'migros-detail', beruf: 'Detailhandelsfachfrau/-mann EFZ', betrieb: 'Migros Ostschweiz', betriebKurz: 'Migros', ort: 'Winterthur', region: 'zurich', branche: 'detailhandel', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 71,
+    { id: 'migros-detail', beruf: 'Detailhandelsfachfrau/-mann EFZ', betrieb: 'Migros Ostschweiz', betriebKurz: 'Migros', ort: 'Winterthur', region: 'zurich', branche: 'detailhandel', typ: 'efz', pensum: '100%', beginn: 'August 2026', lehrjahr: '2026', score: 71,
       grund: 'passt zu Region und Beratungsstärke',
       beschreibung: 'Kundenberatung, Warenpräsentation und Verkauf in einer grossen Filiale. Du lernst den gesamten Detailhandels-Alltag kennen.',
       anforderungen: ['Freude am Kundenkontakt', 'Gepflegtes Auftreten', 'Flexibilität', 'Rechnerisches Verständnis'],
       bietet: ['Einblick in alle Abteilungen', 'Personalrabatt', 'Klare Lernzielkontrolle', 'Übernahme möglich'], loehne: [700, 950, 1300], verifiziert: true },
-    { id: 'bosch-poly', beruf: 'Polymechaniker/in EFZ', betrieb: 'Bosch Schweiz', betriebKurz: 'Bosch', ort: 'Solothurn', region: 'bern', branche: 'technik', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 66,
+    { id: 'bosch-poly', beruf: 'Polymechaniker/in EFZ', betrieb: 'Bosch Schweiz', betriebKurz: 'Bosch', ort: 'Solothurn', region: 'bern', branche: 'technik', typ: 'efz', pensum: '100%', beginn: 'August 2027', lehrjahr: '2027', score: 66,
       grund: 'passt zu technischem Interesse',
       beschreibung: 'Präzisionsmechanik, CNC und Montage in einem industriellen Lehrbetrieb mit eigener Lehrwerkstatt.',
       anforderungen: ['Handwerkliches Geschick', 'Technisches Verständnis', 'Genauigkeit', 'Gute Mathematik-Noten'],
       bietet: ['Eigene Lehrwerkstatt', 'Moderne Maschinen', 'Strukturierte Ausbildung', 'Weiterbildungsmöglichkeiten'], loehne: [750, 1000, 1250], verifiziert: true },
-    { id: 'coop-eba', beruf: 'Detailhandelsassistent/in EBA', betrieb: 'Coop Genossenschaft', betriebKurz: 'Coop', ort: 'Luzern', region: 'zentral', branche: 'detailhandel', typ: 'eba', pensum: '100%', beginn: 'August 2026', score: 60,
+    { id: 'coop-eba', beruf: 'Detailhandelsassistent/in EBA', betrieb: 'Coop Genossenschaft', betriebKurz: 'Coop', ort: 'Luzern', region: 'zentral', branche: 'detailhandel', typ: 'eba', pensum: '100%', beginn: 'August 2026', lehrjahr: '2026', score: 60,
       grund: 'passt zu EBA-Profil und praktischer Veranlagung',
       beschreibung: 'Zweijährige praxisnahe Grundbildung im Verkauf mit individueller Begleitung.',
       anforderungen: ['Freude am Verkauf', 'Zuverlässigkeit', 'Teamgeist', 'Praktische Veranlagung'],
@@ -504,7 +504,8 @@
   var STELLEN_FILTER_OPTS = {
     branche: [{ v: 'all', l: 'Alle Branchen' }, { v: 'banken', l: 'Banken / Finanz' }, { v: 'it', l: 'Informatik' }, { v: 'gesundheit', l: 'Gesundheit' }, { v: 'detailhandel', l: 'Detailhandel' }, { v: 'technik', l: 'Technik' }],
     region: [{ v: 'all', l: 'Ganze Schweiz' }, { v: 'zurich', l: 'Zürich' }, { v: 'bern', l: 'Bern / Mittelland' }, { v: 'zentral', l: 'Zentralschweiz' }],
-    typ: [{ v: 'all', l: 'EFZ und EBA' }, { v: 'efz', l: 'Nur EFZ' }, { v: 'eba', l: 'Nur EBA' }]
+    typ: [{ v: 'all', l: 'EFZ und EBA' }, { v: 'efz', l: 'Nur EFZ' }, { v: 'eba', l: 'Nur EBA' }],
+    lehrjahr: [{ v: 'all', l: 'Alle Jahrgänge' }, { v: '2026', l: 'Lehrstart 2026' }, { v: '2027', l: 'Lehrstart 2027' }]
   };
   function stellenOptLabel(key, val) {
     var opts = STELLEN_FILTER_OPTS[key] || [];
@@ -529,6 +530,7 @@
       '<button class="btn-text" data-action="reset-stellen-filter">Zurücksetzen</button></div>' +
       group('Branche', 'branche', STELLEN_FILTER_OPTS.branche) +
       group('Region', 'region', STELLEN_FILTER_OPTS.region) +
+      group('Lehrbeginn', 'lehrjahr', STELLEN_FILTER_OPTS.lehrjahr) +
       group('Abschluss', 'typ', STELLEN_FILTER_OPTS.typ);
   }
 
@@ -537,6 +539,7 @@
     if (f.branche !== 'all' && s.branche !== f.branche) return false;
     if (f.region !== 'all' && s.region !== f.region) return false;
     if (f.typ !== 'all' && s.typ !== f.typ) return false;
+    if (f.lehrjahr !== 'all' && s.lehrjahr !== f.lehrjahr) return false;
     if (f.q && s.beruf.toLowerCase().indexOf(f.q.toLowerCase()) === -1 &&
       s.betrieb.toLowerCase().indexOf(f.q.toLowerCase()) === -1) return false;
     if (f.ort && s.ort.toLowerCase().indexOf(f.ort.toLowerCase()) === -1) return false;
@@ -577,6 +580,7 @@
       if (sf.branche !== 'all') parts.push(esc(stellenOptLabel('branche', sf.branche)));
       if (sf.region !== 'all') parts.push('in Region ' + esc(stellenOptLabel('region', sf.region)));
       if (sf.typ !== 'all') parts.push('(' + esc(stellenOptLabel('typ', sf.typ)) + ')');
+      if (sf.lehrjahr !== 'all') parts.push('mit ' + esc(stellenOptLabel('lehrjahr', sf.lehrjahr)));
       var head = parts.length ? 'Keine Lehrstellen für ' + parts.join(' ') : 'Keine Lehrstellen gefunden';
       var actions;
       if (sf.region !== 'all') {
@@ -593,8 +597,8 @@
     }
     var chips = [];
     var f = App.stellenFilters;
-    var labels = { branche: 'Branche', region: 'Region', typ: 'Abschluss' };
-    ['branche', 'region', 'typ'].forEach(function (k) {
+    var labels = { branche: 'Branche', region: 'Region', typ: 'Abschluss', lehrjahr: 'Lehrbeginn' };
+    ['branche', 'region', 'lehrjahr', 'typ'].forEach(function (k) {
       if (f[k] !== 'all') chips.push('<button class="chip-active" data-action="clear-filter" data-key="' + k + '" aria-label="Filter entfernen: ' + esc(labels[k]) + ' ' + esc(stellenOptLabel(k, f[k])) + '">' +
         esc(labels[k]) + ': ' + esc(stellenOptLabel(k, f[k])) + ' <svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>');
     });
@@ -1398,7 +1402,7 @@
       case 'goto-cv': e.preventDefault(); gotoRoute('cv'); return true;
 
       case 'reset-stellen-filter':
-        App.stellenFilters = { branche: 'all', region: 'all', typ: 'all', sort: 'score', q: '', ort: '' };
+        App.stellenFilters = { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '' };
         gotoRoute('stellen'); return true;
       case 'clear-filter':
         App.stellenFilters[el.dataset.key] = 'all'; renderStellenResults(); return true;
