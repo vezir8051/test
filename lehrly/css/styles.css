@@ -168,6 +168,9 @@ ul, ol { margin: 0 0 1em; }
 .btn-outline { background: var(--surface); color: var(--text); border-color: var(--line); }
 .btn-outline:hover { border-color: var(--primary); color: var(--primary); background: var(--surface); }
 
+.btn-ghost { background: none; color: var(--muted); border-color: var(--line); }
+.btn-ghost:hover { border-color: var(--primary); color: var(--primary); background: var(--surface); }
+
 .btn-block { display: flex; width: 100%; margin-top: 10px; }
 .aside-card .btn-block:first-of-type { margin-top: 0; }
 
@@ -445,6 +448,8 @@ a.list-item:hover { background: var(--bg-sunken); color: var(--text); }
 .li-meta { display: inline-flex; align-items: center; gap: 5px; }
 .li-meta .ic { width: 15px; height: 15px; color: var(--muted); }
 .li-tags { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 11px; }
+.li-desc { margin: 10px 0 0; font-size: var(--fs-small); line-height: 1.5; }
+.li-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 
 .chip-static {
   font-size: var(--fs-label); font-weight: 600;
