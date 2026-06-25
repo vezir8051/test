@@ -1239,11 +1239,20 @@
       return;
     }
     if (empty) empty.hidden = true;
-    holder.innerHTML = App.inserate.map(function (i) {
+    holder.innerHTML = App.inserate.map(function (i, idx) {
+      var n = parseInt(i.plaetze, 10);
+      var nStr = (i.plaetze && !isNaN(n)) ? String(n) : '1';
+      var label = (nStr === '1') ? ' Platz' : ' Plätze';
+      var berufLbl = esc(i.beruf || 'Lehrstelle');
       return '<div class="list-item"><div class="li-main"><h3 class="li-title">' + esc(i.beruf) + '</h3>' +
-        '<div class="li-tags"><span class="chip-static">' + esc(i.plaetze || '1') + ' Plätze</span>' +
+        '<div class="li-tags"><span class="chip-static">' + esc(nStr) + label + '</span>' +
         '<span class="chip-static">Start ' + esc(i.beginn || 'offen') + '</span>' +
-        '<span class="status-pill pending">veröffentlicht</span></div></div></div>';
+        '<span class="status-pill ok">veröffentlicht</span></div>' +
+        (i.beschreibung ? '<p class="li-desc muted">' + esc(i.beschreibung) + '</p>' : '') +
+        '<div class="li-actions">' +
+          '<button class="btn btn-ghost btn-sm" data-action="edit-inserat" data-idx="' + idx + '" aria-label="Lehrstelle ' + berufLbl + ' bearbeiten">Bearbeiten</button>' +
+          '<button class="btn btn-ghost btn-sm" data-action="remove-inserat" data-idx="' + idx + '" aria-label="Lehrstelle ' + berufLbl + ' entfernen">Entfernen</button>' +
+        '</div></div></div>';
     }).join('');
   }
 
@@ -1750,6 +1759,33 @@
       case 'save-betrieb':
         persist(); updateBetriebPct(); toast('Betriebsprofil gespeichert: ' + (App.betrieb.firma || 'Betrieb') + '.', 'ok'); return true;
       case 'publish-inserat': publishInserat(); return true;
+      case 'remove-inserat': {
+        var ri = parseInt(el.dataset.idx, 10);
+        if (!isNaN(ri) && App.inserate[ri]) {
+          var removed = App.inserate[ri];
+          App.inserate.splice(ri, 1);
+          persist();
+          renderInserate();
+          toast('Lehrstelle „' + esc(removed && removed.beruf || '') + '" entfernt.', 'ok');
+        }
+        return true;
+      }
+      case 'edit-inserat': {
+        var ei = parseInt(el.dataset.idx, 10);
+        var ins = App.inserate[ei];
+        if (ins) {
+          var bEl = qs('[data-ifield="beruf"]'); if (bEl) bEl.value = ins.beruf || '';
+          var pEl = qs('[data-ifield="plaetze"]'); if (pEl) pEl.value = ins.plaetze || '';
+          var gEl = qs('[data-ifield="beginn"]'); if (gEl) gEl.value = ins.beginn || '';
+          var dEl = qs('[data-ifield="beschreibung"]'); if (dEl) dEl.value = ins.beschreibung || '';
+          App.inserate.splice(ei, 1);
+          persist();
+          renderInserate();
+          if (bEl) bEl.focus();
+          toast('Lehrstelle zum Bearbeiten geladen.', 'ok');
+        }
+        return true;
+      }
 
       case 'reset-pool-filter':
         App.poolFilters = { region: 'all', note: 'all', feld: 'all', q: '' };
@@ -1916,7 +1952,8 @@
     if (berufEl) berufEl.removeAttribute('aria-invalid');
     var plaetze = (qs('[data-ifield="plaetze"]') || {}).value || '';
     var beginn = (qs('[data-ifield="beginn"]') || {}).value || '';
-    App.inserate.push({ beruf: beruf.trim(), plaetze: plaetze.trim(), beginn: beginn.trim() });
+    var beschreibung = (qs('[data-ifield="beschreibung"]') || {}).value || '';
+    App.inserate.push({ beruf: beruf.trim(), plaetze: plaetze.trim(), beginn: beginn.trim(), beschreibung: beschreibung.trim() });
     persist();
     renderInserate();
     qsa('[data-ifield]').forEach(function (i) { i.value = ''; i.classList.remove('invalid'); });
