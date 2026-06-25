@@ -71,32 +71,32 @@
       grund: 'passt zu Berufswunsch, Region Zürich (Pendeldistanz kurz) und deinem Anforderungsprofil',
       beschreibung: 'Eine kaufmännische Grundbildung im Bankumfeld mit Einblick in Beratung, Zahlungsverkehr und Backoffice. Du arbeitest in einem strukturierten Lehrbetrieb mit klarer Begleitung.',
       anforderungen: ['Abgeschlossene Sekundarschule (Niveau A/E)', 'Freude an Kontakt mit Menschen', 'Sorgfältige, zuverlässige Arbeitsweise', 'Gute Deutsch- und Mathematik-Noten'],
-      bietet: ['Strukturierte Ausbildung mit Praxisbegleitung', 'Überbetriebliche Kurse', 'Faires Lehrlingslohn-Modell', 'Übernahmechancen nach dem Abschluss'], verifiziert: true },
+      bietet: ['Strukturierte Ausbildung mit Praxisbegleitung', 'Überbetriebliche Kurse', 'Übernahmechancen nach dem Abschluss'], loehne: [800, 1000, 1200], verifiziert: true },
     { id: 'sbb-informatiker', beruf: 'Informatiker/in EFZ', betrieb: 'SBB AG', betriebKurz: 'SBB', ort: 'Bern', region: 'bern', branche: 'it', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 87,
       grund: 'passt zu IT-Berufswunsch und gewählten Stärken (logisches Denken)',
       beschreibung: 'Fachrichtung Applikationsentwicklung in einem grossen Schweizer Infrastruktur-Betrieb. Du lernst moderne Entwicklung im Team und arbeitest an echten Projekten mit.',
       anforderungen: ['Logisch-analytisches Denken', 'Interesse an Technik und Programmierung', 'Gute Mathematik-Noten', 'Teamfähigkeit'],
-      bietet: ['Moderne Entwicklungsumgebung', 'Mentoring durch erfahrene Fachleute', 'Jobticket / ÖV-Vergünstigung', 'Lehrabschluss mit Perspektive'], verifiziert: true },
+      bietet: ['Moderne Entwicklungsumgebung', 'Mentoring durch erfahrene Fachleute', 'Jobticket / ÖV-Vergünstigung', 'Lehrabschluss mit Perspektive'], loehne: [750, 950, 1150], verifiziert: true },
     { id: 'usz-fage', beruf: 'Fachfrau/Fachmann Gesundheit EFZ', betrieb: 'UniversitätsSpital Zürich', betriebKurz: 'USZ', ort: 'Zürich', region: 'zurich', branche: 'gesundheit', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 78,
       grund: 'passt zu Region Zürich und sozialem Stärkenprofil',
       beschreibung: 'Eine vielseitige Ausbildung in Pflege und Betreuung im Spitalumfeld. Du übernimmst Verantwortung und arbeitest eng mit dem Pflegeteam.',
       anforderungen: ['Einfühlungsvermögen und Belastbarkeit', 'Zuverlässigkeit', 'Bereitschaft für Schichtarbeit', 'Gute Deutschkenntnisse'],
-      bietet: ['Begleitete Praxisausbildung', 'Vielseitige Einsätze', 'Interne Weiterbildungen', 'Sicherer Lehrbetrieb'], verifiziert: false },
+      bietet: ['Begleitete Praxisausbildung', 'Vielseitige Einsätze', 'Interne Weiterbildungen', 'Sicherer Lehrbetrieb'], loehne: [760, 990, 1320], verifiziert: false },
     { id: 'migros-detail', beruf: 'Detailhandelsfachfrau/-mann EFZ', betrieb: 'Migros Ostschweiz', betriebKurz: 'Migros', ort: 'Winterthur', region: 'zurich', branche: 'detailhandel', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 71,
       grund: 'passt zu Region und Beratungsstärke',
       beschreibung: 'Kundenberatung, Warenpräsentation und Verkauf in einer grossen Filiale. Du lernst den gesamten Detailhandels-Alltag kennen.',
       anforderungen: ['Freude am Kundenkontakt', 'Gepflegtes Auftreten', 'Flexibilität', 'Rechnerisches Verständnis'],
-      bietet: ['Einblick in alle Abteilungen', 'Personalrabatt', 'Klare Lernzielkontrolle', 'Übernahme möglich'], verifiziert: true },
+      bietet: ['Einblick in alle Abteilungen', 'Personalrabatt', 'Klare Lernzielkontrolle', 'Übernahme möglich'], loehne: [700, 950, 1300], verifiziert: true },
     { id: 'bosch-poly', beruf: 'Polymechaniker/in EFZ', betrieb: 'Bosch Schweiz', betriebKurz: 'Bosch', ort: 'Solothurn', region: 'bern', branche: 'technik', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 66,
       grund: 'passt zu technischem Interesse',
       beschreibung: 'Präzisionsmechanik, CNC und Montage in einem industriellen Lehrbetrieb mit eigener Lehrwerkstatt.',
       anforderungen: ['Handwerkliches Geschick', 'Technisches Verständnis', 'Genauigkeit', 'Gute Mathematik-Noten'],
-      bietet: ['Eigene Lehrwerkstatt', 'Moderne Maschinen', 'Strukturierte Ausbildung', 'Weiterbildungsmöglichkeiten'], verifiziert: true },
+      bietet: ['Eigene Lehrwerkstatt', 'Moderne Maschinen', 'Strukturierte Ausbildung', 'Weiterbildungsmöglichkeiten'], loehne: [750, 1000, 1250], verifiziert: true },
     { id: 'coop-eba', beruf: 'Detailhandelsassistent/in EBA', betrieb: 'Coop Genossenschaft', betriebKurz: 'Coop', ort: 'Luzern', region: 'zentral', branche: 'detailhandel', typ: 'eba', pensum: '100%', beginn: 'August 2026', score: 60,
       grund: 'passt zu EBA-Profil und praktischer Veranlagung',
       beschreibung: 'Zweijährige praxisnahe Grundbildung im Verkauf mit individueller Begleitung.',
       anforderungen: ['Freude am Verkauf', 'Zuverlässigkeit', 'Teamgeist', 'Praktische Veranlagung'],
-      bietet: ['Enge Begleitung', 'Praxisnaher Unterricht', 'Anschlusslösung EFZ möglich', 'Personalrabatt'], verifiziert: false }
+      bietet: ['Enge Begleitung', 'Praxisnaher Unterricht', 'Anschlusslösung EFZ möglich', 'Personalrabatt'], loehne: [700, 950], verifiziert: false }
   ];
 
   var KANDIDATEN = [
@@ -308,6 +308,26 @@
           '<span class="ztrack"><i style="width:' + w + '%"></i></span>' +
           '<span class="znote tnum">' + n[1].toFixed(1) + '</span></div>';
       }).join('') + '</div>';
+  }
+
+  // CHF-Format mit Schweizer Tausender-Apostroph (U+2019) und Strich fuer ".–"
+  function chf(n) {
+    return 'CHF ' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '’') + '.–';
+  }
+
+  // Lohn-Tabelle pro Lehrjahr (Look-and-Feel analog zeugnisStrip)
+  function lohnBlock(loehne) {
+    if (!loehne || !loehne.length) return '';
+    var max = Math.max.apply(null, loehne);
+    var rows = loehne.map(function (betrag, i) {
+      var w = Math.round((betrag / max) * 100);
+      return '<div class="lohn-row"><span class="lohn-lj">' + (i + 1) + '. Lehrjahr</span>' +
+        '<span class="lohn-track"><i style="width:' + w + '%"></i></span>' +
+        '<span class="lohn-betrag tnum">' + chf(betrag) + '</span></div>';
+    }).join('');
+    return '<div class="lohn-table">' +
+      '<div class="lohn-skala">Bruttolohn pro Monat (Richtwert, 13. Monatslohn möglich)</div>' +
+      rows + '</div>';
   }
 
   function staerkenTags(list, active) {
@@ -567,6 +587,9 @@
             '<ul class="dot-list">' + s.anforderungen.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></section>' +
           '<section class="detail-sec"><h2 class="detail-h2">Wir bieten</h2>' +
             '<ul class="dot-list">' + s.bietet.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></section>' +
+          (s.loehne && s.loehne.length ? '<section class="detail-sec"><h2 class="detail-h2">Lehrlingslohn</h2>' +
+            lohnBlock(s.loehne) +
+            '<p class="hint muted">Richtwerte dieses Lehrbetriebs. Effektive Löhne können je nach Vereinbarung und kantonalen Empfehlungen leicht abweichen.</p></section>' : '') +
           '<section class="detail-sec"><h2 class="detail-h2">Betrieb</h2>' +
             '<p class="muted">' + esc(s.betrieb) + ' ist ein verifizierter Lehrbetrieb in ' + esc(s.ort) + '.</p></section>' +
           (aehnliche.length ? '<section class="detail-sec"><h2 class="detail-h2">Ähnliche Stellen</h2><div class="list">' +
@@ -578,6 +601,7 @@
               '<div><dt>Pensum</dt><dd>' + esc(s.pensum) + '</dd></div>' +
               '<div><dt>Lehrbeginn</dt><dd>' + esc(s.beginn) + '</dd></div>' +
               '<div><dt>Abschluss</dt><dd>' + esc(s.typ.toUpperCase()) + '</dd></div>' +
+              (s.loehne && s.loehne.length ? '<div><dt>Lehrlingslohn</dt><dd>' + chf(Math.min.apply(null, s.loehne)) + ' – ' + chf(Math.max.apply(null, s.loehne)) + '</dd></div>' : '') +
               '<div><dt>Ort</dt><dd>' + esc(s.ort) + '</dd></div>' +
             '</dl>' +
             scoreBlock(s.score, s.grund) +

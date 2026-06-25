@@ -250,7 +250,9 @@ async function go(route, param) {
   ok('Detail-H1 zeigt Beruf', /Kauffrau\/Kaufmann EFZ/.test(qs('.detail-h1').textContent));
   ok('Verifiziert-Badge sichtbar', /Betrieb verifiziert/.test($('view').textContent));
   ok('Score-Block 92%', /92%/.test(qs('.score-block').textContent));
-  ok('Eckdaten-Liste (4 Einträge)', qsa('.eckdaten > div').length === 4);
+  ok('Eckdaten-Liste (5 Einträge inkl. Lohn)', qsa('.eckdaten > div').length === 5);
+  ok('Lehrlingslohn-Sektion vorhanden', qsa('.lohn-table .lohn-row').length === 3 && /Lehrlingslohn/.test($('view').textContent));
+  ok('Lohn-Eckdaten zeigt Spanne (CHF)', /CHF 800.– – CHF 1’200.–/.test($('view').textContent));
   ok('Bewerben-Button vorhanden', !!qs('[data-action="goto-bewerben"]'));
 
   // Ähnliche Stellen: Detailhandel hat Geschwister (Migros + Coop)

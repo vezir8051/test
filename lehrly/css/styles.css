@@ -858,6 +858,16 @@ a.list-item:hover .li-go .ic { transform: translateX(2px); }
 }
 .znote { text-align: right; font-weight: 700; }
 
+/* ── Lehrlingslohn pro Lehrjahr (Track-Muster analog zeugnisStrip) ── */
+.lohn-table { margin-top: 8px; }
+.lohn-skala { color: var(--muted); font-size: var(--fs-small); margin-bottom: 10px; }
+.lohn-row { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 12px; padding: 7px 0; }
+.lohn-row + .lohn-row { border-top: 1px solid var(--line); }
+.lohn-lj { font-size: var(--fs-small); color: var(--muted); }
+.lohn-track { height: 8px; border-radius: var(--radius-pill); background: var(--bg-sunken); overflow: hidden; }
+.lohn-track i { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--primary); }
+.lohn-betrag { font-weight: 600; font-variant-numeric: tabular-nums; }
+
 /* ── Dokumente ── */
 .doc-list {
   border: 1px solid var(--line); border-radius: var(--radius);
