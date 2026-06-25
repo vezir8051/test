@@ -185,6 +185,23 @@ async function go(route, param) {
   ok('Treffer-Zähler zeigt 6 Lehrstellen', /6 Lehrstellen/.test($('stellen-count').textContent));
   ok('Sortierung Score: ZKB (92%) zuerst', qs('#stellen-list .list-item').dataset.id === 'zkb-kauffrau');
 
+  // Mobile-Disclosure: einklappbares Filter-Panel (Stellen)
+  console.log('\n[Stellen-Suche · Mobile-Filter-Disclosure]');
+  const stToggle = qs('.filter-col .filter-toggle[data-action="toggle-filter-panel"]');
+  ok('Filter-Trigger-Button vorhanden', !!stToggle);
+  ok('Trigger steuert #filter-body (aria-controls)', stToggle.getAttribute('aria-controls') === 'filter-body');
+  ok('Filter-Body-Container vorhanden mit id=filter-body', !!qs('.filter-col #filter-body.filter-body'));
+  ok('filter-head liegt im filter-body (Desktop unverändert)', !!qs('.filter-col .filter-body .filter-head'));
+  ok('Panel startet eingeklappt (kein is-open)', !qs('.filter-col').classList.contains('is-open'));
+  ok('Trigger aria-expanded startet false', stToggle.getAttribute('aria-expanded') === 'false');
+  ok('Filter-Count-Badge bei 0 aktiven Filtern leer', qs('.filter-col .ft-count').textContent === '');
+  click(stToggle);
+  ok('Klick öffnet Panel (is-open gesetzt)', qs('.filter-col').classList.contains('is-open'));
+  ok('Trigger aria-expanded=true nach Öffnen', stToggle.getAttribute('aria-expanded') === 'true');
+  click(stToggle);
+  ok('Erneuter Klick schliesst Panel', !qs('.filter-col').classList.contains('is-open') &&
+    stToggle.getAttribute('aria-expanded') === 'false');
+
   // Facet-Counts: jede Filter-Option hat eine Trefferzahl rechts (R-Facet)
   ok('Jede Filter-Option hat eine fo-count-Zahl', qsa('.filter-col .filter-opt').length > 0 &&
     qsa('.filter-col .filter-opt').every((l) => !!qs('.fo-count', l) && /^\d+$/.test(qs('.fo-count', l).textContent)));
@@ -205,10 +222,12 @@ async function go(route, param) {
   await waitFor(() => qsa('#stellen-list .list-item').length === 1);
   ok('Branche=IT filtert auf 1 Treffer', qsa('#stellen-list .list-item').length === 1 && qs('#stellen-list .list-item').dataset.id === 'sbb-informatiker');
   ok('Aktiver Filter-Chip sichtbar', qsa('#active-chips .chip-active').length >= 1);
+  ok('Trigger-Count-Badge zeigt 1 aktiven Filter', qs('.filter-col .ft-count').textContent === '1');
   // Chip wegklicken → wieder alle
   click(qs('#active-chips .chip-active[data-key="branche"]'));
   await waitFor(() => qsa('#stellen-list .list-item').length === 6);
   ok('Filter-Chip entfernen stellt 6 Treffer wieder her', qsa('#stellen-list .list-item').length === 6);
+  ok('Trigger-Count-Badge wieder leer nach Filter-Entfernen', qs('.filter-col .ft-count').textContent === '');
 
   // Region-Filter
   changeTo(qs('input[data-filter-key="region"][value="zurich"]'), 'zurich');
@@ -637,6 +656,17 @@ async function go(route, param) {
   await waitFor(() => qsa('#pool-list .list-item').length > 0);
   ok('Alle 4 Kandidaten gelistet', qsa('#pool-list .list-item').length === 4);
   ok('Anonyme Kandidaten maskiert', /anonym/.test($('pool-list').textContent));
+  // Mobile-Disclosure: einklappbares Filter-Panel (Kandidaten)
+  const kdToggle = qs('.filter-col .filter-toggle[data-action="toggle-filter-panel"]');
+  ok('Kandidaten-Filter-Trigger vorhanden', !!kdToggle && kdToggle.getAttribute('aria-controls') === 'filter-body');
+  ok('Kandidaten-Filter-Body vorhanden', !!qs('.filter-col #filter-body.filter-body .filter-head'));
+  ok('Kandidaten-Panel startet eingeklappt', !qs('.filter-col').classList.contains('is-open'));
+  ok('Kandidaten-Count-Badge bei 0 leer', qs('.filter-col .ft-count').textContent === '');
+  click(kdToggle);
+  ok('Kandidaten-Klick öffnet Panel', qs('.filter-col').classList.contains('is-open') &&
+    kdToggle.getAttribute('aria-expanded') === 'true');
+  click(kdToggle);
+  ok('Kandidaten-Panel wieder geschlossen', !qs('.filter-col').classList.contains('is-open'));
   // Pool-Facet-Counts: jede Option mit Trefferzahl rechts
   ok('Jede Pool-Filter-Option hat eine fo-count-Zahl', qsa('.filter-col .filter-opt').length > 0 &&
     qsa('.filter-col .filter-opt').every((l) => !!qs('.fo-count', l) && /^\d+$/.test(qs('.fo-count', l).textContent)));
@@ -648,6 +678,7 @@ async function go(route, param) {
   changeTo(qs('input[data-poolfilter-key="region"][value="bern"]'), 'bern');
   await waitFor(() => qsa('#pool-list .list-item').length === 1);
   ok('Region=Bern → 1 Kandidat', qsa('#pool-list .list-item').length === 1);
+  ok('Pool-Trigger-Count-Badge zeigt 1 aktiven Filter', qs('.filter-col .ft-count').textContent === '1');
   click(qs('[data-action="reset-pool-filter"]'));
   await waitFor(() => qsa('#pool-list .list-item').length === 4);
   // Noten-Filter

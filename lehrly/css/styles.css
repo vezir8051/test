@@ -563,6 +563,9 @@ a.list-item:hover .li-go .ic { transform: translateX(2px); }
   padding: 6px 18px 14px;
   position: sticky; top: calc(var(--header-h) + 16px);
 }
+/* Mobile-Trigger für das einklappbare Filter-Panel — auf Desktop ausgeblendet. */
+.filter-toggle { display: none; }
+.filter-body { display: block; }
 .filter-head {
   display: flex; align-items: baseline; justify-content: space-between;
   padding: 14px 0 4px;
@@ -1305,7 +1308,29 @@ button.step-node:focus-visible { outline: 2px solid var(--primary); outline-offs
   .detail-grid { grid-template-columns: 1fr; gap: 8px; }
   .detail-aside { position: static; margin-top: 8px; }
   .search-page { grid-template-columns: 1fr; }
-  .filter-col { position: static; }
+  /* Filter-Panel als einklappbares Disclosure: Trigger rahmt, Body bekommt eigenen Rahmen. */
+  .filter-col { position: static; padding: 0; border: 0; background: transparent; }
+  .filter-toggle {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 13px 14px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    font: inherit; font-weight: 600; color: var(--text); cursor: pointer;
+  }
+  .filter-toggle .ft-count {
+    margin-left: auto; min-width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0 6px; border-radius: var(--radius-pill);
+    background: var(--primary); color: #fff; font-size: var(--fs-label);
+  }
+  .filter-toggle .ft-count:empty { display: none; }
+  .filter-toggle .ft-chevron { transition: transform var(--t) var(--ease); }
+  .filter-col.is-open .filter-toggle .ft-chevron { transform: rotate(90deg); }
+  .filter-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .filter-col .filter-body {
+    display: none; margin-top: 10px; padding: 0 18px 14px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  }
+  .filter-col.is-open .filter-body { display: block; }
   .dash-cols { grid-template-columns: 1fr; }
   .metric-row { grid-template-columns: repeat(2, 1fr); }
   .metric:nth-child(2) { border-right: 0; }
