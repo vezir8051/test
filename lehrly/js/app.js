@@ -50,7 +50,8 @@
     einladungen: store.get('einladungen', []),
     chats: {},                 // konversations-id -> [{me, text, time}]
     stellenFilters: { branche: 'all', region: 'all', typ: 'all', lehrjahr: 'all', sort: 'score', q: '', ort: '', nurGemerkt: false },
-    poolFilters: { region: 'all', note: 'all', feld: 'all', q: '' }
+    poolFilters: { region: 'all', note: 'all', feld: 'all', q: '' },
+    savedSearches: store.get('savedSearches', [])
   };
   window.App = App;
 
@@ -65,6 +66,7 @@
     store.set('inserate', App.inserate);
     store.set('bewerbungen', App.bewerbungen);
     store.set('einladungen', App.einladungen);
+    store.set('savedSearches', App.savedSearches);
   }
 
   // ───────────────────────── Daten ─────────────────────────
@@ -525,6 +527,7 @@
                 '</select></label></div>' +
           '</div>' +
           '<div id="active-chips" class="active-chips"></div>' +
+          '<div id="save-search-bar" class="save-search-bar"></div>' +
           '<div id="stellen-list" class="list">' + skeletonList(4) + '</div>' +
         '</section>' +
       '</div></div>';
@@ -635,16 +638,12 @@
           '<p class="muted">Tippe in der Liste auf <strong>Merken</strong>, um Lehrstellen zu sammeln und später in Ruhe zu vergleichen.</p>' +
           '<button class="btn btn-primary" data-action="show-all-stellen">Alle Lehrstellen anzeigen</button></div>';
         renderStellenChips();
+        renderSaveSearchBar();
         renderStellenFacets();
         return;
       }
-      var parts = [];
-      if (sf.q) parts.push('„' + esc(sf.q) + '“');
-      if (sf.branche !== 'all') parts.push(esc(stellenOptLabel('branche', sf.branche)));
-      if (sf.region !== 'all') parts.push('in Region ' + esc(stellenOptLabel('region', sf.region)));
-      if (sf.typ !== 'all') parts.push('(' + esc(stellenOptLabel('typ', sf.typ)) + ')');
-      if (sf.lehrjahr !== 'all') parts.push('mit ' + esc(stellenOptLabel('lehrjahr', sf.lehrjahr)));
-      var head = parts.length ? 'Keine Lehrstellen für ' + parts.join(' ') : 'Keine Lehrstellen gefunden';
+      var lbl = stellenFilterLabel(sf);
+      var head = lbl ? 'Keine Lehrstellen für ' + esc(lbl) : 'Keine Lehrstellen gefunden';
       var actions;
       if (sf.region !== 'all') {
         actions = '<button class="btn btn-primary" data-action="widen-stellen-region">Ganze Schweiz durchsuchen</button>' +
@@ -659,7 +658,50 @@
       holder.innerHTML = list.map(stelleCard).join('');
     }
     renderStellenChips();
+    renderSaveSearchBar();
     renderStellenFacets();
+  }
+
+  // Menschenlesbares Label aus den aktiven Filtern (geteilt: Empty-State + gespeicherte Suche).
+  function stellenFilterLabel(f) {
+    var parts = [];
+    if (f.q) parts.push('„' + f.q + '“');
+    if (f.branche !== 'all') parts.push(stellenOptLabel('branche', f.branche));
+    if (f.region !== 'all') parts.push('in Region ' + stellenOptLabel('region', f.region));
+    if (f.typ !== 'all') parts.push('(' + stellenOptLabel('typ', f.typ) + ')');
+    if (f.lehrjahr !== 'all') parts.push('mit ' + stellenOptLabel('lehrjahr', f.lehrjahr));
+    return parts.join(' ');
+  }
+
+  // Deterministische ID aus den gespeicherten Filterwerten (sort/ort/nurGemerkt zaehlen NICHT mit).
+  function savedSearchFilters(f) {
+    return { branche: f.branche, region: f.region, typ: f.typ, lehrjahr: f.lehrjahr, q: (f.q || '').trim() };
+  }
+  function savedSearchId(sf) {
+    return [sf.branche, sf.region, sf.typ, sf.lehrjahr, sf.q.toLowerCase()].join('|');
+  }
+  function findSavedSearch(id) {
+    for (var i = 0; i < App.savedSearches.length; i++) if (App.savedSearches[i].id === id) return App.savedSearches[i];
+    return null;
+  }
+
+  // Schmale Aktionszeile: aktuelle Suche speichern bzw. gespeicherte Suche entfernen (nur Lernende).
+  function renderSaveSearchBar() {
+    var bar = $('save-search-bar');
+    if (!bar) return;
+    if (App.role !== 'lernende') { bar.innerHTML = ''; return; }
+    var sf = savedSearchFilters(App.stellenFilters);
+    var id = savedSearchId(sf);
+    var saved = findSavedSearch(id);
+    if (saved) {
+      bar.innerHTML = '<span class="ss-status is-saved"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>Suche gespeichert</span>' +
+        '<button class="btn-text" type="button" data-action="remove-search" data-id="' + esc(saved.id) + '">' +
+        'Entfernen <svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>';
+    } else {
+      bar.innerHTML = '<button class="btn-text" type="button" data-action="save-search">' +
+        '<svg class="ic" aria-hidden="true"><use href="#i-bookmark"></use></svg> Suche speichern</button>' +
+        '<span class="ss-status muted">Wird bei neuen Treffern benachrichtigt.</span>';
+    }
   }
 
   // Aktive Filter-Chips (inkl. entfernbarem "Nur gemerkte"-Chip).
@@ -1237,6 +1279,17 @@
     var gemerkteStellen = App.gemerkt.map(function (id) {
       return STELLEN.filter(function (x) { return x.id === id; })[0];
     }).filter(Boolean);
+    var savedBlock = '<section class="dash-block dash-saved"><h2 class="detail-h2">Gespeicherte Suchen</h2>' +
+      (App.savedSearches.length
+        ? '<ul class="saved-search-list">' + App.savedSearches.map(function (s) {
+            return '<li><button class="saved-search-item" type="button" data-action="open-saved-search" data-id="' + esc(s.id) + '">' +
+              '<span class="ssi-label">' + esc(s.label) + '</span>' +
+              '<span class="ssi-hint"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>E-Mail-Abo aktiv</span>' +
+              '</button></li>';
+          }).join('') + '</ul>'
+        : '<div class="empty-state"><p class="muted">Speichere deine Suche, um bei neuen passenden Lehrstellen benachrichtigt zu werden.</p>' +
+          '<button class="btn btn-primary" data-route="stellen" data-action="goto-stellen">Stellen finden</button></div>') +
+      '</section>';
     return '<div class="container">' +
       breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Übersicht' }]) +
       '<h1 class="page-h1">Deine Übersicht</h1>' +
@@ -1264,6 +1317,7 @@
             '<li><span class="act-dot"></span>Neue passende Stelle: Informatiker EFZ</li>' +
             '<li><span class="act-dot"></span>Profil zu 80% vollständig</li>' +
           '</ul></section>' +
+        savedBlock +
       '</div></div>';
   };
 
@@ -1570,6 +1624,38 @@
         renderStellenResults(); return true;
       case 'clear-nur-gemerkt':
         App.stellenFilters.nurGemerkt = false; renderStellenResults(); return true;
+
+      case 'save-search': {
+        var ssf = savedSearchFilters(App.stellenFilters);
+        var sid = savedSearchId(ssf);
+        if (!findSavedSearch(sid)) {
+          App.savedSearches.push({ id: sid, filters: ssf, label: stellenFilterLabel(ssf) || 'Alle Lehrstellen', ts: Date.now() });
+          persist();
+        }
+        toast('Suche gespeichert. Wir benachrichtigen dich bei neuen passenden Lehrstellen.', 'ok');
+        renderSaveSearchBar();
+        return true;
+      }
+      case 'remove-search': {
+        var rid = el.dataset.id;
+        App.savedSearches = App.savedSearches.filter(function (x) { return x.id !== rid; });
+        persist();
+        toast('Suche entfernt.', 'neutral');
+        if (App.route === 'dashboard') render();
+        else renderSaveSearchBar();
+        return true;
+      }
+      case 'open-saved-search': {
+        e.preventDefault();
+        var os = findSavedSearch(el.dataset.id);
+        if (os) {
+          var of = os.filters;
+          App.stellenFilters = { branche: of.branche, region: of.region, typ: of.typ, lehrjahr: of.lehrjahr,
+            sort: 'score', q: of.q || '', ort: '', nurGemerkt: false };
+          gotoRoute('stellen');
+        }
+        return true;
+      }
       case 'show-all-stellen':
         App.stellenFilters.nurGemerkt = false; renderStellenResults(); return true;
       case 'widen-stellen-region': {
