@@ -688,9 +688,45 @@ async function go(route, param) {
   ok('Profil-Enter-Submit → Toast ist role=status', $('toast').getAttribute('role') === 'status');
   ok('Profil-Enter-Submit erhält Feldwert (kein Reset/Datenverlust)',
     qs('[data-field="vorname"]').value === 'Lena' && window.App.profile.vorname === 'Lena');
-  // Upload-Dokument
-  click(qs('[data-action="upload-doc"]'));
-  ok('Dokument-Upload → Toast', /Dokument hochgeladen/.test($('toast').textContent));
+  // ── Dokumente: ehrlicher Status + echter Upload-Toggle (toter-Klick-Fix) ──
+  console.log('\n[Profil · Dokumente · ehrlicher Status · Upload-Toggle · Persistenz]');
+  // Frischer Demozustand: keine vorgetäuschten "hochgeladen"/"geprüft"-Status
+  window.App.docsUploaded = {};
+  window.localStorage.removeItem('lehrly:docsUploaded');
+  await go('profil');
+  const docList = qs('#sec-dokumente .doc-list');
+  ok('Drei Dokument-Zeilen mit stabilen data-doc-Keys', qsa('.doc-line', docList).length === 3 &&
+    !!qs('[data-action="upload-doc"][data-doc="lebenslauf"]', docList) &&
+    !!qs('[data-action="upload-doc"][data-doc="schulzeugnis"]', docList) &&
+    !!qs('[data-action="upload-doc"][data-doc="motivation"]', docList));
+  ok('Initial: alle drei Dokumente "offen" (kein vorgetäuschtes hochgeladen/geprüft)',
+    qsa('.doc-line .dl-state.ok', docList).length === 0 &&
+    qsa('.doc-line .dl-state.open', docList).length === 3 &&
+    !/hochgeladen|geprüft/.test(docList.textContent));
+  ok('Initial: jede Zeile hat einen aktiven Hochladen-Button',
+    qsa('.doc-line [data-action="upload-doc"]', docList).length === 3);
+  // Motivationsschreiben hochladen → Toast + Statuswechsel + Button verschwindet
+  $('toast').textContent = '';
+  click(qs('[data-action="upload-doc"][data-doc="motivation"]'));
+  await waitFor(() => window.App.docsUploaded.motivation === true);
+  ok('Upload Motivationsschreiben → Toast', /Dokument hochgeladen/.test($('toast').textContent));
+  const motivLine = qsa('#sec-dokumente .doc-line').find((l) => /Motivationsschreiben/.test(l.textContent));
+  ok('Status Motivationsschreiben wird "hochgeladen" (ok)', !!qs('.dl-state.ok', motivLine) &&
+    /hochgeladen/.test(motivLine.textContent));
+  ok('Hochladen-Button beim hochgeladenen Dokument entfernt', !qs('[data-action="upload-doc"]', motivLine));
+  ok('Andere Dokumente bleiben "offen" mit Button',
+    qsa('#sec-dokumente .doc-line .dl-state.open').length === 2 &&
+    qsa('#sec-dokumente .doc-line [data-action="upload-doc"]').length === 2);
+  // Persistenz + kein wiederholter Erfolgs-Toast
+  ok('Upload-Status in localStorage persistiert', (() => {
+    const d = JSON.parse(window.localStorage.getItem('lehrly:docsUploaded'));
+    return d && d.motivation === true;
+  })());
+  // Reload simulieren: Re-Render hält "hochgeladen"
+  await go('cv'); await go('profil');
+  const motivLine2 = qsa('#sec-dokumente .doc-line').find((l) => /Motivationsschreiben/.test(l.textContent));
+  ok('Nach Neu-Navigation bleibt Motivationsschreiben "hochgeladen"',
+    !!qs('.dl-state.ok', motivLine2) && !qs('[data-action="upload-doc"]', motivLine2));
 
   // ═════════════ PROFIL · ANKER-TABS (Blocker-Fix: kein 404, kein Datenverlust) ═════════════
   console.log('\n[Profil · Anker-Tabs · kein 404 · Felder bleiben]');
@@ -832,8 +868,42 @@ async function go(route, param) {
   ok('Lernende-Frei-Karte vorhanden', /kostenlos/.test($('view').textContent));
   ok('Drei Betriebs-Tarife', qsa('.tarif-col').length === 3);
   ok('Empfohlener Tarif markiert', !!qs('.tarif-col.hot') && /empfohlen/.test($('view').textContent));
+  // ── Plan wählen: echter Zustand statt totem Klick ──
+  console.log('\n[Preise · Plan wählen · Zustand · Markierung · Persistenz · Wechsel]');
+  window.App.chosenPlan = null;
+  window.localStorage.removeItem('lehrly:chosenPlan');
+  await go('preise');
+  ok('Initial: alle drei Tarife mit aktivem "Wählen"-Button',
+    qsa('.tarif-col [data-action="choose-plan"]').length === 3 && !qs('.tarif-col.chosen'));
+  // Empfohlenen Tarif wählen
+  const hotPlanName = qs('.tarif-col.hot [data-action="choose-plan"]').dataset.plan;
   click(qs('.tarif-col.hot [data-action="choose-plan"]'));
+  await waitFor(() => window.App.chosenPlan === hotPlanName);
   ok('Tarif wählen → Toast', /gewählt/.test($('toast').textContent));
+  ok('Gewählter Tarif zeigt disabled "Aktueller Plan"', (() => {
+    const col = qsa('.tarif-col').find((c) => c.classList.contains('chosen'));
+    const btn = qs('button[disabled]', col);
+    return !!col && col.classList.contains('hot') && !!btn && /Aktueller Plan/.test(btn.textContent) &&
+      !qs('[data-action="choose-plan"]', col);
+  })());
+  ok('Nur ein Tarif markiert, andere behalten aktives "Wählen"',
+    qsa('.tarif-col.chosen').length === 1 && qsa('.tarif-col [data-action="choose-plan"]').length === 2);
+  ok('chosenPlan in localStorage persistiert', window.localStorage.getItem('lehrly:chosenPlan') === JSON.stringify(hotPlanName));
+  // Anderen Plan wählen → Markierung wechselt
+  const otherBtn = qs('.tarif-col:not(.chosen) [data-action="choose-plan"]');
+  const otherName = otherBtn.dataset.plan;
+  click(otherBtn);
+  await waitFor(() => window.App.chosenPlan === otherName);
+  ok('Anderen Tarif wählen → Markierung wechselt', (() => {
+    const col = qsa('.tarif-col').find((c) => c.classList.contains('chosen'));
+    return qsa('.tarif-col.chosen').length === 1 && /Aktueller Plan/.test(col.textContent) &&
+      new RegExp(otherName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(col.textContent);
+  })());
+  // Reload simulieren: Markierung bleibt erhalten
+  await go('start'); await go('preise');
+  ok('Nach Neu-Navigation bleibt gewählter Tarif markiert (disabled "Aktueller Plan")',
+    qsa('.tarif-col.chosen').length === 1 &&
+    /Aktueller Plan/.test(qsa('.tarif-col').find((c) => c.classList.contains('chosen')).textContent));
 
   // ═════════════ BETRIEB-FLOWS ═════════════
   console.log('\n[Betrieb · Kandidaten · Filter · Profil · Einladen]');
@@ -930,6 +1000,42 @@ async function go(route, param) {
   await waitFor(() => !!$('schnupper-dialog'));
   doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   ok('Esc schliesst Schnupper-Modal', !$('schnupper-dialog'));
+
+  // ── Anonymer Kandidat: "Freigabe anfragen" quittiert Zustand (toter-Klick-Fix) ──
+  console.log('\n[Kandidat (anonym) · Freigabe anfragen · Zustand · Persistenz · Mehrfach-Schutz]');
+  window.App.freigabeAnfragen = {};
+  window.localStorage.removeItem('lehrly:freigabeAnfragen');
+  await go('kandidat', 'k-tim');
+  ok('Anonymes Profil: "Freigabe anfragen"-Button aktiv',
+    !!qs('[data-action="request-freigabe"][data-id="k-tim"]') &&
+    /Freigabe anfragen/.test(qs('[data-action="request-freigabe"]').textContent) &&
+    !qs('.btn-primary.btn-block[disabled]'));
+  $('toast').textContent = '';
+  click(qs('[data-action="request-freigabe"][data-id="k-tim"]'));
+  await waitFor(() => window.App.freigabeAnfragen['k-tim'] === true);
+  ok('Freigabe anfragen → Toast', /Freigabe angefragt/.test($('toast').textContent));
+  ok('Button wird zu disabled "Freigabe angefragt - ausstehend"', (() => {
+    const b = qs('.detail-aside .btn-primary.btn-block');
+    return !!b && b.disabled === true && /Freigabe angefragt - ausstehend/.test(b.textContent) &&
+      !qs('[data-action="request-freigabe"]');
+  })());
+  ok('Freigabe-Anfrage in localStorage persistiert', (() => {
+    const f = JSON.parse(window.localStorage.getItem('lehrly:freigabeAnfragen'));
+    return f && f['k-tim'] === true;
+  })());
+  // Neu-Navigation → Zustand bleibt, erneuter Klick nicht möglich
+  await go('kandidaten'); await go('kandidat', 'k-tim');
+  ok('Nach Neu-Navigation bleibt Button disabled (kein erneuter request-freigabe-Button)',
+    !qs('[data-action="request-freigabe"]') &&
+    !!qs('.detail-aside .btn-primary.btn-block[disabled]'));
+  // Anderer anonymer Kandidat (Sara) bleibt unabhängig anfragbar
+  await go('kandidat', 'k-sara');
+  ok('Anderer anonymer Kandidat behält aktiven Freigabe-Button',
+    !!qs('[data-action="request-freigabe"][data-id="k-sara"]') &&
+    !qs('.btn-primary.btn-block[disabled]'));
+  // Aufräumen für nachfolgende Chat-Kontext-Tests (Anonymität/Chat unberührt)
+  window.App.freigabeAnfragen = {};
+  window.localStorage.removeItem('lehrly:freigabeAnfragen');
 
   // Nachricht senden (msg-kandidat) → Chat
   await go('kandidat', 'k-noah');
