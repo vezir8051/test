@@ -484,6 +484,27 @@ async function go(route, param) {
   click(qs('[data-action="goto-bewerben"]'));
   await waitFor(() => window.App.route === 'bewerben');
   ok('Bewerben-Stepper Step 1', !!qs('#bewerben-stepper .step-node.current') && /Profil prüfen/.test($('bewerben-stepper').textContent));
+
+  // ═════════════ BEWERBEN · BREADCRUMB (Major-Fix: mittlerer Crumb mit id, kein 404) ═════════════
+  console.log('\n[Bewerben · Breadcrumb · mittlerer Crumb → Stellen-Detail]');
+  const bcCrumbs = qsa('.breadcrumb a');
+  ok('Breadcrumb hat zwei Links (Stellen finden / Beruf)', bcCrumbs.length === 2);
+  const bcStelle = bcCrumbs.filter((a) => a.dataset.route === 'stelle')[0];
+  ok('T3: Mittlerer Crumb hat data-id (id mitgegeben)', !!bcStelle && bcStelle.dataset.id === 'zkb-kauffrau');
+  ok('T3: Mittlerer Crumb-href = #/stelle/<id> (nicht ohne id)', bcStelle.getAttribute('href') === '#/stelle/zkb-kauffrau');
+  // T4 Regression: Crumbs ohne id dürfen keinen /null und keinen doppelten Slash erzeugen
+  const bcStellen = bcCrumbs.filter((a) => a.dataset.route === 'stellen')[0];
+  ok('T4: Crumb ohne id ist sauber (#/stellen, kein /null)', bcStellen.getAttribute('href') === '#/stellen' && !bcStellen.hasAttribute('data-id'));
+  // T3: Klick auf mittleren Crumb → zurück zur Stellen-Detailseite, KEIN 404
+  click(bcStelle);
+  await waitFor(() => window.App.route === 'stelle');
+  ok('T3: Mittlerer Crumb führt zur Stellen-Detailseite', window.App.route === 'stelle' && window.App.param === 'zkb-kauffrau');
+  ok('T3: Kein 404 nach Crumb-Klick', !/Seite nicht gefunden/i.test($('view').textContent) && !!qs('.detail-h1'));
+  // zurück in den Bewerben-Flow für die folgenden Stepper-Tests
+  await go('stelle', 'zkb-kauffrau');
+  click(qs('[data-action="goto-bewerben"]'));
+  await waitFor(() => window.App.route === 'bewerben' && !!qs('#bewerben-stepper .step-node.current'));
+
   // ARIA-Fortschritt + Stepper-Semantik
   ok('Stepper hat aria-label', $('bewerben-stepper').getAttribute('aria-label') === 'Bewerbungs-Fortschritt');
   ok('Fortschritts-Label "Schritt 1 von 4 · Profil prüfen"', /Schritt\s*1\s*von\s*4\s*·\s*Profil prüfen/.test($('bewerben-progress').textContent));
@@ -637,6 +658,38 @@ async function go(route, param) {
   // Upload-Dokument
   click(qs('[data-action="upload-doc"]'));
   ok('Dokument-Upload → Toast', /Dokument hochgeladen/.test($('toast').textContent));
+
+  // ═════════════ PROFIL · ANKER-TABS (Blocker-Fix: kein 404, kein Datenverlust) ═════════════
+  console.log('\n[Profil · Anker-Tabs · kein 404 · Felder bleiben]');
+  ok('Sechs Anker-Tabs vorhanden', qsa('.anchor-tabs .atab').length === 6);
+  // Cancelable-Klick, um die native Anker-Navigation zu prüfen (preventDefault).
+  // Hinweis: jsdom setzt location.hash trotz preventDefault (bekannte jsdom-Grenze);
+  // im echten Browser bleibt der Hash dadurch #/profil. Die parseHash-Absicherung
+  // (T2) hält die Route auch dann, wenn der Hash zum Anker wechselt.
+  const clickCancelable = (el) => { const ev = new window.MouseEvent('click', { bubbles: true, cancelable: true }); el.dispatchEvent(ev); return ev; };
+  ok('Vorname-Feld vor Tab-Klick gefüllt', qs('[data-field="vorname"]').value === 'Lena');
+  const tabNoten = qsa('.anchor-tabs .atab').filter((a) => /sec-noten/.test(a.getAttribute('href')))[0];
+  const evNoten = clickCancelable(tabNoten);
+  await delay(0);
+  ok('T1: Tab "Noten" wird aktiv markiert', tabNoten.classList.contains('active') && tabNoten.getAttribute('aria-current') === 'true');
+  ok('T1: Handler verhindert nativen Anker-Sprung (preventDefault)', evNoten.defaultPrevented === true);
+  ok('T1: Kein 404 nach Noten-Tab', window.App.route === 'profil' && !/Seite nicht gefunden/i.test($('view').textContent));
+  ok('T1: Eingegebener Vorname bleibt erhalten', qs('[data-field="vorname"]').value === 'Lena' && window.App.profile.vorname === 'Lena');
+  const tabStaerken = qsa('.anchor-tabs .atab').filter((a) => /sec-staerken/.test(a.getAttribute('href')))[0];
+  clickCancelable(tabStaerken);
+  await delay(0);
+  ok('T1: Tab "Stärken" wird aktiv markiert', tabStaerken.classList.contains('active') && !tabNoten.classList.contains('active'));
+  ok('T1: Kein 404 nach Stärken-Tab, Felder bleiben', window.App.route === 'profil' && qs('[data-field="vorname"]').value === 'Lena');
+
+  // T2: direkter Anker-Deep-Link darf parseHash nicht auf 404 werfen
+  window.location.hash = '#sec-noten';
+  window.dispatchEvent(new window.HashChangeEvent('hashchange'));
+  await delay(0);
+  ok('T2: Direkter #sec-Anker hält Profil-Route', window.App.route === 'profil');
+  ok('T2: Direkter #sec-Anker erzeugt kein 404', !/Seite nicht gefunden/i.test($('view').textContent));
+  // wieder sauberer Router-Hash für Folgetests
+  window.gotoRoute('profil');
+  await waitFor(() => window.App.route === 'profil' && window.location.hash === '#/profil');
 
   // ═════════════ LEBENSLAUF-VORSCHAU (CV) ═════════════
   console.log('\n[CV · Lebenslauf-Vorschau]');

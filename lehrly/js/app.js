@@ -282,7 +282,9 @@
     return '<nav class="breadcrumb" aria-label="Brotkrumen">' + items.map(function (it, i) {
       var last = i === items.length - 1;
       if (last) return '<span aria-current="page">' + esc(it.label) + '</span>';
-      return '<a href="#/' + it.route + '" data-route="' + it.route + '">' + esc(it.label) + '</a><span class="bc-sep" aria-hidden="true">/</span>';
+      var href = '#/' + it.route + (it.id ? '/' + it.id : '');
+      var idAttr = it.id ? ' data-id="' + esc(String(it.id)) + '"' : '';
+      return '<a href="' + href + '" data-route="' + it.route + '"' + idAttr + '>' + esc(it.label) + '</a><span class="bc-sep" aria-hidden="true">/</span>';
     }).join('') + '</nav>';
   }
 
@@ -798,7 +800,7 @@
     var s = STELLEN.filter(function (x) { return x.id === id; })[0] || STELLEN[0];
     bewerbenState.id = s.id;
     return '<div class="container narrow">' +
-      breadcrumb([{ route: 'stellen', label: 'Stellen finden' }, { route: 'stelle', label: s.beruf }, { label: 'Bewerben' }]) +
+      breadcrumb([{ route: 'stellen', label: 'Stellen finden' }, { route: 'stelle', id: s.id, label: s.beruf }, { label: 'Bewerben' }]) +
       '<h1 class="page-h1">Bewerbung – ' + esc(s.beruf) + '</h1>' +
       '<p class="stepper-progress" id="bewerben-progress"></p>' +
       '<div class="stepper" id="bewerben-stepper"></div>' +
@@ -1430,6 +1432,11 @@
 
   // ═══════════════════════ ROUTER ═══════════════════════
   function parseHash() {
+    // Reiner Seiten-Anker (z.B. '#sec-noten', '#view') ist KEINE Router-Route:
+    // bestehende Route beibehalten, statt eine unbekannte Route -> 404 abzuleiten.
+    if (location.hash && location.hash.indexOf('#/') !== 0) {
+      return { route: App.route || 'start', param: App.param || null };
+    }
     var h = (location.hash || '').replace(/^#\/?/, '');
     var parts = h.split('/').filter(Boolean);
     return { route: parts[0] || 'start', param: parts[1] || null };
@@ -1549,9 +1556,18 @@
     var tag = t.closest && t.closest('.tag.toggle');
     if (tag && tag.dataset.strength) { toggleStrength(tag); return; }
 
-    // Anker-Tabs im Profil: aktiven Zustand sofort umschalten (Sprung bleibt nativ)
+    // Anker-Tabs im Profil: aktiven Zustand umschalten und manuell zum Abschnitt scrollen.
+    // KEIN nativer href-Sprung -> location.hash bleibt unveraendert -> kein render()/404,
+    // eingegebene Formularfelder bleiben erhalten.
     var atab = t.closest && t.closest('.atab');
-    if (atab) { setActiveAtab(atab); /* href-Sprung nicht verhindern */ }
+    if (atab) {
+      e.preventDefault();
+      setActiveAtab(atab);
+      var aid = (atab.getAttribute('href') || '').replace(/^#/, '');
+      var sec = aid && document.getElementById(aid);
+      if (sec) sec.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+      return;
+    }
 
     var actEl = t.closest && t.closest('[data-action]');
     if (actEl) {
