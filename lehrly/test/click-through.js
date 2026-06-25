@@ -642,6 +642,23 @@ async function go(route, param) {
   // Schnupper-Erfahrung
   typeInto(qs('[data-snfield="schnupper"]'), 'Raiffeisenbank (3 Tage)');
   ok('Schnupper-Erfahrung in State', window.App.schnupperErf === 'Raiffeisenbank (3 Tage)');
+
+  // ── NOTEN: editierbar, persistent, kein Fremd-/Demowert ──
+  console.log('\n[Profil · Noten editierbar · echte Daten]');
+  const sNoten = $('sec-noten');
+  ok('Noten-Abschnitt: vier number-Inputs', qsa('input[type="number"][data-nfield]', sNoten).length === 4);
+  ok('Noten-Inputs: CH-Skala min/max/step', (() => {
+    const inp = qs('input[data-nfield="deutsch"]', sNoten);
+    return inp.getAttribute('min') === '1' && inp.getAttribute('max') === '6' && inp.getAttribute('step') === '0.1';
+  })());
+  // Frisches Profil: keine Fremdnoten gerendert, Inputs leer
+  ok('Frisches Profil: keine erfundenen Noten vorbelegt', qsa('input[data-nfield]', sNoten).every((i) => i.value === ''));
+  ok('Frisches Profil: kein Demo-Notenstrip im Abschnitt', !qs('.zeugnis-strip', sNoten));
+  // Eingabe einer echten Note
+  typeInto(qs('[data-nfield="deutsch"]', sNoten), '5.2');
+  ok('Note Deutsch live in State', window.App.profile.noten.deutsch === '5.2');
+  typeInto(qs('[data-nfield="mathematik"]', sNoten), '4.5');
+  ok('Note Mathematik live in State', window.App.profile.noten.mathematik === '4.5');
   // Stärken-Tags toggeln
   const tag1 = qs('.tag.toggle[data-strength="Organisation"]');
   const tag2 = qs('.tag.toggle[data-strength="Kommunikation"]');
@@ -657,6 +674,11 @@ async function go(route, param) {
   // Speichern
   click(qs('[data-action="save-profil"]'));
   ok('Profil speichern → Toast', /Profil gesichert/.test($('toast').textContent));
+  // Noten landen mit dem Profil im localStorage (Persistenz über Reload)
+  ok('Noten in localStorage persistiert', (() => {
+    const p = JSON.parse(window.localStorage.getItem('lehrly:profile'));
+    return p.noten && p.noten.deutsch === '5.2' && p.noten.mathematik === '4.5';
+  })());
   // Enter-Submit des Profil-Formulars (data-action="profil-form") teilt denselben Pfad
   typeInto(qs('[data-field="vorname"]'), 'Lena');
   $('toast').textContent = '';
@@ -711,6 +733,13 @@ async function go(route, param) {
   ok('CV zeigt Berufswunsch', /Kauffrau\/Kaufmann EFZ/.test($('cv-sheet').textContent));
   ok('CV zeigt gewählte Stärken', /Organisation/.test($('cv-sheet').textContent));
   ok('CV zeigt Schnupper-Erfahrung', /Raiffeisenbank/.test($('cv-sheet').textContent));
+  // CV-Schulnoten aus echten Profil-Daten (Deutsch 5.2, Mathematik 4.5) – teilweise erfasst
+  const cvNotenBlock = qsa('.cv-block').filter((b) => /Schulnoten/.test(b.textContent))[0];
+  ok('CV-Schulnoten: nur erfasste Fächer (2 Zeilen)', qsa('.zeugnis-strip .zrow', cvNotenBlock).length === 2);
+  ok('CV-Schulnoten: echte Note 5.2 (Deutsch)', /Deutsch/.test(cvNotenBlock.textContent) && /5\.2/.test(cvNotenBlock.textContent));
+  ok('CV-Schulnoten: echte Note 4.5 (Mathematik)', /Mathematik/.test(cvNotenBlock.textContent) && /4\.5/.test(cvNotenBlock.textContent));
+  ok('CV-Schulnoten: kein Demowert für leere Fächer (kein Französisch/Englisch im Strip)',
+    !/Französisch/.test(cvNotenBlock.textContent) && !/Englisch/.test(cvNotenBlock.textContent));
   // Drucken
   let printed = false; window.print = function () { printed = true; };
   click(qs('[data-action="cv-print"]'));
@@ -1044,6 +1073,25 @@ async function go(route, param) {
   } else {
     ok('Consent bereits akzeptiert/ausgeblendet', true);
   }
+
+  // ═════════════ NOTEN · LEERZUSTAND + UNGÜLTIG-GUARD ═════════════
+  console.log('\n[Profil/CV · Noten-Leerzustand · toFixed-Guard]');
+  // Noten leeren und Profil neu rendern → Leerzustand statt Fremdnoten
+  window.App.profile.noten = { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
+  await go('profil');
+  const sNotenEmpty = $('sec-noten');
+  // Im Profil sind die leeren Eingabefelder der Leerzustand (kein Demo-Strip mit Fremdnoten)
+  ok('Leeres Profil: #sec-noten zeigt leere Eingabefelder statt Fremdnoten',
+    qsa('input[data-nfield]', sNotenEmpty).length === 4 &&
+    qsa('input[data-nfield]', sNotenEmpty).every((i) => i.value === '') &&
+    !qs('.zeugnis-strip', sNotenEmpty));
+  // Ungültige Eingabe darf keinen JS-Fehler/Render-Bruch auslösen (toFixed-Guard)
+  const errBeforeInvalid = errors.length;
+  typeInto(qs('[data-nfield="deutsch"]', sNotenEmpty), 'abc');
+  await go('cv');
+  const cvEmptyBlock = qsa('.cv-block').filter((b) => /Schulnoten/.test(b.textContent))[0];
+  ok('Ungültige Note (abc) → kein JS-Fehler', errors.length === errBeforeInvalid);
+  ok('Ungültige Note (abc) → kein Strip, Leerzustand im CV', /Noch keine Noten erfasst/.test(cvEmptyBlock.textContent) && !qs('.zeugnis-strip', cvEmptyBlock));
 
   // ═════════════ KEINE JS-FEHLER ═════════════
   console.log('\n[JS-Fehler-Bilanz]');
