@@ -737,6 +737,7 @@
     return '<div class="container narrow">' +
       breadcrumb([{ route: 'stellen', label: 'Stellen finden' }, { route: 'stelle', label: s.beruf }, { label: 'Bewerben' }]) +
       '<h1 class="page-h1">Bewerbung – ' + esc(s.beruf) + '</h1>' +
+      '<p class="stepper-progress" id="bewerben-progress"></p>' +
       '<div class="stepper" id="bewerben-stepper"></div>' +
       '<form id="bewerben-form" class="step-form" data-action="bewerben-form"></form>' +
     '</div>';
@@ -745,10 +746,20 @@
   function renderBewerbenForm() {
     var steps = ['Profil prüfen', 'Motivation', 'Unterlagen', 'Absenden'];
     var st = bewerbenState.step;
-    $('bewerben-stepper').innerHTML = steps.map(function (s, i) {
-      var n = i + 1, cls = n < st ? 'done' : (n === st ? 'current' : '');
-      return '<div class="step-node ' + cls + '"><span class="step-num tnum">' + (n < st ? '✓' : n) + '</span>' +
-        '<span class="step-label">' + esc(s) + '</span></div>';
+    $('bewerben-progress').innerHTML = 'Schritt <span class="tnum">' + st + '</span> von <span class="tnum">4</span> · ' + esc(steps[st - 1]);
+    var stepper = $('bewerben-stepper');
+    stepper.setAttribute('aria-label', 'Bewerbungs-Fortschritt');
+    stepper.innerHTML = steps.map(function (s, i) {
+      var n = i + 1, label = esc(s), inner = '<span class="step-num tnum">' + (n < st ? '✓' : n) +
+        '</span><span class="step-label">' + label + '</span>';
+      if (n < st) {
+        return '<button type="button" class="step-node done" data-action="bewerben-goto" data-step="' + n +
+          '" aria-label="Zurück zu Schritt ' + n + ': ' + label + '">' + inner + '</button>';
+      }
+      if (n === st) {
+        return '<div class="step-node current" aria-current="step">' + inner + '</div>';
+      }
+      return '<div class="step-node" aria-disabled="true">' + inner + '</div>';
     }).join('');
 
     var body = '';
@@ -1524,6 +1535,7 @@
         e.preventDefault(); openStelleChat(el.dataset.id); toast('Frage an den Betrieb gestartet.', 'neutral'); return true;
       case 'bewerben-next': bewerbenNext(); return true;
       case 'bewerben-prev': bewerbenState.step = Math.max(1, bewerbenState.step - 1); renderBewerbenForm(); return true;
+      case 'bewerben-goto': { var tgt = parseInt(el.dataset.step, 10) || 1; if (tgt < bewerbenState.step) { bewerbenState.step = tgt; renderBewerbenForm(); } return true; }
       case 'submit-bewerbung': submitBewerbung(el.dataset.id); return true;
 
       case 'save-profil':
