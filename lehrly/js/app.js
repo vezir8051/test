@@ -517,9 +517,12 @@
       return '<fieldset class="filter-group"><legend class="filter-h">' + esc(title) + '</legend>' +
         opts.map(function (o) {
           var checked = App.stellenFilters[key] === o.v;
-          return '<label class="filter-opt"><input type="radio" name="f-' + key + '" value="' + o.v + '"' +
+          var c = countStellenFor(key, o.v);
+          var empty = (o.v !== 'all' && c === 0);
+          return '<label class="filter-opt' + (empty ? ' is-empty' : '') + '"><input type="radio" name="f-' + key + '" value="' + o.v + '"' +
             (checked ? ' checked' : '') + ' data-filter-key="' + key + '">' +
-            '<span>' + esc(o.l) + '</span></label>';
+            '<span class="fo-label">' + esc(o.l) + '</span>' +
+            '<span class="fo-count tnum" aria-hidden="true">' + c + '</span></label>';
         }).join('') + '</fieldset>';
     }
     return '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
@@ -529,16 +532,31 @@
       group('Abschluss', 'typ', STELLEN_FILTER_OPTS.typ);
   }
 
+  // Gemeinsame Filterbedingung (von filteredStellen UND den Facet-Countern genutzt).
+  function stellenMatch(s, f) {
+    if (f.branche !== 'all' && s.branche !== f.branche) return false;
+    if (f.region !== 'all' && s.region !== f.region) return false;
+    if (f.typ !== 'all' && s.typ !== f.typ) return false;
+    if (f.q && s.beruf.toLowerCase().indexOf(f.q.toLowerCase()) === -1 &&
+      s.betrieb.toLowerCase().indexOf(f.q.toLowerCase()) === -1) return false;
+    if (f.ort && s.ort.toLowerCase().indexOf(f.ort.toLowerCase()) === -1) return false;
+    return true;
+  }
+
+  // Treffer fuer eine Filter-Option, uebrige aktuelle Filter beibehalten (sort egal).
+  function countStellenFor(key, val) {
+    var f = {};
+    for (var k in App.stellenFilters) if (App.stellenFilters.hasOwnProperty(k)) f[k] = App.stellenFilters[k];
+    f[key] = val;
+    var n = 0;
+    for (var i = 0; i < STELLEN.length; i++) if (stellenMatch(STELLEN[i], f)) n++;
+    return n;
+  }
+
   function filteredStellen() {
     var f = App.stellenFilters;
     var list = STELLEN.filter(function (s) {
-      if (f.branche !== 'all' && s.branche !== f.branche) return false;
-      if (f.region !== 'all' && s.region !== f.region) return false;
-      if (f.typ !== 'all' && s.typ !== f.typ) return false;
-      if (f.q && s.beruf.toLowerCase().indexOf(f.q.toLowerCase()) === -1 &&
-        s.betrieb.toLowerCase().indexOf(f.q.toLowerCase()) === -1) return false;
-      if (f.ort && s.ort.toLowerCase().indexOf(f.ort.toLowerCase()) === -1) return false;
-      return true;
+      return stellenMatch(s, f);
     });
     if (f.sort === 'beruf') list.sort(function (a, b) { return a.beruf.localeCompare(b.beruf); });
     else if (f.sort === 'ort') list.sort(function (a, b) { return a.ort.localeCompare(b.ort); });
@@ -582,6 +600,14 @@
     });
     var ac = $('active-chips');
     if (ac) ac.innerHTML = chips.join('');
+    // Facet-Counts im Filter-Panel IN-PLACE aktualisieren (Radio bleibt erhalten → kein Fokusverlust).
+    var fcol = qs('.filter-col');
+    if (fcol) Array.prototype.forEach.call(fcol.querySelectorAll('.filter-opt'), function (opt) {
+      var input = opt.querySelector('input[type="radio"]'); if (!input) return;
+      var key = input.name.slice(2), val = input.value, c = countStellenFor(key, val);
+      var cnt = opt.querySelector('.fo-count'); if (cnt) cnt.textContent = c;
+      opt.classList.toggle('is-empty', c === 0 && val !== 'all');
+    });
   }
 
   // — STELLEN-DETAIL —
@@ -818,8 +844,12 @@
       return '<fieldset class="filter-group"><legend class="filter-h">' + esc(title) + '</legend>' +
         opts.map(function (o) {
           var checked = App.poolFilters[key] === o.v;
-          return '<label class="filter-opt"><input type="radio" name="p-' + key + '" value="' + o.v + '"' +
-            (checked ? ' checked' : '') + ' data-poolfilter-key="' + key + '"><span>' + esc(o.l) + '</span></label>';
+          var c = countPoolFor(key, o.v);
+          var empty = (o.v !== 'all' && c === 0);
+          return '<label class="filter-opt' + (empty ? ' is-empty' : '') + '"><input type="radio" name="p-' + key + '" value="' + o.v + '"' +
+            (checked ? ' checked' : '') + ' data-poolfilter-key="' + key + '">' +
+            '<span class="fo-label">' + esc(o.l) + '</span>' +
+            '<span class="fo-count tnum" aria-hidden="true">' + c + '</span></label>';
         }).join('') + '</fieldset>';
     }
     return '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
@@ -829,18 +859,33 @@
       group('Noten', 'note', POOL_FILTER_OPTS.note);
   }
 
+  // Gemeinsame Filterbedingung (von filteredPool UND den Facet-Countern genutzt).
+  function poolMatch(k, f) {
+    if (f.region !== 'all' && k.region !== f.region) return false;
+    if (f.feld !== 'all' && k.feld !== f.feld) return false;
+    if (f.note === '5' && k.noteAvg < 5.0) return false;
+    if (f.note === '55' && k.noteAvg < 5.5) return false;
+    if (f.q) {
+      var hay = (k.beruf + ' ' + k.staerken.join(' ')).toLowerCase();
+      if (hay.indexOf(f.q.toLowerCase()) === -1) return false;
+    }
+    return true;
+  }
+
+  // Treffer fuer eine Pool-Filter-Option, uebrige aktuelle Filter beibehalten.
+  function countPoolFor(key, val) {
+    var f = {};
+    for (var k in App.poolFilters) if (App.poolFilters.hasOwnProperty(k)) f[k] = App.poolFilters[k];
+    f[key] = val;
+    var n = 0;
+    for (var i = 0; i < KANDIDATEN.length; i++) if (poolMatch(KANDIDATEN[i], f)) n++;
+    return n;
+  }
+
   function filteredPool() {
     var f = App.poolFilters;
     return KANDIDATEN.filter(function (k) {
-      if (f.region !== 'all' && k.region !== f.region) return false;
-      if (f.feld !== 'all' && k.feld !== f.feld) return false;
-      if (f.note === '5' && k.noteAvg < 5.0) return false;
-      if (f.note === '55' && k.noteAvg < 5.5) return false;
-      if (f.q) {
-        var hay = (k.beruf + ' ' + k.staerken.join(' ')).toLowerCase();
-        if (hay.indexOf(f.q.toLowerCase()) === -1) return false;
-      }
-      return true;
+      return poolMatch(k, f);
     });
   }
 
@@ -871,6 +916,14 @@
     } else {
       holder.innerHTML = list.map(kandidatCard).join('');
     }
+    // Facet-Counts IN-PLACE aktualisieren (Radio bleibt erhalten → kein Fokusverlust).
+    var fcol = qs('.filter-col');
+    if (fcol) Array.prototype.forEach.call(fcol.querySelectorAll('.filter-opt'), function (opt) {
+      var input = opt.querySelector('input[type="radio"]'); if (!input) return;
+      var key = input.name.slice(2), val = input.value, c = countPoolFor(key, val);
+      var cnt = opt.querySelector('.fo-count'); if (cnt) cnt.textContent = c;
+      opt.classList.toggle('is-empty', c === 0 && val !== 'all');
+    });
   }
 
   // — KANDIDAT-PROFIL —

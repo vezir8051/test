@@ -185,6 +185,15 @@ async function go(route, param) {
   ok('Treffer-Zähler zeigt 6 Lehrstellen', /6 Lehrstellen/.test($('stellen-count').textContent));
   ok('Sortierung Score: ZKB (92%) zuerst', qs('#stellen-list .list-item').dataset.id === 'zkb-kauffrau');
 
+  // Facet-Counts: jede Filter-Option hat eine Trefferzahl rechts (R-Facet)
+  ok('Jede Filter-Option hat eine fo-count-Zahl', qsa('.filter-col .filter-opt').length > 0 &&
+    qsa('.filter-col .filter-opt').every((l) => !!qs('.fo-count', l) && /^\d+$/.test(qs('.fo-count', l).textContent)));
+  ok('Facet-Count "Alle Branchen" = 6 (alle Filter offen)',
+    qs('.filter-col input[data-filter-key="branche"][value="all"]').closest('.filter-opt').querySelector('.fo-count').textContent === '6');
+  ok('Facet-Count Branche=IT = 1', qs('.filter-col input[data-filter-key="branche"][value="it"]').closest('.filter-opt').querySelector('.fo-count').textContent === '1');
+  ok('"Alle"-Option nie als is-empty markiert',
+    !qs('.filter-col input[data-filter-key="branche"][value="all"]').closest('.filter-opt').classList.contains('is-empty'));
+
   // Verifizierungs-Badge auf der Stellenkarte (R2) — beide Zweige
   const vCard = qs('#stellen-list .list-item[data-id="zkb-kauffrau"]');
   const uCard = qs('#stellen-list .list-item[data-id="usz-fage"]');
@@ -205,6 +214,21 @@ async function go(route, param) {
   changeTo(qs('input[data-filter-key="region"][value="zurich"]'), 'zurich');
   await waitFor(() => qsa('#stellen-list .list-item').length === 3);
   ok('Region=Zürich → 3 Treffer', qsa('#stellen-list .list-item').length === 3);
+  // Facet-Count reagiert auf gesetzten Region-Filter: EBA liefert in Zürich 0 → is-empty, klickbar (kein disabled)
+  ok('Facet-Count Abschluss=EBA in Zürich = 0',
+    qs('.filter-col input[data-filter-key="typ"][value="eba"]').closest('.filter-opt').querySelector('.fo-count').textContent === '0');
+  ok('0-Treffer-Option ist is-empty markiert',
+    qs('.filter-col input[data-filter-key="typ"][value="eba"]').closest('.filter-opt').classList.contains('is-empty'));
+  ok('is-empty-Option bleibt klickbar (kein disabled)',
+    !qs('.filter-col input[data-filter-key="typ"][value="eba"]').disabled);
+  // a11y: Fokus bleibt beim Filtern erhalten (In-Place-Count-Update statt Panel-Neuaufbau, R6-Fix)
+  const rBern = qs('.filter-col input[data-filter-key="region"][value="bern"]');
+  rBern.focus();
+  changeTo(rBern, 'bern');
+  ok('Filter-Radio behält Fokus nach Count-Update (kein Panel-Neuaufbau)', doc.activeElement === rBern);
+  // zurück auf Zürich für die folgenden Assertions
+  changeTo(qs('.filter-col input[data-filter-key="region"][value="zurich"]'), 'zurich');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 3);
   // Abschluss EBA kombiniert → 0 Treffer (Zürich hat kein EBA) → kontextbezogener Empty-State (R5)
   changeTo(qs('input[data-filter-key="typ"][value="eba"]'), 'eba');
   await waitFor(() => qsa('#stellen-list .empty-state').length === 1);
@@ -445,6 +469,13 @@ async function go(route, param) {
   await waitFor(() => qsa('#pool-list .list-item').length > 0);
   ok('Alle 4 Kandidaten gelistet', qsa('#pool-list .list-item').length === 4);
   ok('Anonyme Kandidaten maskiert', /anonym/.test($('pool-list').textContent));
+  // Pool-Facet-Counts: jede Option mit Trefferzahl rechts
+  ok('Jede Pool-Filter-Option hat eine fo-count-Zahl', qsa('.filter-col .filter-opt').length > 0 &&
+    qsa('.filter-col .filter-opt').every((l) => !!qs('.fo-count', l) && /^\d+$/.test(qs('.fo-count', l).textContent)));
+  ok('Pool-Facet-Count "Ganze Schweiz" = 4',
+    qs('.filter-col input[data-poolfilter-key="region"][value="all"]').closest('.filter-opt').querySelector('.fo-count').textContent === '4');
+  ok('Pool-Facet-Count Region=Bern = 1',
+    qs('.filter-col input[data-poolfilter-key="region"][value="bern"]').closest('.filter-opt').querySelector('.fo-count').textContent === '1');
   // Region-Filter
   changeTo(qs('input[data-poolfilter-key="region"][value="bern"]'), 'bern');
   await waitFor(() => qsa('#pool-list .list-item').length === 1);

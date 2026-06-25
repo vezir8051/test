@@ -521,6 +521,10 @@ a.list-item:hover .li-go .ic { transform: translateX(2px); }
   transition: color var(--t-fast) var(--ease);
 }
 .filter-opt:hover { color: var(--primary); }
+.filter-opt .fo-label { flex: 1 1 auto; min-width: 0; }
+.fo-count { flex: none; font-size: var(--fs-small); color: var(--muted); font-variant-numeric: tabular-nums; }
+.filter-opt.is-empty { opacity: .45; }
+.filter-opt.is-empty:hover { color: var(--text); }  /* kein Hover-Akzent auf leeren Optionen */
 .filter-opt input[type="radio"] {
   appearance: none; -webkit-appearance: none;
   width: 18px; height: 18px; flex: none; margin: 0;
