@@ -1,1090 +1,1591 @@
-'use strict';
-
 /* ════════════════════════════════════════════════════════════════════
-   LEHRLY LAUFBAHN — Studio Deck
-   Persistente Rail-Reise + Commander + Stack-Panes. Vanilla JS, kein
-   Framework, kein Backend. Single source of truth = App-State; Rail und
-   Canvas werden aus dem State gerendert (kein Section-Toggling).
+   Lehrly — Berufsbildungs-Register (hell, seriös-institutionell).
+   Vanilla-JS-SPA: Hash-Routing, heller Top-Header mit Rollen-Umschalter
+   (Für Lernende / Für Betriebe), Such-/Filter-first-Listen, zweispaltige
+   Detailseiten, mehrstufige Formulare, Chat, Dashboard, Preise, CV.
+   Keine Rail, kein Cmd-K, keine Stack-Panes. Event-Delegation,
+   localStorage try/catch, prefers-reduced-motion-Guard.
    ════════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
 
-/* ── tiny helpers ── */
-const $ = (id) => document.getElementById(id);
-const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const prefersReduced = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-
-/* localStorage gegen Inkognito abgesichert */
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* noop */ } },
-};
-
-/* ════════════════════════════════════════════════════════════════════
-   1. DATEN  (reine Daten — vom Renderer konsumiert, nicht hardverdrahtet)
-   ════════════════════════════════════════════════════════════════════ */
-
-const DATA = {
-  stellen: {
-    zkb: { mk: 'ZK', n: 'Kauffrau/-mann EFZ', co: 'ZKB · Zürich HB', l: '750', note: '4.5', pl: '4', score: 96,
-      d: 'Bei der ZKB lernst du alle Facetten des Bankwesens: Kundenberatung, Backoffice und Zahlungsverkehr.',
-      a: ['Sek A, Ø mind. 4.5', 'Freude an Zahlen & Menschen', 'Teamfähigkeit'],
-      b: ['MacBook während der Lehrzeit', 'GA & Lunch-Zuschuss', '70 % Übernahmechance'] },
-    sbb: { mk: 'SB', n: 'Kauffrau/-mann EFZ', co: 'SBB · Zürich HB', l: '730', note: '4.0', pl: '8', score: 91,
-      d: 'Spannende Ausbildung bei der grössten Arbeitgeberin der Schweiz in verschiedenen Abteilungen.',
-      a: ['Abgeschlossene Schulpflicht', 'Interesse an Admin & Organisation', 'Pünktlichkeit'],
-      b: ['GA für die gesamte Lehrzeit', 'Lehrlingslager & Events', 'Sehr gute Übernahmechancen'] },
-    sanitas: { mk: 'SA', n: 'KV Kundenservice EFZ', co: 'Sanitas · Zürich City', l: '700', note: '4.5', pl: '2', score: 85,
-      d: 'Modernes Dienstleistungsunternehmen im Gesundheitsbereich mit Fokus auf Kundenkontakt.',
-      a: ['Sek A, Ø mind. 4.5', 'Freude am Kundenkontakt', 'Kommunikationsstärke'],
-      b: ['Modernes Büro in Zürich City', 'Homeoffice ab 2. Lehrjahr', 'Junges Team'] },
-  },
-  profs: {
-    'Lena Müller':  { i: 'LM', p: 96, alt: '16', kan: 'Zürich',     sch: 'Sek A', beruf: 'Kauffrau EFZ', note: '5.3', d: 5.5, m: 5.0, e: 5.5, f: 4.5, st: ['Teamarbeit', 'Zahlen', 'Organisieren', 'Kundenkontakt'], sn: 'Raiffeisenbank (3T), Bäckerei (2T)', mot: 'Motiviert, zuverlässig, teamfähig. Ziel: Kauffrau EFZ.', tags: ['zurich', 'note5', 'schnuppern'] },
-    'Noah Keller':  { i: 'NK', p: 89, alt: '15', kan: 'Zürich',     sch: 'Sek A', beruf: 'Kauffrau EFZ', note: '5.1', d: 5.0, m: 5.5, e: 5.0, f: 4.0, st: ['Digital', 'Analytisch', 'Zahlen'], sn: 'Zürich Versicherung (2T)', mot: 'Analytisches Denken und Zahlenaffinität sind meine Stärken.', tags: ['zurich', 'note5', 'schnuppern'] },
-    'Sara Brunner': { i: 'SB', p: 85, alt: '16', kan: 'Zürich',     sch: 'Sek A', beruf: 'Kauffrau EFZ', note: '4.9', d: 5.0, m: 4.5, e: 5.0, f: 4.5, st: ['Kundenkontakt', 'Kreativität', 'Teamarbeit'], sn: 'Migros (2T)', mot: 'Ich liebe den Kontakt mit Menschen.', tags: ['zurich', 'schnuppern'] },
-    'Tim Wenger':   { i: 'TW', p: 78, alt: '15', kan: 'Winterthur', sch: 'Sek A', beruf: 'Kauffrau EFZ', note: '4.7', d: 4.5, m: 5.0, e: 4.5, f: 4.0, st: ['Organisieren', 'Teamarbeit'], sn: 'Noch keine', mot: 'Zuverlässig und pünktlich.', tags: ['winterthur'] },
-  },
-  chats: {
-    zkb:     { name: 'ZKB · Recruiting', msgs: [
-      { them: 'Guten Tag! Wir haben Ihr Profil auf Lehrly.ch gesehen. Hätten Sie Interesse an einem Schnuppertag?', t: '14:28' },
-      { me: 'Vielen Dank! Ich würde mich sehr freuen!', t: '14:30' },
-      { them: 'Perfekt! Mittwoch 14. Mai, 9 bis 17 Uhr?', t: '14:32' } ] },
-    sbb:     { name: 'SBB · Berufsbildung', msgs: [
-      { them: 'Vielen Dank für Ihre Bewerbung!', t: '09:10' },
-      { them: 'Hätten Sie Zeit für ein Schnupperpraktikum am 20. Mai?', t: '09:15' } ] },
-    sanitas: { name: 'Sanitas · HR', msgs: [
-      { them: 'Guten Tag! Haben Sie Interesse an einer Schnupperlehre bei uns?', t: 'Gestern' } ] },
-  },
-  /* Gespräche aus Betriebs-Sicht (Kandidaten) */
-  betriebChats: {
-    'Lena Müller':  { name: 'Lena Müller', msgs: [ { me: 'Guten Tag Lena! Ihr Profil hat uns überzeugt. Lust auf einen Schnuppertag?', t: 'Mo 10:02' }, { them: 'Sehr gerne, vielen Dank!', t: 'Mo 10:20' } ] },
-    'Noah Keller':  { name: 'Noah Keller',  msgs: [ { me: 'Guten Tag Noah, wir würden Sie gerne kennenlernen.', t: 'Di 08:30' } ] },
-    'Sara Brunner': { name: 'Sara Brunner', msgs: [ { me: 'Hallo Sara, passt ein Telefonat diese Woche?', t: 'Mi 14:00' } ] },
-  },
-  plaene: [
-    { id: 'free',   name: 'Schnupper', preis: 'CHF 0', sub: 'für immer', f: ['Profil & CV erstellen', '3 Bewerbungen / Monat', 'Match-Stream'], cta: 'Aktiv', hot: false, role: 'lernende' },
-    { id: 'plus',   name: 'Lehrly Plus', preis: 'CHF 9', sub: 'pro Monat', f: ['Unbegrenzte Bewerbungen', 'Marktwert-Cockpit', 'Priorität im Stream'], cta: 'Upgraden', hot: true, role: 'lernende' },
-    { id: 'starter',name: 'Betrieb Start', preis: 'CHF 49', sub: 'pro Monat', f: ['1 aktive Stelle', 'Talent-Pool Zugriff', '20 Anschreiben'], cta: 'Wählen', hot: false, role: 'betrieb' },
-    { id: 'pro',    name: 'Betrieb Pro', preis: 'CHF 149', sub: 'pro Monat', f: ['10 aktive Stellen', 'Pipeline-Cockpit', 'Unbegrenzte Anschreiben'], cta: 'Empfohlen', hot: true, role: 'betrieb' },
-    { id: 'enter',  name: 'Enterprise', preis: 'Auf Anfrage', sub: 'individuell', f: ['Unbegrenzte Stellen', 'API & ATS-Anbindung', 'Persönliche Betreuung'], cta: 'Kontakt', hot: false, role: 'betrieb' },
-  ],
-};
-
-/* Stations-Definitionen pro Rolle */
-const STATIONS = {
-  lernende: [
-    { id: 'steckbrief', icon: 'i-steckbrief', label: 'Steckbrief',   kurz: 'Personalien & Berufswunsch' },
-    { id: 'profil',     icon: 'i-profil',     label: 'Profil-Tiefe', kurz: 'Noten, Stärken, Erfahrung' },
-    { id: 'unterlagen', icon: 'i-unterlagen', label: 'Unterlagen',   kurz: 'Dokumente & Lebenslauf' },
-    { id: 'treffer',    icon: 'i-treffer',    label: 'Treffer',      kurz: 'Deine Matches' },
-    { id: 'gespraeche', icon: 'i-gespraeche', label: 'Gespräche',    kurz: 'Konversationen' },
-    { id: 'cockpit',    icon: 'i-cockpit',    label: 'Cockpit',      kurz: 'Marktwert & Aktivität' },
-  ],
-  betrieb: [
-    { id: 'betriebsprofil', icon: 'i-betrieb',     label: 'Betriebsprofil', kurz: 'Euer Unternehmen' },
-    { id: 'ausschreiben',   icon: 'i-ausschreiben',label: 'Stelle',         kurz: 'Stelle ausschreiben' },
-    { id: 'pool',           icon: 'i-pool',        label: 'Talent-Pool',    kurz: 'Kandidaten filtern' },
-    { id: 'b-gespraeche',   icon: 'i-gespraeche',  label: 'Gespräche',      kurz: 'Konversationen' },
-    { id: 'pipeline',       icon: 'i-pipeline',    label: 'Pipeline',       kurz: 'Kennzahlen & Aktivität' },
-  ],
-};
-
-/* ════════════════════════════════════════════════════════════════════
-   STATE — Single source of truth
-   ════════════════════════════════════════════════════════════════════ */
-const App = {
-  role: 'lernende',
-  station: 'steckbrief',
-  paneStack: [],            /* [{type, payload, el, trigger}] */
-  cmdIndex: [],
-  cmdActive: 0,
-  poolFilter: 'all',
-  profile: {},              /* ausgefüllte Steckbrief-Felder */
-  strengths: {},            /* aktivierte Stärken-Tags */
-  schnupperErf: '',         /* freie Schnupper-Erfahrung (Profil-Tiefe) */
-  matched: false,
-  betrieb: {},              /* Betriebsprofil-Felder */
-  inserate: [],             /* selbst ausgeschriebene Stellen (in den Stream gespiegelt) */
-};
-
-/* ════════════════════════════════════════════════════════════════════
-   2. RENDER-LAYER
-   ════════════════════════════════════════════════════════════════════ */
-
-function stationsFor(role) { return STATIONS[role] || STATIONS.lernende; }
-
-/* ── Fortschritt: welche Stationen sind "abgeschlossen"? ── */
-function isStationDone(id) {
-  switch (id) {
-    case 'steckbrief': return !!(App.profile.vorname && App.profile.beruf);
-    case 'profil':     return Object.values(App.strengths).filter(Boolean).length >= 2;
-    case 'unterlagen': return !!store.get('lehrly_cv_done');
-    case 'treffer':    return App.matched;
-    default:           return false;
-  }
-}
-
-/* ── RAIL ── */
-function renderRail() {
-  const wrap = $('rail-stations');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-  stationsFor(App.role).forEach((st, idx) => {
-    const node = el('button', 'rail-node');
-    node.dataset.station = st.id;
-    node.dataset.action = 'goto';
-    node.setAttribute('aria-current', App.station === st.id ? 'true' : 'false');
-    node.setAttribute('aria-label', st.label + ' — ' + st.kurz);
-    node.setAttribute('title', st.label);
-    const done = isStationDone(st.id);
-    if (done) node.classList.add('done');
-    if (App.station === st.id) node.classList.add('active');
-    node.innerHTML =
-      `<span class="rn-dot" aria-hidden="true"><svg class="ic"><use href="#${st.icon}"></use></svg></span>` +
-      `<span class="rn-meta"><span class="rn-idx">0${idx + 1}</span><span class="rn-label">${st.label}</span><span class="rn-kurz">${st.kurz}</span></span>`;
-    wrap.appendChild(node);
-  });
-  /* Rollen-Switch spiegeln */
-  document.querySelectorAll('#role-switch .role-opt').forEach((b) => {
-    const on = b.dataset.role === App.role;
-    b.setAttribute('aria-checked', on ? 'true' : 'false');
-    b.classList.toggle('on', on);
-  });
-  $('shell').dataset.role = App.role;
-}
-
-/* ── CANVAS: alle Stationen als echte Scroll-Abschnitte ── */
-function renderCanvas() {
-  const wrap = $('stations');
-  wrap.innerHTML = '';
-  stationsFor(App.role).forEach((st) => {
-    const sec = el('section', 'station');
-    sec.id = 'st-' + st.id;
-    sec.dataset.station = st.id;
-    sec.setAttribute('aria-label', st.label);
-    sec.innerHTML =
-      `<header class="st-head"><span class="st-eyebrow">Station · ${st.label}</span></header>` +
-      `<div class="st-grid" data-body="${st.id}"></div>`;
-    wrap.appendChild(sec);
-    renderStation(st.id, sec.querySelector('.st-grid'));
-  });
-  observeStations();
-}
-
-/* ── einzelne Station füllen ── */
-function renderStation(id, body) {
-  const R = {
-    steckbrief: renderSteckbrief, profil: renderProfilTiefe, unterlagen: renderUnterlagen,
-    treffer: renderTreffer, gespraeche: () => renderGespraeche(body, 'lernende'), cockpit: () => renderCockpit(body, 'lernende'),
-    betriebsprofil: renderBetriebsprofil, ausschreiben: renderAusschreiben, pool: renderPool,
-    'b-gespraeche': () => renderGespraeche(body, 'betrieb'), pipeline: () => renderCockpit(body, 'betrieb'),
+  // ───────────────────────── Helpers ─────────────────────────
+  var $ = function (id) { return document.getElementById(id); };
+  var qs = function (s, r) { return (r || document).querySelector(s); };
+  var qsa = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var esc = function (s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   };
-  (R[id] || (() => {}))(body);
-}
+  var prefersReduced = (function () {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch (e) { return false; }
+  })();
 
-/* ───────── LERNENDE Station 1: Steckbrief ───────── */
-function renderSteckbrief(b) {
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">Dein Steckbrief</h1>
-       <p class="st-lede">Erzähl uns, wer du bist und welche Lehre du suchst. Ein Schritt nach dem anderen.</p>
-       <form class="flow" id="form-steckbrief" autocomplete="off">
-         <label class="field"><span class="lbl">Vorname</span><input class="inp" name="vorname" data-field="vorname" placeholder="z. B. Lena"></label>
-         <label class="field"><span class="lbl">Nachname</span><input class="inp" name="nachname" data-field="nachname" placeholder="z. B. Müller"></label>
-         <label class="field"><span class="lbl">Wohnkanton</span><input class="inp" name="kanton" data-field="kanton" placeholder="z. B. Zürich"></label>
-         <label class="field"><span class="lbl">Berufswunsch</span><input class="inp" name="beruf" data-field="beruf" placeholder="z. B. Kauffrau EFZ"></label>
-         <button type="button" class="btn" data-action="save-steckbrief">Steckbrief sichern</button>
-       </form>
-     </div>
-     <aside class="st-margin">
-       <div class="ring-wrap"><div class="ring" id="ring-steckbrief" data-pct="0"><span class="ring-num">0%</span></div><span class="ring-cap">Vollständig</span></div>
-       <p class="margin-note">Je vollständiger dein Steckbrief, desto besser deine Matches.</p>
-     </aside>`;
-  syncSteckbrief(b);
-}
+  // localStorage mit try/catch (Origin-/Privacy-sicher)
+  var store = {
+    get: function (k, def) {
+      try { var v = window.localStorage.getItem('lehrly:' + k); return v == null ? def : JSON.parse(v); }
+      catch (e) { return def; }
+    },
+    set: function (k, v) {
+      try { window.localStorage.setItem('lehrly:' + k, JSON.stringify(v)); } catch (e) {}
+    }
+  };
 
-function syncSteckbrief(b) {
-  ['vorname', 'nachname', 'kanton', 'beruf'].forEach((f) => {
-    const i = b.querySelector(`[data-field="${f}"]`);
-    if (i && App.profile[f]) i.value = App.profile[f];
-  });
-  const filled = ['vorname', 'nachname', 'kanton', 'beruf'].filter((f) => App.profile[f]).length;
-  const pct = Math.round(filled / 4 * 100);
-  setRing(b.querySelector('#ring-steckbrief'), pct);
-}
+  // ───────────────────────── State ─────────────────────────
+  var App = {
+    role: store.get('role', 'lernende'),
+    route: 'start',
+    param: null,
+    matched: store.get('matched', false),
+    profile: store.get('profile', { vorname: '', nachname: '', kanton: '', beruf: '', plz: '' }),
+    strengths: store.get('strengths', {}),
+    schnupperErf: store.get('schnupperErf', ''),
+    betrieb: store.get('betrieb', { firma: '', branche: '', ort: '' }),
+    inserate: store.get('inserate', []),
+    bewerbungen: store.get('bewerbungen', []),
+    einladungen: store.get('einladungen', []),
+    chats: {},                 // konversations-id -> [{me, text, time}]
+    stellenFilters: { branche: 'all', region: 'all', typ: 'all', sort: 'score', q: '', ort: '' },
+    poolFilters: { region: 'all', note: 'all', feld: 'all', q: '' }
+  };
+  window.App = App;
 
-/* ───────── LERNENDE Station 2: Profil-Tiefe ───────── */
-function renderProfilTiefe(b) {
-  const noten = [['Deutsch', 5.5], ['Mathematik', 5.0], ['Englisch', 5.5], ['Französisch', 4.5]];
-  const tags = ['Teamarbeit', 'Zahlen', 'Organisieren', 'Kundenkontakt', 'Digital', 'Kreativität', 'Analytisch'];
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">Profil-Tiefe</h1>
-       <p class="st-lede">Deine Noten als Zeugnis-Strip, deine Stärken und Schnupper-Erfahrung.</p>
-       <h2 class="sub-h">Zeugnis</h2>
-       <div class="zeugnis-strip">
-         ${noten.map(([n, v]) => `<div class="zrow"><span class="zn">${n}</span><div class="ztrack"><i style="width:${(v / 6 * 100).toFixed(0)}%"></i></div><span class="zv mono">${v.toFixed(1)}</span></div>`).join('')}
-       </div>
-       <h2 class="sub-h">Stärken</h2>
-       <div class="tag-row" id="strength-tags">
-         ${tags.map((t) => `<button type="button" class="tag${App.strengths[t] ? ' on' : ''}" data-action="toggle-strength" data-tag="${t}">${t}</button>`).join('')}
-       </div>
-       <h2 class="sub-h">Erfahrung & Schnuppern</h2>
-       <label class="field"><span class="lbl">Bisherige Schnuppertage</span><input class="inp" name="schnupper" data-snfield="schnupper" placeholder="z. B. Raiffeisenbank (3 Tage)"></label>
-     </div>
-     <aside class="st-margin">
-       <div class="ring-wrap"><div class="ring" id="ring-profil" data-pct="0"><span class="ring-num">0%</span></div><span class="ring-cap">Stärken gewählt</span></div>
-       <p class="margin-note"><span class="mono">Ø 5.13</span> · Sek A</p>
-     </aside>`;
-  const sn = b.querySelector('[data-snfield="schnupper"]');
-  if (sn && App.schnupperErf) sn.value = App.schnupperErf;
-  syncStrengthRing(b);
-}
+  function persist() {
+    store.set('role', App.role);
+    store.set('matched', App.matched);
+    store.set('profile', App.profile);
+    store.set('strengths', App.strengths);
+    store.set('schnupperErf', App.schnupperErf);
+    store.set('betrieb', App.betrieb);
+    store.set('inserate', App.inserate);
+    store.set('bewerbungen', App.bewerbungen);
+    store.set('einladungen', App.einladungen);
+  }
 
-function syncStrengthRing(b) {
-  const n = Object.values(App.strengths).filter(Boolean).length;
-  setRing(b.querySelector('#ring-profil'), Math.min(100, Math.round(n / 3 * 100)));
-}
+  // ───────────────────────── Daten ─────────────────────────
+  var STELLEN = [
+    { id: 'zkb-kauffrau', beruf: 'Kauffrau/Kaufmann EFZ', betrieb: 'Zürcher Kantonalbank', betriebKurz: 'ZKB', ort: 'Zürich', region: 'zurich', branche: 'banken', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 92,
+      grund: 'passt zu Berufswunsch, Region Zürich (Pendeldistanz kurz) und deinem Anforderungsprofil',
+      beschreibung: 'Eine kaufmännische Grundbildung im Bankumfeld mit Einblick in Beratung, Zahlungsverkehr und Backoffice. Du arbeitest in einem strukturierten Lehrbetrieb mit klarer Begleitung.',
+      anforderungen: ['Abgeschlossene Sekundarschule (Niveau A/E)', 'Freude an Kontakt mit Menschen', 'Sorgfältige, zuverlässige Arbeitsweise', 'Gute Deutsch- und Mathematik-Noten'],
+      bietet: ['Strukturierte Ausbildung mit Praxisbegleitung', 'Überbetriebliche Kurse', 'Faires Lehrlingslohn-Modell', 'Übernahmechancen nach dem Abschluss'], verifiziert: true },
+    { id: 'sbb-informatiker', beruf: 'Informatiker/in EFZ', betrieb: 'SBB AG', betriebKurz: 'SBB', ort: 'Bern', region: 'bern', branche: 'it', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 87,
+      grund: 'passt zu IT-Berufswunsch und gewählten Stärken (logisches Denken)',
+      beschreibung: 'Fachrichtung Applikationsentwicklung in einem grossen Schweizer Infrastruktur-Betrieb. Du lernst moderne Entwicklung im Team und arbeitest an echten Projekten mit.',
+      anforderungen: ['Logisch-analytisches Denken', 'Interesse an Technik und Programmierung', 'Gute Mathematik-Noten', 'Teamfähigkeit'],
+      bietet: ['Moderne Entwicklungsumgebung', 'Mentoring durch erfahrene Fachleute', 'Jobticket / ÖV-Vergünstigung', 'Lehrabschluss mit Perspektive'], verifiziert: true },
+    { id: 'usz-fage', beruf: 'Fachfrau/Fachmann Gesundheit EFZ', betrieb: 'UniversitätsSpital Zürich', betriebKurz: 'USZ', ort: 'Zürich', region: 'zurich', branche: 'gesundheit', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 78,
+      grund: 'passt zu Region Zürich und sozialem Stärkenprofil',
+      beschreibung: 'Eine vielseitige Ausbildung in Pflege und Betreuung im Spitalumfeld. Du übernimmst Verantwortung und arbeitest eng mit dem Pflegeteam.',
+      anforderungen: ['Einfühlungsvermögen und Belastbarkeit', 'Zuverlässigkeit', 'Bereitschaft für Schichtarbeit', 'Gute Deutschkenntnisse'],
+      bietet: ['Begleitete Praxisausbildung', 'Vielseitige Einsätze', 'Interne Weiterbildungen', 'Sicherer Lehrbetrieb'], verifiziert: false },
+    { id: 'migros-detail', beruf: 'Detailhandelsfachfrau/-mann EFZ', betrieb: 'Migros Ostschweiz', betriebKurz: 'Migros', ort: 'Winterthur', region: 'zurich', branche: 'detailhandel', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 71,
+      grund: 'passt zu Region und Beratungsstärke',
+      beschreibung: 'Kundenberatung, Warenpräsentation und Verkauf in einer grossen Filiale. Du lernst den gesamten Detailhandels-Alltag kennen.',
+      anforderungen: ['Freude am Kundenkontakt', 'Gepflegtes Auftreten', 'Flexibilität', 'Rechnerisches Verständnis'],
+      bietet: ['Einblick in alle Abteilungen', 'Personalrabatt', 'Klare Lernzielkontrolle', 'Übernahme möglich'], verifiziert: true },
+    { id: 'bosch-poly', beruf: 'Polymechaniker/in EFZ', betrieb: 'Bosch Schweiz', betriebKurz: 'Bosch', ort: 'Solothurn', region: 'bern', branche: 'technik', typ: 'efz', pensum: '100%', beginn: 'August 2026', score: 66,
+      grund: 'passt zu technischem Interesse',
+      beschreibung: 'Präzisionsmechanik, CNC und Montage in einem industriellen Lehrbetrieb mit eigener Lehrwerkstatt.',
+      anforderungen: ['Handwerkliches Geschick', 'Technisches Verständnis', 'Genauigkeit', 'Gute Mathematik-Noten'],
+      bietet: ['Eigene Lehrwerkstatt', 'Moderne Maschinen', 'Strukturierte Ausbildung', 'Weiterbildungsmöglichkeiten'], verifiziert: true },
+    { id: 'coop-eba', beruf: 'Detailhandelsassistent/in EBA', betrieb: 'Coop Genossenschaft', betriebKurz: 'Coop', ort: 'Luzern', region: 'zentral', branche: 'detailhandel', typ: 'eba', pensum: '100%', beginn: 'August 2026', score: 60,
+      grund: 'passt zu EBA-Profil und praktischer Veranlagung',
+      beschreibung: 'Zweijährige praxisnahe Grundbildung im Verkauf mit individueller Begleitung.',
+      anforderungen: ['Freude am Verkauf', 'Zuverlässigkeit', 'Teamgeist', 'Praktische Veranlagung'],
+      bietet: ['Enge Begleitung', 'Praxisnaher Unterricht', 'Anschlusslösung EFZ möglich', 'Personalrabatt'], verifiziert: false }
+  ];
 
-/* ───────── LERNENDE Station 3: Unterlagen ───────── */
-function renderUnterlagen(b) {
-  const docs = [['Zeugnis 2024', 'Sek Zürich · PDF', true], ['Multicheck', 'Resultat · PDF', true], ['Motivationsschreiben', 'Noch offen', false]];
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">Unterlagen</h1>
-       <p class="st-lede">Lade deine Dokumente hoch — dein Lebenslauf rendert rechts als Vorschau.</p>
-       <div class="doc-list">
-         ${docs.map(([n, m, ok]) => `<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><div class="dl-meta"><span class="dl-n">${n}</span><span class="dl-m">${m}</span></div><span class="dl-state ${ok ? 'ok' : 'open'}">${ok ? 'OK' : 'offen'}</span></div>`).join('')}
-       </div>
-       <button type="button" class="btn out" data-action="upload-doc">Dokument hochladen</button>
-       <button type="button" class="btn" data-action="pane" data-pane="cv">CV-Vorschau öffnen</button>
-     </div>
-     <aside class="st-margin">
-       <p class="margin-note">Dein Lehrly-CV wird automatisch aus Steckbrief, Noten und Stärken erzeugt.</p>
-     </aside>`;
-}
+  var KANDIDATEN = [
+    { id: 'k-lena', name: 'Lena M.', beruf: 'Kauffrau EFZ', berufFeld: 'Kaufmännisch / KV', region: 'zurich', ort: 'Zürich', feld: 'kv', noteAvg: 5.2, score: 91, staerken: ['Organisation', 'Kommunikation', 'Zuverlässigkeit'], freigegeben: true, zeugnisGeprueft: true,
+      noten: [['Deutsch', 5.0], ['Mathematik', 5.5], ['Französisch', 4.8], ['Englisch', 5.5]] },
+    { id: 'k-noah', name: 'Noah B.', beruf: 'Informatiker EFZ', berufFeld: 'Informatik / ICT', region: 'zurich', ort: 'Zürich', feld: 'informatik', noteAvg: 5.6, score: 88, staerken: ['Logik', 'Genauigkeit', 'Selbstständigkeit'], freigegeben: true, zeugnisGeprueft: true,
+      noten: [['Mathematik', 6.0], ['Deutsch', 5.0], ['Physik', 5.5], ['Englisch', 5.8]] },
+    { id: 'k-sara', name: 'Sara K.', beruf: 'Fachfrau Gesundheit EFZ', berufFeld: 'Gesundheit / Pflege', region: 'bern', ort: 'Bern', feld: 'gesundheit', noteAvg: 4.9, score: 74, staerken: ['Empathie', 'Belastbarkeit', 'Teamarbeit'], freigegeben: false, zeugnisGeprueft: true,
+      noten: [['Deutsch', 5.0], ['Mathematik', 4.5], ['Biologie', 5.5], ['Englisch', 4.6]] },
+    { id: 'k-tim', name: 'Tim R.', beruf: 'Detailhandel EFZ', berufFeld: 'Detailhandel', region: 'zurich', ort: 'Winterthur', feld: 'kv', noteAvg: 4.6, score: 67, staerken: ['Kundenkontakt', 'Flexibilität'], freigegeben: false, zeugnisGeprueft: false,
+      noten: [['Deutsch', 4.5], ['Mathematik', 4.8], ['Französisch', 4.2], ['Englisch', 4.9]] }
+  ];
 
-/* ───────── LERNENDE Station 4: Treffer ───────── */
-function renderTreffer(b) {
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">Deine Treffer</h1>
-       <p class="st-lede">Match-Stream auf Basis deines Profils. Starte das Matching — danach Stelle antippen für Details und Bewerben.</p>
-       <button type="button" class="btn" id="btn-match" data-action="run-match">${App.matched ? 'Match-Stream aktualisieren' : 'Matches finden'}</button>
-       <div class="index-list" id="match-list">${App.matched ? matchEntriesHTML() : matchTeaserHTML()}</div>
-     </div>
-     <aside class="st-margin">
-       <p class="margin-note"><span class="mono">3</span> Stellen · Score ≥ 85</p>
-       <p class="margin-note">Score = Passung von Noten, Region und Berufswunsch.</p>
-     </aside>`;
-}
+  // Anzeigename: Klarname nur bei Freigabe, sonst Initiale + Hinweis.
+  function kandName(k, anon) {
+    return k.freigegeben ? k.name : k.name.charAt(0) + '. ' + (anon || '(anonym)');
+  }
+  // Schluessel fuer Aktionen/Dialoge: nie Klarname eines anonymen Profils.
+  function kandKey(k) {
+    return k.freigegeben ? k.name : k.name.charAt(0) + '. (anonymisiert)';
+  }
+  // Standort: exakter Ort nur bei Freigabe, sonst nur Region.
+  var REGION_LABEL = { zurich: 'Region Zürich', bern: 'Region Bern', zentral: 'Zentralschweiz' };
+  function kandRegion(k) {
+    return k.freigegeben ? k.ort : (REGION_LABEL[k.region] || 'Region Schweiz');
+  }
 
-/* Vor dem Matching: anonymisierter Teaser ohne Detail-Sprungziele */
-function matchTeaserHTML() {
-  return Object.keys(DATA.stellen).map(() =>
-    `<div class="index-entry teaser" aria-hidden="true">
-       <span class="ie-mark">··</span>
-       <span class="ie-body"><span class="teaser-bar w1"></span><span class="teaser-bar w2"></span></span>
-       <span class="ring sm" data-pct="0"><span class="ring-num mono">?</span></span>
-     </div>`).join('') +
-    `<p class="empty-state">Starte das Matching, um deine ${Object.keys(DATA.stellen).length} Treffer aufzudecken.</p>`;
-}
+  var BERUFSFELDER = [
+    { id: 'kv', label: 'Kaufmännisch / KV' }, { id: 'informatik', label: 'Informatik / ICT' },
+    { id: 'gesundheit', label: 'Gesundheit / Pflege' }, { id: 'detailhandel', label: 'Detailhandel' },
+    { id: 'technik', label: 'Technik / Mechanik' }, { id: 'bau', label: 'Bau / Gewerbe' },
+    { id: 'gastro', label: 'Gastronomie / Hotellerie' }, { id: 'soziales', label: 'Soziales / Betreuung' }
+  ];
 
-function matchEntriesHTML() {
-  return Object.entries(DATA.stellen).map(([k, s]) =>
-    `<button type="button" class="index-entry" data-action="pane" data-pane="stelle" data-key="${k}">
-       <span class="ie-mark">${s.mk}</span>
-       <span class="ie-body"><span class="ie-title">${s.n}</span><span class="ie-sub">${s.co}</span></span>
-       <span class="ring sm score-ring" data-pct="${s.score}"><span class="ring-num mono">${s.score}</span></span>
-     </button>`).join('');
-}
+  var KONVERSATIONEN = {
+    lernende: [
+      { id: 'c-zkb', partner: 'Zürcher Kantonalbank', kontext: 'Kauffrau EFZ', time: '10:24', preview: 'Gerne laden wir Sie zum Schnuppern ein.', msgs: [
+        { me: false, text: 'Guten Tag Lena, vielen Dank für Ihre Bewerbung.', time: '10:20' },
+        { me: false, text: 'Gerne laden wir Sie zum Schnuppern ein.', time: '10:24' } ] },
+      { id: 'c-sbb', partner: 'SBB AG', kontext: 'Informatiker EFZ', time: 'Gestern', preview: 'Haben Sie noch Fragen zur Stelle?', msgs: [
+        { me: false, text: 'Guten Tag, schön dass Sie sich interessieren.', time: 'Gestern' },
+        { me: false, text: 'Haben Sie noch Fragen zur Stelle?', time: 'Gestern' } ] },
+      { id: 'c-usz', partner: 'UniversitätsSpital Zürich', kontext: 'FaGe EFZ', time: 'Mo', preview: 'Ihre Bewerbung ist eingegangen.', msgs: [
+        { me: false, text: 'Ihre Bewerbung ist eingegangen.', time: 'Mo' } ] }
+    ],
+    betrieb: [
+      { id: 'b-lena', partner: 'Lena M.', kontext: 'Kauffrau EFZ', time: '09:10', preview: 'Sehr gerne, vielen Dank!', msgs: [
+        { me: false, text: 'Guten Tag, vielen Dank für die Einladung!', time: '09:05' },
+        { me: false, text: 'Sehr gerne, vielen Dank!', time: '09:10' } ] },
+      { id: 'b-noah', partner: 'Noah B.', kontext: 'Informatiker EFZ', time: 'Gestern', preview: 'Wann darf ich vorbeikommen?', msgs: [
+        { me: false, text: 'Wann darf ich vorbeikommen?', time: 'Gestern' } ] }
+    ]
+  };
 
-/* ───────── Station 5 / Betrieb 4: Gespräche ───────── */
-function renderGespraeche(b, role) {
-  const src = role === 'betrieb' ? DATA.betriebChats : DATA.chats;
-  const entries = Object.entries(src);
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">Gespräche</h1>
-       <p class="st-lede">${role === 'betrieb' ? 'Deine Konversationen mit Kandidaten.' : 'Deine Konversationen mit Betrieben.'}</p>
-       <div class="index-list conv-list">
-         ${entries.map(([key, c]) => {
-           const last = c.msgs[c.msgs.length - 1];
-           const prev = (last.me || last.them).slice(0, 46);
-           return `<button type="button" class="index-entry conv" data-action="pane" data-pane="chat" data-key="${key}" data-chatrole="${role}">
-             <span class="ie-mark">${c.name.slice(0, 2).toUpperCase()}</span>
-             <span class="ie-body"><span class="ie-title">${esc(c.name)}</span><span class="ie-sub">${esc(prev)}…</span></span>
-             <span class="ie-time">${last.t}</span>
-           </button>`;
-         }).join('')}
-       </div>
-     </div>
-     <aside class="st-margin"><p class="margin-note mono">${entries.length} aktive Gespräche</p></aside>`;
-}
+  // Kennzahlen aus echten Datenarrays (ehrliche Trust-Zahlen statt Fantasiewerte).
+  function uniqueCount(list, key) {
+    var seen = {};
+    list.forEach(function (x) { seen[x[key]] = true; });
+    return Object.keys(seen).length;
+  }
+  function berufeCount() { return uniqueCount(STELLEN, 'beruf'); }
+  function regionenCount() { return uniqueCount(STELLEN, 'region'); }
 
-/* ───────── Station 6 / Betrieb 5: Cockpit ───────── */
-function renderCockpit(b, role) {
-  const metrics = role === 'betrieb'
-    ? [['Aktive Stellen', '3'], ['Bewerbungen', '47'], ['Im Pool', '128'], ['Schnupper geplant', '6']]
-    : [['Profil-Stärke', '89'], ['Matches', '3'], ['Bewerbungen', '2'], ['Antwortquote', '67%']];
-  const ticker = role === 'betrieb'
-    ? ['Lena Müller hat zugesagt', 'Neue Bewerbung: KV EFZ', '12 neue Profile im Pool']
-    : ['ZKB hat dir geschrieben', 'Dein Match-Score stieg auf 89', 'SBB lädt zum Schnuppern'];
-  const actions = role === 'betrieb'
-    ? [['Stelle ausschreiben', 'goto', 'ausschreiben'], ['Talent-Pool', 'goto', 'pool'], ['Gespräche', 'goto', 'b-gespraeche'], ['Pakete', 'pane', 'tarife']]
-    : [['Matches finden', 'goto', 'treffer'], ['CV ansehen', 'pane', 'cv'], ['Gespräche', 'goto', 'gespraeche'], ['Pakete', 'pane', 'tarife']];
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">${role === 'betrieb' ? 'Pipeline-Cockpit' : 'Marktwert-Cockpit'}</h1>
-       <p class="st-lede">${role === 'betrieb' ? 'Kennzahlen deiner Rekrutierung auf einen Blick.' : 'Dein Marktwert und deine Aktivität auf einen Blick.'}</p>
-       <div class="metric-strips">
-         ${metrics.map(([l, v]) => `<div class="metric-strip"><span class="ms-num mono">${v}</span><span class="ms-lbl">${l}</span></div>`).join('')}
-       </div>
-       <h2 class="sub-h">Aktivität</h2>
-       <ul class="ticker">${ticker.map((t) => `<li class="tick"><span class="tick-dot"></span>${esc(t)}</li>`).join('')}</ul>
-       <h2 class="sub-h">Schnellaktionen</h2>
-       <div class="chip-row">
-         ${actions.map(([lab, act, key]) => `<button type="button" class="cmd-chip" data-action="${act === 'goto' ? 'goto' : 'pane'}" ${act === 'goto' ? `data-station="${key}"` : `data-pane="${key}"`}>${lab}</button>`).join('')}
-       </div>
-     </div>
-     <aside class="st-margin"><p class="margin-note">Werte aktualisieren sich automatisch.</p></aside>`;
-}
+  // ───────────────────────── Sprache (Du/Sie) ─────────────────────────
+  function lang() {
+    return App.role === 'lernende'
+      ? { anrede: 'du', findCta: 'Lehrstelle finden', applyCta: 'Jetzt bewerben' }
+      : { anrede: 'Sie', findCta: 'Kandidaten finden', applyCta: 'Zum Schnuppern einladen' };
+  }
+  window.lang = lang;
 
-/* ───────── BETRIEB Station 1: Betriebsprofil ───────── */
-function renderBetriebsprofil(b) {
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">Betriebsprofil</h1>
-       <p class="st-lede">So präsentiert sich euer Unternehmen den Lernenden.</p>
-       <form class="flow" id="form-betrieb" autocomplete="off">
-         <label class="field"><span class="lbl">Firmenname</span><input class="inp" name="firma" data-bfield="firma" placeholder="z. B. Muster AG"></label>
-         <label class="field"><span class="lbl">Branche</span><input class="inp" name="branche" data-bfield="branche" placeholder="z. B. Banken & Finanzen"></label>
-         <label class="field"><span class="lbl">Standort</span><input class="inp" name="ort" data-bfield="ort" placeholder="z. B. Zürich"></label>
-         <button type="button" class="btn" data-action="save-betrieb">Profil sichern</button>
-       </form>
-     </div>
-     <aside class="st-margin">
-       <div class="ring-wrap"><div class="ring" id="ring-betrieb" data-pct="0"><span class="ring-num">0%</span></div><span class="ring-cap">Vollständig</span></div>
-       <p class="margin-note">Ein vollständiges Profil erhöht eure Sichtbarkeit im Match-Stream.</p>
-     </aside>`;
-  syncBetrieb(b);
-}
+  // ───────────────────────── Routen-Definition ─────────────────────────
+  var NAV = {
+    lernende: [
+      { route: 'start', label: 'Start', icon: 'i-home' },
+      { route: 'stellen', label: 'Stellen finden', icon: 'i-stelle' },
+      { route: 'profil', label: 'Mein Profil', icon: 'i-profil' },
+      { route: 'chat', label: 'Nachrichten', icon: 'i-chat' },
+      { route: 'dashboard', label: 'Übersicht', icon: 'i-dash' }
+    ],
+    betrieb: [
+      { route: 'start', label: 'Start', icon: 'i-home' },
+      { route: 'kandidaten', label: 'Kandidaten suchen', icon: 'i-search' },
+      { route: 'ausschreiben', label: 'Stelle ausschreiben', icon: 'i-tag' },
+      { route: 'chat', label: 'Nachrichten', icon: 'i-chat' },
+      { route: 'dashboard', label: 'Pipeline', icon: 'i-dash' }
+    ]
+  };
 
-function syncBetrieb(b) {
-  ['firma', 'branche', 'ort'].forEach((f) => {
-    const i = b.querySelector(`[data-bfield="${f}"]`);
-    if (i && App.betrieb[f]) i.value = App.betrieb[f];
-  });
-  const filled = ['firma', 'branche', 'ort'].filter((f) => App.betrieb[f]).length;
-  setRing(b.querySelector('#ring-betrieb'), Math.round(filled / 3 * 100));
-}
+  // ───────────────────────── Toast ─────────────────────────
+  var toastTimer = null;
+  function toast(text, kind) {
+    var el = $('toast');
+    if (!el) return;
+    el.textContent = text;
+    el.dataset.kind = kind || 'neutral';
+    el.hidden = false;
+    void el.offsetWidth; // reflow für Re-Trigger
+    el.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      el.classList.remove('show');
+      setTimeout(function () { el.hidden = true; }, prefersReduced ? 0 : 220);
+    }, 2600);
+  }
+  window.toast = toast;
 
-/* ───────── BETRIEB Station 2: Stelle ausschreiben ───────── */
-function renderAusschreiben(b) {
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">Stelle ausschreiben</h1>
-       <p class="st-lede">Geführter Fluss — die Stelle erscheint danach in eurem Stellen-Stream.</p>
-       <form class="flow" id="form-inserat" autocomplete="off">
-         <label class="field"><span class="lbl">Berufsbezeichnung</span><input class="inp" name="beruf" data-ifield="beruf" placeholder="z. B. Kauffrau/-mann EFZ"></label>
-         <label class="field"><span class="lbl">Anzahl Plätze</span><input class="inp" name="plaetze" data-ifield="plaetze" type="number" min="1" placeholder="2"></label>
-         <label class="field"><span class="lbl">Lehrbeginn</span><input class="inp" name="beginn" data-ifield="beginn" placeholder="August 2026"></label>
-         <button type="button" class="btn" data-action="publish-inserat">Stelle veröffentlichen</button>
-       </form>
-       <h2 class="sub-h">Veröffentlichte Stellen</h2>
-       <div class="index-list" id="inserat-list">${inseratEntriesHTML()}</div>
-       <p class="empty-state" id="inserat-empty"${App.inserate.length ? ' hidden' : ''}>Noch keine Stelle ausgeschrieben.</p>
-     </div>
-     <aside class="st-margin"><p class="margin-note mono" id="inserat-count">${App.inserate.length} aktive Stellen</p><p class="margin-note">Tipp: Nenne den Lohn — Stellen mit Lohnangabe erhalten 2× mehr Bewerbungen.</p></aside>`;
-}
+  // ───────────────────────── Header / Nav rendern ─────────────────────────
+  function renderChrome() {
+    document.body.dataset.role = App.role;
+    qsa('.role-opt').forEach(function (b) {
+      var on = b.dataset.role === App.role;
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.setAttribute('tabindex', on ? '0' : '-1'); // roving tabindex
+    });
+    $('login-btn').textContent = App.role === 'lernende' ? 'Anmelden' : 'Betriebs-Login';
 
-function inseratEntriesHTML() {
-  return App.inserate.map((s, idx) =>
-    `<div class="index-entry static-entry">
-       <span class="ie-mark">${esc((s.beruf || '?').slice(0, 2).toUpperCase())}</span>
-       <span class="ie-body"><span class="ie-title">${esc(s.beruf || 'Stelle')}</span><span class="ie-sub">${esc(s.plaetze || '–')} Plätze · ab ${esc(s.beginn || 'n. V.')}</span></span>
-       <span class="dl-state ok">live</span>
-     </div>`).join('');
-}
+    var items = NAV[App.role];
+    var navHtml = items.map(function (it) {
+      var active = (it.route === App.route || (it.route === 'stellen' && App.route === 'stelle') ||
+        (it.route === 'kandidaten' && App.route === 'kandidat'));
+      return '<a class="nav-link' + (active ? ' active' : '') + '" data-route="' + it.route + '" href="#/' + it.route + '"' +
+        (active ? ' aria-current="page"' : '') + '>' + esc(it.label) + '</a>';
+    }).join('');
+    $('primary-nav').innerHTML = navHtml;
 
-/* ───────── BETRIEB Station 3: Talent-Pool ───────── */
-function renderPool(b) {
-  const filters = [['all', 'Alle'], ['zurich', 'Zürich'], ['winterthur', 'Winterthur'], ['note5', 'Note 5+'], ['schnuppern', 'Schnupper-Erf.'], ['informatik', 'Informatik']];
-  b.innerHTML =
-    `<div class="st-main">
-       <h1 class="st-title">Talent-Pool</h1>
-       <p class="st-lede">Filtere den Pool — Treffer erscheinen direkt im Index. Kandidat antippen für die Akte.</p>
-       <div class="filter-row" id="pool-filters">
-         ${filters.map(([f, l]) => `<button type="button" class="fchip${f === 'all' ? ' on' : ''}" data-action="filter-pool" data-filter="${f}">${l}</button>`).join('')}
-       </div>
-       <div class="index-list" id="pool-list">${poolEntriesHTML()}</div>
-       <p class="empty-state" id="pool-empty" hidden>Keine Kandidaten für diesen Filter.</p>
-     </div>
-     <aside class="st-margin"><p class="margin-note mono" id="pool-count">${Object.keys(DATA.profs).length} Kandidaten</p></aside>`;
-}
+    var roleSwitchMm = '<div class="mm-roleswitch" role="group" aria-label="Rolle wählen">' +
+      '<button class="mm-role' + (App.role === 'lernende' ? ' active' : '') + '" data-action="switch-lernende"' +
+        (App.role === 'lernende' ? ' aria-current="true"' : '') + '>Für Lernende</button>' +
+      '<button class="mm-role' + (App.role === 'betrieb' ? ' active' : '') + '" data-action="switch-betrieb"' +
+        (App.role === 'betrieb' ? ' aria-current="true"' : '') + '>Für Betriebe</button>' +
+      '</div>';
+    $('mobile-menu').innerHTML = roleSwitchMm + items.map(function (it) {
+      return '<a class="mm-link" data-route="' + it.route + '" href="#/' + it.route + '">' + esc(it.label) + '</a>';
+    }).join('') + '<a class="mm-link" data-route="preise" href="#/preise">Preise</a>' +
+      '<button class="mm-link mm-login" data-action="login">' + (App.role === 'lernende' ? 'Anmelden' : 'Betriebs-Login') + '</button>';
 
-function poolEntriesHTML() {
-  return Object.entries(DATA.profs).map(([name, p]) =>
-    `<button type="button" class="index-entry kand" data-action="pane" data-pane="kandidat" data-key="${name}" data-tags="${p.tags.join(',')}">
-       <span class="ie-mark">${p.i}</span>
-       <span class="ie-body"><span class="ie-title">${esc(name)}</span><span class="ie-sub">${p.beruf} · ${p.sch} · ${p.kan}</span></span>
-       <span class="ring sm score-ring" data-pct="${p.p}"><span class="ring-num mono">${p.p}</span></span>
-     </button>`).join('');
-}
+    var tabItems = items.slice(0, 4);
+    $('tabbar').innerHTML = tabItems.map(function (it) {
+      var active = (it.route === App.route);
+      return '<a class="tab' + (active ? ' active' : '') + '" data-route="' + it.route + '" href="#/' + it.route + '"' +
+        (active ? ' aria-current="page"' : '') + '>' +
+        '<svg class="ic" aria-hidden="true"><use href="#' + it.icon + '"></use></svg>' +
+        '<span>' + esc(it.label.split(' ')[0]) + '</span></a>';
+    }).join('');
+  }
 
-/* ════════════════════════════════════════════════════════════════════
-   RING-Helfer (sich füllende Kreissegmente + Mono-Count-up)
-   ════════════════════════════════════════════════════════════════════ */
-function setRing(ring, pct) {
-  if (!ring) return;
-  ring.dataset.pct = pct;
-  ring.style.setProperty('--pct', pct);
-  const num = ring.querySelector('.ring-num');
-  if (num) num.textContent = pct + '%';
-}
+  function renderFooter() {
+    $('footer').innerHTML =
+      '<div class="footer-inner">' +
+        '<div class="foot-cols">' +
+          '<div class="foot-col"><h4 class="foot-h">Lehrly</h4>' +
+            '<a href="#/info/ueber" data-route="info" data-id="ueber">Über uns</a>' +
+            '<a href="#/info/funktioniert" data-route="info" data-id="funktioniert">So funktioniert es</a>' +
+            '<a href="#/info/schulen" data-route="info" data-id="schulen">Für Schulen &amp; Berufsberatung</a></div>' +
+          '<div class="foot-col"><h4 class="foot-h">Angebot</h4>' +
+            '<a href="#/start" data-action="switch-lernende">Für Lernende</a>' +
+            '<a href="#/start" data-action="switch-betrieb">Für Betriebe</a>' +
+            '<a href="#/preise" data-route="preise">Preise</a></div>' +
+          '<div class="foot-col"><h4 class="foot-h">Kontakt &amp; Support</h4>' +
+            '<p class="foot-addr">Lehrly AG<br>Bahnhofstrasse 1, 8001 Zürich</p>' +
+            '<p class="foot-addr">Support Mo–Fr 08–17 Uhr</p></div>' +
+        '</div>' +
+        '<div class="foot-trust">' +
+          '<span class="trust-badge"><svg class="ic" aria-hidden="true"><use href="#i-shield"></use></svg> Daten in der Schweiz gehostet (revDSG-konform)</span>' +
+        '</div>' +
+        '<div class="foot-legal">' +
+          '<span>© 2026 Lehrly AG</span>' +
+          '<a href="#/info/impressum" data-route="info" data-id="impressum">Impressum</a>' +
+          '<a href="#/info/datenschutz" data-route="info" data-id="datenschutz">Datenschutz</a>' +
+          '<a href="#/info/agb" data-route="info" data-id="agb">AGB</a>' +
+          '<span class="foot-ch">Made in Switzerland 🇨🇭</span>' +
+        '</div>' +
+      '</div>';
+  }
 
-function paintScoreRings(scope) {
-  (scope || document).querySelectorAll('.score-ring').forEach((r) => {
-    r.style.setProperty('--pct', r.dataset.pct || 0);
-  });
-}
+  // ───────────────────────── Bausteine ─────────────────────────
+  function breadcrumb(items) {
+    return '<nav class="breadcrumb" aria-label="Brotkrumen">' + items.map(function (it, i) {
+      var last = i === items.length - 1;
+      if (last) return '<span aria-current="page">' + esc(it.label) + '</span>';
+      return '<a href="#/' + it.route + '" data-route="' + it.route + '">' + esc(it.label) + '</a><span class="bc-sep" aria-hidden="true">/</span>';
+    }).join('') + '</nav>';
+  }
 
-/* ════════════════════════════════════════════════════════════════════
-   3. NAVIGATION
-   ════════════════════════════════════════════════════════════════════ */
-function gotoStation(id, opts) {
-  const list = stationsFor(App.role);
-  if (!list.some((s) => s.id === id)) return;
-  App.station = id;
-  renderRail();
-  const sec = $('st-' + id);
-  if (sec) {
-    if (prefersReduced() || (opts && opts.instant)) {
-      try { $('canvas').scrollTop = sec.offsetTop; } catch (e) { /* noop */ }
+  function scoreBlock(score, grund) {
+    var pct = Math.max(0, Math.min(100, score));
+    return '<div class="score-block">' +
+      '<div class="score-head"><span class="score-label">Match</span>' +
+      '<span class="score-pct tnum">' + pct + '%</span></div>' +
+      '<div class="score-bar"><i class="score-fill" style="width:' + pct + '%"></i></div>' +
+      '<p class="score-grund">' + esc(grund) + '</p></div>';
+  }
+
+  function verBadge(verifiziert) {
+    if (verifiziert) {
+      return '<span class="badge badge-ok" tabindex="0" title="Identität und Lehrberechtigung durch Lehrly geprüft">' +
+        '<svg class="ic" aria-hidden="true"><use href="#i-shield"></use></svg> Betrieb verifiziert</span>';
+    }
+    return '<span class="badge badge-pending" tabindex="0" title="Prüfung der Angaben noch ausstehend">Prüfung ausstehend</span>';
+  }
+
+  function zeugnisStrip(noten) {
+    return '<div class="zeugnis-strip">' +
+      '<div class="zeugnis-skala">CH-Notenskala 1–6 · 6 = beste Note</div>' +
+      noten.map(function (n) {
+        var w = Math.round((n[1] / 6) * 100);
+        return '<div class="zrow"><span class="zfach">' + esc(n[0]) + '</span>' +
+          '<span class="ztrack"><i style="width:' + w + '%"></i></span>' +
+          '<span class="znote tnum">' + n[1].toFixed(1) + '</span></div>';
+      }).join('') + '</div>';
+  }
+
+  function staerkenTags(list, active) {
+    return '<div class="tag-row">' + list.map(function (s) {
+      var on = active ? !!App.strengths[s] : true;
+      return '<span class="tag' + (on ? ' on' : '') + (active ? ' toggle' : ' static') + '"' +
+        (active ? ' data-strength="' + esc(s) + '" role="button" tabindex="0"' : '') + '>' + esc(s) + '</span>';
+    }).join('') + '</div>';
+  }
+
+  function skeletonList(n) {
+    var rows = '';
+    for (var i = 0; i < (n || 3); i++) rows += '<div class="skel-row"><div class="skel-line w60"></div><div class="skel-line w40"></div></div>';
+    return '<div class="skeleton" aria-hidden="true">' + rows + '</div>';
+  }
+
+  // ───────────────────────── Listenkarten ─────────────────────────
+  function stelleCard(s) {
+    return '<a class="list-item" data-route="stelle" data-id="' + s.id + '" href="#/stelle/' + s.id + '">' +
+      '<div class="li-main">' +
+        '<h3 class="li-title">' + esc(s.beruf) + '</h3>' +
+        '<div class="li-sub"><span class="li-betrieb">' + esc(s.betrieb) + '</span>' +
+          '<span class="li-meta"><svg class="ic" aria-hidden="true"><use href="#i-pin"></use></svg>' + esc(s.ort) + '</span></div>' +
+        '<div class="li-tags"><span class="chip-static">' + esc(s.typ.toUpperCase()) + '</span>' +
+          '<span class="chip-static">' + esc(s.pensum) + '</span>' +
+          '<span class="chip-static">Start ' + esc(s.beginn) + '</span></div>' +
+      '</div>' +
+      '<div class="li-aside">' +
+        '<span class="li-scorewrap"><span class="li-scorelabel">Match</span>' +
+        '<span class="li-score tnum" aria-label="Match-Score ' + s.score + ' Prozent">' + s.score + '%</span></span>' +
+        '<span class="li-go">Details <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></span>' +
+      '</div></a>';
+  }
+
+  function kandidatCard(k) {
+    var name = kandName(k, '(anonym)');
+    // Beruf-/Stärken-Felder bei anonymen Profilen generalisieren, kein Klarname im DOM.
+    var berufZeile = k.freigegeben ? k.beruf : k.berufFeld;
+    var tags = k.freigegeben
+      ? '<span class="chip-static tnum">Ø ' + k.noteAvg.toFixed(1) + '</span>' +
+        k.staerken.slice(0, 2).map(function (x) { return '<span class="chip-static">' + esc(x) + '</span>'; }).join('')
+      : '<span class="chip-static">Noten nach Freigabe</span>' +
+        '<span class="chip-static">freigabepflichtig</span>';
+    return '<a class="list-item" data-route="kandidat" data-id="' + k.id + '" data-key="' + esc(kandKey(k)) + '" href="#/kandidat/' + k.id + '">' +
+      '<div class="li-main">' +
+        '<h3 class="li-title">' + esc(name) + '</h3>' +
+        '<div class="li-sub"><span class="li-betrieb">' + esc(berufZeile) + '</span>' +
+          '<span class="li-meta"><svg class="ic" aria-hidden="true"><use href="#i-pin"></use></svg>' + esc(kandRegion(k)) + '</span></div>' +
+        '<div class="li-tags">' + tags + '</div>' +
+      '</div>' +
+      '<div class="li-aside">' +
+        '<span class="li-scorewrap"><span class="li-scorelabel">Match</span>' +
+        '<span class="li-score tnum" aria-label="Match-Score ' + k.score + ' Prozent">' + k.score + '%</span></span>' +
+        '<span class="li-go">Profil <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></span>' +
+      '</div></a>';
+  }
+
+  // ═══════════════════════ SEITEN / VIEWS ═══════════════════════
+  var views = {};
+
+  views.start = function () {
+    if (App.role === 'betrieb') return views.bStart();
+    return '' +
+      '<section class="hero"><div class="container">' +
+        '<h1 class="hero-h1">Finde deine Lehrstelle.</h1>' +
+        '<p class="hero-sub lead">Das Schweizer Berufsbildungs-Register. Such transparent, sieh echte Anforderungen und bewirb dich direkt.</p>' +
+        searchBar('stellen') +
+      '</div></section>' +
+      '<section class="band"><div class="container">' +
+        '<h2 class="sr-only">Kennzahlen dieser Vorschau</h2>' +
+        '<div class="trust-row">' +
+          '<div class="trust-stat"><span class="ts-num tnum">' + STELLEN.length + '</span><span class="ts-label">Lehrstellen in dieser Vorschau</span></div>' +
+          '<div class="trust-stat"><span class="ts-num tnum">' + STELLEN.filter(function (s) { return s.verifiziert; }).length + '</span><span class="ts-label">davon verifizierte Betriebe</span></div>' +
+          '<div class="trust-stat"><span class="ts-num tnum">' + berufeCount() + '</span><span class="ts-label">Berufe (EFZ/EBA)</span></div>' +
+          '<div class="trust-stat"><span class="ts-num tnum">' + regionenCount() + '</span><span class="ts-label">Regionen</span></div>' +
+        '</div>' +
+        '<p class="trust-note muted">Demo-Vorschau mit Beispieldaten — Kennzahlen aus dem aktuellen Datensatz, keine Live-Statistik.</p>' +
+        '</div></section>' +
+      '<section class="band"><div class="container narrow">' +
+        '<h2 class="sec-h">So funktioniert Lehrly</h2>' +
+        '<ol class="steps-list">' +
+          '<li><span class="step-n tnum">1</span><div><strong>Profil anlegen.</strong> Personalien, Berufswunsch aus der offiziellen EFZ/EBA-Liste, Noten und Stärken.</div></li>' +
+          '<li><span class="step-n tnum">2</span><div><strong>Stellen finden.</strong> Such und filtere nach Beruf, Region und Lehrbeginn — mit ehrlichem Match-Score.</div></li>' +
+          '<li><span class="step-n tnum">3</span><div><strong>Direkt bewerben.</strong> Deine Kontaktdaten siehst nur du und Betriebe, die du freigibst.</div></li>' +
+          '<li><span class="step-n tnum">4</span><div><strong>In Kontakt bleiben.</strong> Nachrichten, Schnupper-Einladungen und Status an einem Ort.</div></li>' +
+        '</ol></div></section>' +
+      '<section class="band"><div class="container">' +
+        '<h2 class="sec-h">Beliebte Berufsfelder</h2>' +
+        '<div class="feld-grid">' + BERUFSFELDER.map(function (f) {
+          return '<a class="feld-tile" data-route="stellen" data-feld="' + f.id + '" href="#/stellen">' + esc(f.label) + '</a>';
+        }).join('') + '</div></div></section>' +
+      '<section class="band"><div class="container">' +
+        '<div class="sec-head"><h2 class="sec-h">Aktuelle Lehrstellen</h2>' +
+          '<a class="link-arrow" data-route="stellen" href="#/stellen">Alle ansehen <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></a></div>' +
+        '<div class="list">' + STELLEN.slice(0, 3).map(stelleCard).join('') + '</div></div></section>' +
+      '<section class="band band-cta"><div class="container">' +
+        '<div class="cta-row"><div><h2 class="sec-h">Sie sind ein Betrieb?</h2>' +
+          '<p class="muted">Schreiben Sie Lehrstellen aus und finden Sie passende Lernende.</p></div>' +
+          '<button class="btn btn-primary" data-action="switch-betrieb">Für Betriebe</button></div></div></section>';
+  };
+
+  views.bStart = function () {
+    return '' +
+      '<section class="hero"><div class="container">' +
+        '<h1 class="hero-h1">Finden Sie passende Lernende.</h1>' +
+        '<p class="hero-sub lead">Schreiben Sie Lehrstellen nach Bildungsverordnung aus und durchsuchen Sie geprüfte Profile — anonymisiert bis zur Freigabe.</p>' +
+        searchBar('kandidaten') +
+      '</div></section>' +
+      '<section class="band"><div class="container">' +
+        '<h2 class="sr-only">Kennzahlen dieser Vorschau</h2>' +
+        '<div class="trust-row">' +
+          '<div class="trust-stat"><span class="ts-num tnum">' + KANDIDATEN.length + '</span><span class="ts-label">Profile in dieser Vorschau</span></div>' +
+          '<div class="trust-stat"><span class="ts-num tnum">' + KANDIDATEN.filter(function (k) { return k.zeugnisGeprueft; }).length + '</span><span class="ts-label">davon mit geprüftem Zeugnis</span></div>' +
+          '<div class="trust-stat"><span class="ts-num tnum">' + KANDIDATEN.filter(function (k) { return k.freigegeben; }).length + '</span><span class="ts-label">bereits freigegebene Profile</span></div>' +
+        '</div>' +
+        '<p class="trust-note muted">Demo-Vorschau mit Beispieldaten — Kennzahlen aus dem aktuellen Datensatz, keine Live-Statistik.</p>' +
+        '</div></section>' +
+      '<section class="band"><div class="container narrow">' +
+        '<h2 class="sec-h">So funktioniert es für Betriebe</h2>' +
+        '<ol class="steps-list">' +
+          '<li><span class="step-n tnum">1</span><div><strong>Betriebsprofil anlegen.</strong> Firma, Branche, Standort.</div></li>' +
+          '<li><span class="step-n tnum">2</span><div><strong>Stelle ausschreiben.</strong> Strukturierte Felder nach Bildungsverordnung.</div></li>' +
+          '<li><span class="step-n tnum">3</span><div><strong>Kandidaten finden.</strong> Filtern nach Region, Jahrgang, Noten und Stärken.</div></li>' +
+          '<li><span class="step-n tnum">4</span><div><strong>Einladen.</strong> Zum Schnuppern einladen oder direkt schreiben.</div></li>' +
+        '</ol></div></section>' +
+      '<section class="band"><div class="container">' +
+        '<div class="sec-head"><h2 class="sec-h">Empfohlene Kandidaten</h2>' +
+          '<a class="link-arrow" data-route="kandidaten" href="#/kandidaten">Alle ansehen <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></a></div>' +
+        '<div class="list">' + KANDIDATEN.slice(0, 3).map(kandidatCard).join('') + '</div></div></section>';
+  };
+
+  function searchBar(targetRoute) {
+    var ph = targetRoute === 'kandidaten' ? 'Beruf oder Stärke …' : 'Beruf, z.B. Kauffrau EFZ';
+    return '<form class="search-hero" data-action="hero-search" data-target="' + targetRoute + '">' +
+      '<div class="sh-field"><label class="sr-only" for="sh-q">Beruf</label>' +
+        '<svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg>' +
+        '<input id="sh-q" class="sh-input" type="text" name="q" placeholder="' + esc(ph) + '" autocomplete="off"></div>' +
+      '<div class="sh-field"><label class="sr-only" for="sh-ort">Ort oder PLZ</label>' +
+        '<svg class="ic" aria-hidden="true"><use href="#i-pin"></use></svg>' +
+        '<input id="sh-ort" class="sh-input" type="text" name="ort" placeholder="Ort oder PLZ" autocomplete="off"></div>' +
+      '<button class="btn btn-primary sh-btn" type="submit">Suchen</button>' +
+    '</form>';
+  }
+
+  // — STELLEN FINDEN (feste linke Filter-Spalte + Trefferliste) —
+  views.stellen = function () {
+    return '<div class="container">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Stellen finden' }]) +
+      '<div class="search-page">' +
+        '<aside class="filter-col" aria-label="Filter">' + stellenFilterPanel() + '</aside>' +
+        '<section class="results-col" aria-label="Trefferliste">' +
+          '<div class="results-bar">' +
+            '<div class="search-inline"><svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg>' +
+              '<input id="stellen-q" class="search-inline-inp" type="text" placeholder="Beruf suchen …" value="' + esc(App.stellenFilters.q) + '" data-action="stellen-q" aria-label="Beruf suchen"></div>' +
+            '<div class="results-meta"><span id="stellen-count" class="results-count tnum"></span>' +
+              '<label class="sort-label">Sortieren ' +
+                '<select id="stellen-sort" class="sort-select" data-action="stellen-sort">' +
+                  '<option value="score">Beste Übereinstimmung</option>' +
+                  '<option value="beruf">Beruf A–Z</option>' +
+                  '<option value="ort">Ort A–Z</option>' +
+                '</select></label></div>' +
+          '</div>' +
+          '<div id="active-chips" class="active-chips"></div>' +
+          '<div id="stellen-list" class="list">' + skeletonList(4) + '</div>' +
+        '</section>' +
+      '</div></div>';
+  };
+
+  // Filter-Optionen zentral (für Panel UND Chip-Labels)
+  var STELLEN_FILTER_OPTS = {
+    branche: [{ v: 'all', l: 'Alle Branchen' }, { v: 'banken', l: 'Banken / Finanz' }, { v: 'it', l: 'Informatik' }, { v: 'gesundheit', l: 'Gesundheit' }, { v: 'detailhandel', l: 'Detailhandel' }, { v: 'technik', l: 'Technik' }],
+    region: [{ v: 'all', l: 'Ganze Schweiz' }, { v: 'zurich', l: 'Zürich' }, { v: 'bern', l: 'Bern / Mittelland' }, { v: 'zentral', l: 'Zentralschweiz' }],
+    typ: [{ v: 'all', l: 'EFZ und EBA' }, { v: 'efz', l: 'Nur EFZ' }, { v: 'eba', l: 'Nur EBA' }]
+  };
+  function stellenOptLabel(key, val) {
+    var opts = STELLEN_FILTER_OPTS[key] || [];
+    for (var i = 0; i < opts.length; i++) if (opts[i].v === val) return opts[i].l;
+    return val;
+  }
+
+  function stellenFilterPanel() {
+    function group(title, key, opts) {
+      return '<fieldset class="filter-group"><legend class="filter-h">' + esc(title) + '</legend>' +
+        opts.map(function (o) {
+          var checked = App.stellenFilters[key] === o.v;
+          return '<label class="filter-opt"><input type="radio" name="f-' + key + '" value="' + o.v + '"' +
+            (checked ? ' checked' : '') + ' data-filter-key="' + key + '">' +
+            '<span>' + esc(o.l) + '</span></label>';
+        }).join('') + '</fieldset>';
+    }
+    return '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
+      '<button class="btn-text" data-action="reset-stellen-filter">Zurücksetzen</button></div>' +
+      group('Branche', 'branche', STELLEN_FILTER_OPTS.branche) +
+      group('Region', 'region', STELLEN_FILTER_OPTS.region) +
+      group('Abschluss', 'typ', STELLEN_FILTER_OPTS.typ);
+  }
+
+  function filteredStellen() {
+    var f = App.stellenFilters;
+    var list = STELLEN.filter(function (s) {
+      if (f.branche !== 'all' && s.branche !== f.branche) return false;
+      if (f.region !== 'all' && s.region !== f.region) return false;
+      if (f.typ !== 'all' && s.typ !== f.typ) return false;
+      if (f.q && s.beruf.toLowerCase().indexOf(f.q.toLowerCase()) === -1 &&
+        s.betrieb.toLowerCase().indexOf(f.q.toLowerCase()) === -1) return false;
+      if (f.ort && s.ort.toLowerCase().indexOf(f.ort.toLowerCase()) === -1) return false;
+      return true;
+    });
+    if (f.sort === 'beruf') list.sort(function (a, b) { return a.beruf.localeCompare(b.beruf); });
+    else if (f.sort === 'ort') list.sort(function (a, b) { return a.ort.localeCompare(b.ort); });
+    else list.sort(function (a, b) { return b.score - a.score; });
+    return list;
+  }
+
+  function renderStellenResults() {
+    var list = filteredStellen();
+    var cnt = $('stellen-count');
+    if (cnt) cnt.textContent = list.length + (list.length === 1 ? ' Lehrstelle' : ' Lehrstellen');
+    var holder = $('stellen-list');
+    if (!holder) return;
+    if (list.length === 0) {
+      holder.innerHTML = '<div class="empty-state"><h3>Keine Treffer</h3>' +
+        '<p class="muted">Passe deine Filter an oder setze sie zurück.</p>' +
+        '<button class="btn btn-outline" data-action="reset-stellen-filter">Filter zurücksetzen</button></div>';
     } else {
-      try { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { try { $('canvas').scrollTop = sec.offsetTop; } catch (_) {} }
+      holder.innerHTML = list.map(stelleCard).join('');
     }
-  }
-}
-
-function switchRole(r) {
-  if (r !== 'lernende' && r !== 'betrieb') return;
-  App.role = r;
-  App.station = stationsFor(r)[0].id;
-  renderRail();
-  renderCanvas();
-  buildCommandIndex();
-  paintScoreRings();
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   4. PANE-STACK  (einschiebende Stack-Panes — nie Bottom-Sheet)
-   ════════════════════════════════════════════════════════════════════ */
-const FOCUSABLE = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])';
-
-function paneContent(type, payload) {
-  switch (type) {
-    case 'stelle':   return stellePane(payload);
-    case 'kandidat': return kandidatPane(payload);
-    case 'cv':       return cvPane();
-    case 'chat':     return chatPane(payload);
-    case 'tarife':   return tarifePane();
-    case 'bewerben': return bewerbenPane(payload);
-    case 'schnupper':return schnupperPane(payload);
-    default:         return { title: 'Detail', html: '<p>—</p>' };
-  }
-}
-
-function pushPane(type, payload) {
-  const { title, html } = paneContent(type, payload);
-  const trigger = document.activeElement;
-  const pane = el('div', 'pane');
-  pane.dataset.pane = type;
-  if (payload) pane.dataset.key = (typeof payload === 'string' ? payload : (payload.key || ''));
-  pane.setAttribute('role', 'dialog');
-  pane.setAttribute('aria-modal', 'true');
-  pane.setAttribute('aria-label', title);
-  pane.innerHTML =
-    `<header class="pane-head">
-       <button class="pane-back" data-action="pop-pane" aria-label="Zurück"><svg class="ic" aria-hidden="true"><use href="#i-back"></use></svg></button>
-       <h2 class="pane-title">${esc(title)}</h2>
-       <button class="pane-x" data-action="pop-pane" aria-label="Schliessen"><svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>
-     </header>
-     <div class="pane-body">${html}</div>`;
-  $('pane-stack').appendChild(pane);
-  $('pane-stack').setAttribute('aria-hidden', 'false');
-  $('pane-scrim').hidden = false;
-  App.paneStack.push({ type, payload, el: pane, trigger });
-  paintScoreRings(pane);
-  /* einschieben */
-  requestAnimationFrame(() => pane.classList.add('in'));
-  /* Fokus in die Pane */
-  const first = pane.querySelector(FOCUSABLE);
-  if (first) { try { first.focus(); } catch (e) {} }
-  return pane;
-}
-
-function popPane() {
-  const top = App.paneStack.pop();
-  if (!top) return;
-  top.el.classList.remove('in');
-  const remove = () => { if (top.el.parentNode) top.el.parentNode.removeChild(top.el); };
-  if (prefersReduced()) remove(); else setTimeout(remove, 240);
-  if (App.paneStack.length === 0) {
-    $('pane-stack').setAttribute('aria-hidden', 'true');
-    $('pane-scrim').hidden = true;
-  }
-  if (top.trigger && typeof top.trigger.focus === 'function') { try { top.trigger.focus(); } catch (e) {} }
-}
-
-function popAllPanes() { while (App.paneStack.length) popPane(); }
-
-/* ── Pane-Inhalte ── */
-function stellePane(key) {
-  const s = DATA.stellen[key] || DATA.stellen.zkb;
-  return { title: s.n, html:
-    `<div class="pane-cols">
-       <div class="pane-detail">
-         <div class="detail-banner"><span class="ie-mark lg">${s.mk}</span><div><span class="db-tag">Lehrstelle</span><h3>${s.n}</h3><span class="db-co">${s.co}</span></div></div>
-         <div class="strip-meta">
-           <div class="sm-cell"><span class="sm-l">Lohn Lj. 1</span><span class="sm-v mono">CHF ${s.l}</span></div>
-           <div class="sm-cell"><span class="sm-l">Plätze</span><span class="sm-v mono">${s.pl}</span></div>
-           <div class="sm-cell"><span class="sm-l">Ø-Note</span><span class="sm-v mono">${s.note}+</span></div>
-           <div class="sm-cell"><span class="sm-l">Match</span><span class="sm-v mono acc">${s.score}%</span></div>
-         </div>
-         <section class="detail-sec"><h4>Über die Stelle</h4><p>${esc(s.d)}</p></section>
-         <section class="detail-sec"><h4>Wir bieten</h4><ul>${s.b.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></section>
-         <section class="detail-sec"><h4>Du bringst mit</h4><ul>${s.a.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></section>
-       </div>
-       <aside class="pane-action">
-         <button type="button" class="btn" data-action="pane" data-pane="bewerben" data-key="${key}">Jetzt bewerben</button>
-         <button type="button" class="btn out" data-action="pane" data-pane="chat" data-key="${chatKeyForStelle(key)}" data-chatrole="lernende">Frage stellen</button>
-       </aside>
-     </div>` };
-}
-function chatKeyForStelle(key) { return DATA.chats[key] ? key : 'zkb'; }
-
-function kandidatPane(name) {
-  const p = DATA.profs[name] || DATA.profs['Lena Müller'];
-  const noten = [['Deutsch', p.d], ['Mathematik', p.m], ['Englisch', p.e], ['Französisch', p.f]];
-  return { title: name, html:
-    `<div class="pane-cols">
-       <div class="pane-detail">
-         <div class="detail-banner"><span class="ie-mark lg">${p.i}</span><div><span class="db-tag">${p.beruf}</span><h3>${esc(name)}</h3><span class="db-co">${p.sch} · ${p.kan} · ${p.alt} J.</span></div>
-           <span class="ring score-ring" data-pct="${p.p}"><span class="ring-num mono">${p.p}</span></span></div>
-         <section class="detail-sec"><h4>Noten</h4>
-           <div class="zeugnis-strip">${noten.map(([n, v]) => `<div class="zrow"><span class="zn">${n}</span><div class="ztrack"><i style="width:${(v / 6 * 100).toFixed(0)}%"></i></div><span class="zv mono">${v.toFixed(1)}</span></div>`).join('')}</div></section>
-         <section class="detail-sec"><h4>Stärken</h4><div class="tag-row">${p.st.map((t) => `<span class="tag static">${esc(t)}</span>`).join('')}</div></section>
-         <section class="detail-sec"><h4>Schnuppern</h4><p>${esc(p.sn)}</p></section>
-         <section class="detail-sec"><h4>Über mich</h4><p>${esc(p.mot)}</p></section>
-       </div>
-       <aside class="pane-action">
-         <button type="button" class="btn" data-action="pane" data-pane="schnupper" data-key="${esc(name)}">Zum Schnuppern einladen</button>
-         <button type="button" class="btn out" data-action="pane" data-pane="chat" data-key="${esc(name)}" data-chatrole="betrieb">Anschreiben</button>
-       </aside>
-     </div>` };
-}
-
-function cvPane() {
-  const p = App.profile;
-  const nm = (p.vorname || 'Lena') + ' ' + (p.nachname || 'Müller');
-  const beruf = p.beruf || 'Kauffrau EFZ';
-  const kan = p.kanton || 'Zürich';
-  return { title: 'Lebenslauf-Vorschau', html:
-    `<div class="cv-sheet">
-       <div class="cv-head"><h3>${esc(nm)}</h3><span class="cv-role mono">${esc(beruf)} · ${esc(kan)}</span></div>
-       <div class="cv-sec"><h4>Schulische Ausbildung</h4><p>Sekundarschule A, ${esc(kan)} — Abschluss 2025</p></div>
-       <div class="cv-sec"><h4>Noten</h4><div class="zeugnis-strip">
-         <div class="zrow"><span class="zn">Deutsch</span><div class="ztrack"><i style="width:92%"></i></div><span class="zv mono">5.5</span></div>
-         <div class="zrow"><span class="zn">Mathematik</span><div class="ztrack"><i style="width:83%"></i></div><span class="zv mono">5.0</span></div>
-       </div></div>
-       <div class="cv-sec"><h4>Stärken</h4><div class="tag-row">${(Object.keys(App.strengths).filter((k) => App.strengths[k]).map((t) => `<span class="tag static">${esc(t)}</span>`).join('') || '<span class="tag static">Teamarbeit</span>')}</div></div>
-       <div class="cv-sec"><h4>Schnupper-Erfahrung</h4><p>${esc(App.schnupperErf || 'Raiffeisenbank (3 Tage), Bäckerei (2 Tage)')}</p></div>
-     </div>
-     <div class="pane-action inline"><button type="button" class="btn" data-action="cv-done">CV als bereit markieren</button></div>` };
-}
-
-function chatPane(payload) {
-  const isObj = payload && typeof payload === 'object';
-  const role = (isObj && payload.role) || App._lastChatRole || 'lernende';
-  const key = isObj ? payload.key : payload;
-  const src = role === 'betrieb' ? DATA.betriebChats : DATA.chats;
-  const c = src[key] || Object.values(src)[0];
-  App._lastChatRole = role;
-  return { title: c.name, html:
-    `<div class="chat-pane" data-chat-key="${esc(key || '')}" data-chat-role="${role}">
-       <div class="chat-log" id="chat-log">${chatMsgsHTML(c)}</div>
-       <form class="chat-compose" data-action="send-msg">
-         <input class="chat-inp" id="chat-inp" placeholder="Nachricht schreiben …" autocomplete="off" aria-label="Nachricht">
-         <button type="submit" class="chat-send" aria-label="Senden"><svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></button>
-       </form>
-     </div>` };
-}
-function chatMsgsHTML(c) {
-  const first = c.name.split(/[ ·]/)[0];
-  return c.msgs.map((m) => m.me
-    ? `<div class="cm-row me"><div class="bubble me">${esc(m.me)}</div><span class="cm-time">Ich · ${m.t}</span></div>`
-    : `<div class="cm-row them"><div class="bubble them">${esc(m.them)}</div><span class="cm-time">${esc(first)} · ${m.t}</span></div>`
-  ).join('');
-}
-
-function tarifePane() {
-  const rows = DATA.plaene.filter((p) => p.role === App.role);
-  return { title: 'Pakete & Tarife', html:
-    `<p class="pane-lede">Vergleich der Pakete für ${App.role === 'betrieb' ? 'Betriebe' : 'Lernende'}. Eine Empfehlung ist hervorgehoben.</p>
-     <div class="tarif-table">
-       ${rows.map((p) => `<div class="tarif-col${p.hot ? ' hot' : ''}">
-         ${p.hot ? '<span class="tarif-flag">Empfohlen</span>' : ''}
-         <h3 class="tarif-name">${p.name}</h3>
-         <div class="tarif-price"><span class="tp-num mono">${p.preis}</span><span class="tp-sub">${p.sub}</span></div>
-         <ul class="tarif-feat">${p.f.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
-         <button type="button" class="btn${p.hot ? '' : ' out'}" data-action="choose-plan" data-plan="${p.name}">${p.cta}</button>
-       </div>`).join('')}
-     </div>` };
-}
-
-function bewerbenPane(key) {
-  const s = DATA.stellen[key] || DATA.stellen.zkb;
-  return { title: 'Bewerbung senden', html:
-    `<div class="form-pane">
-       <p class="pane-lede">Du bewirbst dich bei <strong>${esc(s.co)}</strong> als ${esc(s.n)}.</p>
-       <label class="field"><span class="lbl">Kurze Motivation</span><textarea class="inp ta" placeholder="Warum diese Lehrstelle?"></textarea></label>
-       <label class="field check"><input type="checkbox" checked> Lehrly-CV & Zeugnis anhängen</label>
-       <button type="button" class="btn" data-action="submit-bewerbung" data-key="${key}">Bewerbung absenden</button>
-     </div>` };
-}
-
-function schnupperPane(name) {
-  return { title: 'Schnuppern einladen', html:
-    `<div class="form-pane">
-       <p class="pane-lede">Lade <strong>${esc(name)}</strong> zu einem Schnuppertag ein.</p>
-       <label class="field"><span class="lbl">Datum</span><input class="inp" data-sfield="datum" placeholder="z. B. Mi 14. Mai"></label>
-       <label class="field"><span class="lbl">Nachricht</span><textarea class="inp ta" data-sfield="nachricht" placeholder="Persönliche Worte …"></textarea></label>
-       <button type="button" class="btn" data-action="submit-schnupper" data-key="${esc(name)}">Einladung senden</button>
-     </div>` };
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   5. COMMANDER  (verb-gruppiertes Befehlsregister, Cmd-K)
-   ════════════════════════════════════════════════════════════════════ */
-function buildCommandIndex() {
-  const idx = [];
-  stationsFor(App.role).forEach((s) => idx.push({ group: 'Gehe zu', label: s.label, hint: s.kurz, run: () => gotoStation(s.id) }));
-  if (App.role === 'lernende') {
-    Object.entries(DATA.stellen).forEach(([k, s]) => idx.push({ group: 'Stelle öffnen', label: s.n + ' · ' + s.co, hint: 'Score ' + s.score, run: () => { gotoStation('treffer'); pushPane('stelle', k); } }));
-    idx.push({ group: 'Aktion', label: 'Matches finden', hint: 'Match-Stream', run: () => { gotoStation('treffer'); const b = $('btn-match'); if (b) b.click(); } });
-    idx.push({ group: 'Aktion', label: 'Lebenslauf ansehen', hint: 'CV-Vorschau', run: () => pushPane('cv') });
-  } else {
-    Object.entries(DATA.profs).forEach(([name, p]) => idx.push({ group: 'Kandidat', label: name, hint: p.beruf + ' · ' + p.kan, run: () => { gotoStation('pool'); pushPane('kandidat', name); } }));
-    idx.push({ group: 'Aktion', label: 'Stelle ausschreiben', hint: 'Neue Lehrstelle', run: () => gotoStation('ausschreiben') });
-  }
-  idx.push({ group: 'Aktion', label: 'Pakete vergleichen', hint: 'Tarife', run: () => pushPane('tarife') });
-  idx.push({ group: 'Rolle', label: App.role === 'lernende' ? 'Zu Betrieb wechseln' : 'Zu Lernende wechseln', hint: 'Rolle kippen', run: () => switchRole(App.role === 'lernende' ? 'betrieb' : 'lernende') });
-  App.cmdIndex = idx;
-  return idx;
-}
-
-function openCommander() {
-  buildCommandIndex();
-  const c = $('commander');
-  c.hidden = false;
-  requestAnimationFrame(() => c.classList.add('open'));
-  const inp = $('cmd-input');
-  inp.value = '';
-  filterCommands('');
-  try { inp.focus(); } catch (e) {}
-}
-
-function closeCommander() {
-  const c = $('commander');
-  c.classList.remove('open');
-  if (prefersReduced()) c.hidden = true; else setTimeout(() => { c.hidden = true; }, 200);
-}
-
-function filterCommands(q) {
-  const query = (q || '').trim().toLowerCase();
-  const res = App.cmdIndex.filter((it) => !query || (it.label + ' ' + it.group + ' ' + it.hint).toLowerCase().includes(query));
-  App.cmdResults = res;
-  App.cmdActive = 0;
-  const wrap = $('cmd-results');
-  if (!res.length) { wrap.innerHTML = '<div class="cmd-empty">Kein Treffer für „' + esc(q) + '"</div>'; return; }
-  let lastGroup = null, html = '';
-  res.forEach((it, i) => {
-    if (it.group !== lastGroup) { html += `<div class="cmd-group" role="presentation">${esc(it.group)}</div>`; lastGroup = it.group; }
-    html += `<div class="cmd-item${i === 0 ? ' active' : ''}" id="cmd-opt-${i}" role="option" tabindex="-1" aria-selected="${i === 0 ? 'true' : 'false'}" data-action="cmd-run" data-idx="${i}">
-      <span class="ci-label">${esc(it.label)}</span><span class="ci-hint">${esc(it.hint)}</span></div>`;
-  });
-  wrap.innerHTML = html;
-  syncCmdActiveDescendant();
-}
-
-/* aktive Option für Screenreader an das Combobox-Input koppeln */
-function syncCmdActiveDescendant() {
-  const inp = $('cmd-input');
-  if (!inp) return;
-  const cur = $('cmd-results').querySelector('.cmd-item.active');
-  inp.setAttribute('aria-activedescendant', cur ? cur.id : '');
-}
-
-function runCommand(i) {
-  const it = App.cmdResults && App.cmdResults[i];
-  closeCommander();
-  if (it && it.run) it.run();
-}
-
-function moveCmdActive(dir) {
-  const items = Array.from($('cmd-results').querySelectorAll('.cmd-item'));
-  if (!items.length) return;
-  if (items[App.cmdActive]) { items[App.cmdActive].classList.remove('active'); items[App.cmdActive].setAttribute('aria-selected', 'false'); }
-  App.cmdActive = (App.cmdActive + dir + items.length) % items.length;
-  const cur = items[App.cmdActive];
-  cur.classList.add('active');
-  cur.setAttribute('aria-selected', 'true');
-  cur.scrollIntoView({ block: 'nearest' });
-  syncCmdActiveDescendant();
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   6. FEATURE-AKTIONEN
-   ════════════════════════════════════════════════════════════════════ */
-function saveSteckbrief() {
-  const form = $('form-steckbrief');
-  if (!form) return;
-  ['vorname', 'nachname', 'kanton', 'beruf'].forEach((f) => {
-    const i = form.querySelector(`[data-field="${f}"]`);
-    if (i) App.profile[f] = i.value.trim();
-  });
-  store.set('lehrly_profile', JSON.stringify(App.profile));
-  syncSteckbrief(form.closest('.st-grid'));
-  renderRail();
-  vermerk('Steckbrief gesichert', 'haken');
-}
-
-function toggleStrength(tag, btn) {
-  App.strengths[tag] = !App.strengths[tag];
-  if (btn) btn.classList.toggle('on', App.strengths[tag]);
-  store.set('lehrly_strengths', JSON.stringify(App.strengths));
-  const grid = btn && btn.closest('.st-grid');
-  if (grid) syncStrengthRing(grid);
-  renderRail();
-}
-
-function runMatch(btn) {
-  if (!btn) btn = $('btn-match');
-  if (!btn) return;
-  const wasMatched = App.matched;
-  btn.disabled = true;
-  btn.textContent = 'Matching läuft …';
-  setTimeout(() => {
-    App.matched = true;
-    btn.textContent = '3 Matches gefunden';
-    /* echter Effekt: Treffer werden jetzt erst eingefüllt (vorher Teaser) */
-    const list = $('match-list');
-    if (list) {
-      list.innerHTML = matchEntriesHTML();
-      paintScoreRings(list);
-      if (!prefersReduced()) { list.style.opacity = '0'; requestAnimationFrame(() => { list.style.transition = 'opacity .5s'; list.style.opacity = '1'; }); }
-    }
-    renderRail();
-    vermerk(wasMatched ? '3 Matches aktualisiert' : '3 Matches in deinem Stream', 'siegel');
-    setTimeout(() => { btn.textContent = 'Match-Stream aktualisieren'; btn.disabled = false; }, 2600);
-  }, 1500);
-}
-
-function filterPool(filter, chip) {
-  App.poolFilter = filter || 'all';
-  document.querySelectorAll('#pool-filters .fchip').forEach((c) => c.classList.toggle('on', c === chip));
-  let visible = 0;
-  document.querySelectorAll('#pool-list .index-entry').forEach((card) => {
-    const tags = (card.dataset.tags || '').split(',');
-    const ok = App.poolFilter === 'all' || tags.includes(App.poolFilter);
-    card.hidden = !ok;
-    if (ok) visible++;
-  });
-  const empty = $('pool-empty');
-  if (empty) empty.hidden = visible !== 0;
-  const cnt = $('pool-count');
-  if (cnt) cnt.textContent = visible + ' Kandidaten';
-}
-
-function sendMsg(form) {
-  const pane = form.closest('.chat-pane');
-  const inp = pane.querySelector('#chat-inp');
-  if (!inp.value.trim()) return;
-  const log = pane.querySelector('#chat-log');
-  const row = el('div', 'cm-row me');
-  row.innerHTML = `<div class="bubble me">${esc(inp.value)}</div><span class="cm-time">Ich · Jetzt</span>`;
-  log.appendChild(row);
-  inp.value = '';
-  log.scrollTop = log.scrollHeight;
-}
-
-function cvDone() {
-  store.set('lehrly_cv_done', '1');
-  renderRail();
-  vermerk('Lebenslauf bereit', 'haken');
-}
-
-/* ── Betrieb: Profil sichern (echter State + localStorage) ── */
-function saveBetrieb() {
-  const form = $('form-betrieb');
-  if (!form) { vermerk('Betriebsprofil gesichert', 'haken'); return; }
-  ['firma', 'branche', 'ort'].forEach((f) => {
-    const i = form.querySelector(`[data-bfield="${f}"]`);
-    if (i) App.betrieb[f] = i.value.trim();
-  });
-  store.set('lehrly_betrieb', JSON.stringify(App.betrieb));
-  syncBetrieb(form.closest('.st-grid'));
-  const nm = App.betrieb.firma;
-  vermerk(nm ? `Profil „${nm}" gesichert` : 'Betriebsprofil gesichert', 'haken');
-}
-
-/* ── Betrieb: Stelle veröffentlichen (liest Felder, spiegelt in Stream) ── */
-function publishInserat() {
-  const form = $('form-inserat');
-  if (!form) { vermerk('Stelle veröffentlicht', 'siegel'); return; }
-  const get = (f) => { const i = form.querySelector(`[data-ifield="${f}"]`); return i ? i.value.trim() : ''; };
-  const beruf = get('beruf');
-  if (!beruf) { vermerk('Bitte Berufsbezeichnung angeben', 'reiter'); return; }
-  const entry = { beruf, plaetze: get('plaetze') || '1', beginn: get('beginn') || 'n. V.' };
-  App.inserate.unshift(entry);
-  store.set('lehrly_inserate', JSON.stringify(App.inserate));
-  /* Stream live aktualisieren statt nur Toast */
-  const list = $('inserat-list');
-  if (list) list.innerHTML = inseratEntriesHTML();
-  const empty = $('inserat-empty'); if (empty) empty.hidden = true;
-  const cnt = $('inserat-count'); if (cnt) cnt.textContent = App.inserate.length + ' aktive Stellen';
-  ['beruf', 'plaetze', 'beginn'].forEach((f) => { const i = form.querySelector(`[data-ifield="${f}"]`); if (i) i.value = ''; });
-  vermerk(`„${beruf}" ist live im Stream`, 'siegel');
-}
-
-/* ── Bewerbung absenden: Motivation auslesen & in Bestätigung zurückspielen ── */
-function submitBewerbung(t) {
-  const pane = t.closest('.pane');
-  const ta = pane && pane.querySelector('textarea');
-  const txt = ta ? ta.value.trim() : '';
-  const key = t.dataset.key;
-  const s = DATA.stellen[key];
-  popPane();
-  vermerk(s ? `Bewerbung an ${s.co.split(' · ')[0]} gesendet` : 'Bewerbung gesendet', 'siegel');
-}
-
-/* ── Schnupper-Einladung: Datum/Nachricht auslesen & echoen ── */
-function submitSchnupper(t) {
-  const pane = t.closest('.pane');
-  const datum = pane && pane.querySelector('[data-sfield="datum"]');
-  const d = datum ? datum.value.trim() : '';
-  const name = t.dataset.key || '';
-  popPane();
-  vermerk(d ? `Einladung an ${name} für ${d}` : `Einladung an ${name} gesendet`, 'siegel');
-}
-
-/* ── dock-vermerk Toast (andockende Sprech-Pille) ── */
-let vermerkTimer = null;
-function vermerk(msg, kind) {
-  const v = $('vermerk');
-  if (!v) return;
-  v.hidden = false;
-  v.dataset.kind = kind || 'haken';
-  v.textContent = msg;
-  void v.offsetWidth;
-  v.classList.add('show');
-  clearTimeout(vermerkTimer);
-  vermerkTimer = setTimeout(() => { v.classList.remove('show'); }, 2400);
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   8. MOTION — IntersectionObserver Stations-Reveal
-   ════════════════════════════════════════════════════════════════════ */
-let _io = null;
-function observeStations() {
-  const targets = document.querySelectorAll('.station, .index-entry, .metric-strip, .zrow, .tarif-col');
-  if (typeof IntersectionObserver !== 'function' || prefersReduced()) {
-    targets.forEach((t) => t.classList.add('in'));
-    return;
-  }
-  if (_io) _io.disconnect();
-  _io = new IntersectionObserver((entries) => {
-    entries.forEach((e, i) => {
-      if (e.isIntersecting) { const t = e.target; setTimeout(() => t.classList.add('in'), (i % 6) * 50); _io.unobserve(t); }
+    var chips = [];
+    var f = App.stellenFilters;
+    var labels = { branche: 'Branche', region: 'Region', typ: 'Abschluss' };
+    ['branche', 'region', 'typ'].forEach(function (k) {
+      if (f[k] !== 'all') chips.push('<button class="chip-active" data-action="clear-filter" data-key="' + k + '" aria-label="Filter entfernen: ' + esc(labels[k]) + ' ' + esc(stellenOptLabel(k, f[k])) + '">' +
+        esc(labels[k]) + ': ' + esc(stellenOptLabel(k, f[k])) + ' <svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>');
     });
-  }, { root: $('canvas'), rootMargin: '0px 0px -6% 0px', threshold: 0.05 });
-  targets.forEach((t) => { t.classList.add('reveal'); _io.observe(t); });
-  /* Defensive: noch nicht intersectete Targets nach Timeout sichtbar zwingen,
-     damit Edge-Layouts/Zoom keine Blank-Sections produzieren. */
-  setTimeout(() => { targets.forEach((t) => { if (!t.classList.contains('in')) t.classList.add('in'); }); }, 1200);
-}
+    var ac = $('active-chips');
+    if (ac) ac.innerHTML = chips.join('');
+  }
 
-/* ── aktive Station aus Scroll-Position ableiten ── */
-function trackActiveStation() {
-  const canvas = $('canvas');
-  if (!canvas) return;
-  let raf = null;
-  canvas.addEventListener('scroll', () => {
-    if (raf) return;
-    raf = requestAnimationFrame(() => {
-      raf = null;
-      const secs = Array.from(document.querySelectorAll('.station'));
-      const top = canvas.scrollTop + canvas.clientHeight * 0.3;
-      let cur = secs[0];
-      for (const s of secs) { if (s.offsetTop <= top) cur = s; }
-      if (cur && cur.dataset.station !== App.station) {
-        App.station = cur.dataset.station;
-        document.querySelectorAll('.rail-node').forEach((n) => {
-          const on = n.dataset.station === App.station;
-          n.classList.toggle('active', on);
-          n.setAttribute('aria-current', on ? 'true' : 'false');
-          /* done-Haken konsistent halten, auch wenn nur gescrollt wurde */
-          n.classList.toggle('done', isStationDone(n.dataset.station));
-        });
+  // — STELLEN-DETAIL —
+  views.stelle = function (id) {
+    var s = STELLEN.filter(function (x) { return x.id === id; })[0];
+    if (!s) return views.notfound();
+    var aehnliche = STELLEN.filter(function (x) { return x.id !== s.id && x.branche === s.branche; }).slice(0, 2);
+    return '<div class="container">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { route: 'stellen', label: 'Stellen finden' }, { label: s.beruf }]) +
+      '<div class="detail-grid">' +
+        '<article class="detail-main">' +
+          '<header class="detail-head">' +
+            '<h1 class="detail-h1">' + esc(s.beruf) + '</h1>' +
+            '<div class="detail-sub"><span>' + esc(s.betrieb) + '</span><span class="dot">·</span><span>' + esc(s.ort) + '</span></div>' +
+            '<div class="badge-row">' + verBadge(s.verifiziert) +
+              '<span class="badge badge-ok" tabindex="0" title="Lehrstelle entspricht der eidgenössischen Bildungsverordnung">' +
+              '<svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg> Gemäss Bildungsverordnung</span></div>' +
+          '</header>' +
+          '<section class="detail-sec"><h2 class="detail-h2">Über die Stelle</h2><p>' + esc(s.beschreibung) + '</p></section>' +
+          '<section class="detail-sec"><h2 class="detail-h2">Anforderungen</h2>' +
+            '<ul class="dot-list">' + s.anforderungen.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></section>' +
+          '<section class="detail-sec"><h2 class="detail-h2">Wir bieten</h2>' +
+            '<ul class="dot-list">' + s.bietet.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></section>' +
+          '<section class="detail-sec"><h2 class="detail-h2">Betrieb</h2>' +
+            '<p class="muted">' + esc(s.betrieb) + ' ist ein verifizierter Lehrbetrieb in ' + esc(s.ort) + '.</p></section>' +
+          (aehnliche.length ? '<section class="detail-sec"><h2 class="detail-h2">Ähnliche Stellen</h2><div class="list">' +
+            aehnliche.map(stelleCard).join('') + '</div></section>' : '') +
+        '</article>' +
+        '<aside class="detail-aside">' +
+          '<div class="aside-card">' +
+            '<dl class="eckdaten">' +
+              '<div><dt>Pensum</dt><dd>' + esc(s.pensum) + '</dd></div>' +
+              '<div><dt>Lehrbeginn</dt><dd>' + esc(s.beginn) + '</dd></div>' +
+              '<div><dt>Abschluss</dt><dd>' + esc(s.typ.toUpperCase()) + '</dd></div>' +
+              '<div><dt>Ort</dt><dd>' + esc(s.ort) + '</dd></div>' +
+            '</dl>' +
+            scoreBlock(s.score, s.grund) +
+            '<button class="btn btn-primary btn-block" data-action="goto-bewerben" data-id="' + s.id + '">Jetzt bewerben</button>' +
+            '<button class="btn btn-outline btn-block" data-action="ask-stelle" data-id="' + s.id + '">Frage stellen</button>' +
+          '</div>' +
+        '</aside>' +
+      '</div></div>';
+  };
+
+  // — BEWERBEN —
+  var bewerbenState = { step: 1, id: null, motivation: '' };
+  views.bewerben = function (id) {
+    var s = STELLEN.filter(function (x) { return x.id === id; })[0] || STELLEN[0];
+    bewerbenState.id = s.id;
+    return '<div class="container narrow">' +
+      breadcrumb([{ route: 'stellen', label: 'Stellen finden' }, { route: 'stelle', label: s.beruf }, { label: 'Bewerben' }]) +
+      '<h1 class="page-h1">Bewerbung – ' + esc(s.beruf) + '</h1>' +
+      '<div class="stepper" id="bewerben-stepper"></div>' +
+      '<form id="bewerben-form" class="step-form" data-action="bewerben-form"></form>' +
+    '</div>';
+  };
+
+  function renderBewerbenForm() {
+    var steps = ['Profil prüfen', 'Motivation', 'Unterlagen', 'Absenden'];
+    var st = bewerbenState.step;
+    $('bewerben-stepper').innerHTML = steps.map(function (s, i) {
+      var n = i + 1, cls = n < st ? 'done' : (n === st ? 'current' : '');
+      return '<div class="step-node ' + cls + '"><span class="step-num tnum">' + (n < st ? '✓' : n) + '</span>' +
+        '<span class="step-label">' + esc(s) + '</span></div>';
+    }).join('');
+
+    var body = '';
+    if (st === 1) {
+      body = '<fieldset class="fset"><legend>Deine Angaben</legend>' +
+        '<p class="hint">Wir übernehmen die Angaben aus deinem Profil. Prüfe sie kurz.</p>' +
+        '<div class="kv-line"><span>Name</span><strong>' + esc((App.profile.vorname + ' ' + App.profile.nachname).trim() || '—') + '</strong></div>' +
+        '<div class="kv-line"><span>Kanton</span><strong>' + esc(App.profile.kanton || '—') + '</strong></div>' +
+        '<div class="kv-line"><span>Berufswunsch</span><strong>' + esc(App.profile.beruf || '—') + '</strong></div>' +
+        '<p class="hint hint-trust"><svg class="ic" aria-hidden="true"><use href="#i-shield"></use></svg> Deine Kontaktdaten sieht der Betrieb erst nach deiner Zustimmung.</p>' +
+        '</fieldset><div class="step-actions"><button type="button" class="btn btn-primary" data-action="bewerben-next">Weiter</button></div>';
+    } else if (st === 2) {
+      body = '<fieldset class="fset"><legend>Motivation</legend>' +
+        '<label class="field"><span class="field-label">Warum interessierst du dich für diese Stelle? <em class="req">*</em></span>' +
+        '<textarea id="bw-motivation" class="textarea" rows="6" aria-describedby="bw-motivation-err" placeholder="Erzähle kurz von dir und deiner Motivation …">' + esc(bewerbenState.motivation) + '</textarea>' +
+        '<span class="field-error" id="bw-motivation-err" hidden>Bitte schreibe ein paar Sätze zu deiner Motivation.</span></label>' +
+        '</fieldset><div class="step-actions"><button type="button" class="btn btn-outline" data-action="bewerben-prev">Zurück</button>' +
+        '<button type="button" class="btn btn-primary" data-action="bewerben-next">Weiter</button></div>';
+    } else if (st === 3) {
+      body = '<fieldset class="fset"><legend>Unterlagen</legend>' +
+        '<div class="doc-list">' +
+          '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><span>Lebenslauf</span><span class="dl-state ok">aus Profil</span></div>' +
+          '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><span>Zeugnis</span><span class="dl-state ok">geprüft</span></div>' +
+        '</div>' +
+        '<p class="hint">Diese Unterlagen werden mit deiner Bewerbung übermittelt.</p>' +
+        '</fieldset><div class="step-actions"><button type="button" class="btn btn-outline" data-action="bewerben-prev">Zurück</button>' +
+        '<button type="button" class="btn btn-primary" data-action="bewerben-next">Weiter</button></div>';
+    } else {
+      var s = STELLEN.filter(function (x) { return x.id === bewerbenState.id; })[0] || STELLEN[0];
+      body = '<fieldset class="fset"><legend>Bewerbung absenden</legend>' +
+        '<p>Du bewirbst dich bei <strong>' + esc(s.betrieb) + '</strong> für <strong>' + esc(s.beruf) + '</strong>.</p>' +
+        '<p class="hint">Mit dem Absenden stimmst du der Weitergabe deiner Bewerbungsdaten an diesen Betrieb zu.</p>' +
+        '</fieldset><div class="step-actions"><button type="button" class="btn btn-outline" data-action="bewerben-prev">Zurück</button>' +
+        '<button type="button" class="btn btn-primary" data-action="submit-bewerbung" data-id="' + s.id + '">Bewerbung absenden</button></div>';
+    }
+    $('bewerben-form').innerHTML = body;
+  }
+
+  // — MEIN PROFIL —
+  var ALLE_STAERKEN = ['Organisation', 'Kommunikation', 'Zuverlässigkeit', 'Logisches Denken', 'Teamarbeit', 'Kreativität', 'Empathie', 'Genauigkeit'];
+  views.profil = function () {
+    var voll = profilVollstaendigkeit();
+    return '<div class="container narrow">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Mein Profil' }]) +
+      '<div class="profil-head"><h1 class="page-h1">Mein Profil</h1>' +
+        '<div class="vollstand"><span class="vs-label">Profil-Vollständigkeit</span>' +
+          '<div class="vs-bar"><i id="vs-fill" style="width:' + voll + '%"></i></div>' +
+          '<span id="vs-pct" class="vs-pct tnum">' + voll + '%</span></div></div>' +
+      '<nav class="anchor-tabs" aria-label="Profil-Abschnitte">' +
+        '<a href="#sec-personalien" class="atab active">Personalien</a>' +
+        '<a href="#sec-beruf" class="atab">Berufswunsch</a>' +
+        '<a href="#sec-noten" class="atab">Noten</a>' +
+        '<a href="#sec-staerken" class="atab">Stärken</a>' +
+        '<a href="#sec-erfahrung" class="atab">Erfahrung</a>' +
+        '<a href="#sec-dokumente" class="atab">Dokumente</a></nav>' +
+
+      '<section id="sec-personalien" class="profil-sec"><h2 class="detail-h2">Personalien</h2>' +
+        '<form id="form-steckbrief" class="form-grid" data-action="profil-form">' +
+          field('vorname', 'Vorname', App.profile.vorname, true) +
+          field('nachname', 'Nachname', App.profile.nachname, true) +
+          field('kanton', 'Kanton', App.profile.kanton, false) +
+          field('plz', 'PLZ', App.profile.plz, false) +
+        '</form></section>' +
+
+      '<section id="sec-beruf" class="profil-sec"><h2 class="detail-h2">Berufswunsch</h2>' +
+        '<label class="field"><span class="field-label">Wunschberuf (EFZ/EBA-Liste)</span>' +
+        '<select class="select" data-field="beruf">' +
+          '<option value="">Bitte wählen …</option>' +
+          ['Kauffrau/Kaufmann EFZ', 'Informatiker/in EFZ', 'Fachfrau/Fachmann Gesundheit EFZ', 'Detailhandelsfachfrau/-mann EFZ', 'Polymechaniker/in EFZ', 'Detailhandelsassistent/in EBA'].map(function (b) {
+            return '<option value="' + esc(b) + '"' + (App.profile.beruf === b ? ' selected' : '') + '>' + esc(b) + '</option>';
+          }).join('') + '</select></label></section>' +
+
+      '<section id="sec-noten" class="profil-sec"><h2 class="detail-h2">Noten</h2>' +
+        zeugnisStrip([['Deutsch', 5.0], ['Mathematik', 5.5], ['Französisch', 4.8], ['Englisch', 5.5]]) + '</section>' +
+
+      '<section id="sec-staerken" class="profil-sec"><h2 class="detail-h2">Stärken</h2>' +
+        '<p class="hint">Wähle, was dich auszeichnet.</p>' +
+        '<div id="strength-tags">' + staerkenTags(ALLE_STAERKEN, true) + '</div></section>' +
+
+      '<section id="sec-erfahrung" class="profil-sec"><h2 class="detail-h2">Erfahrung / Schnuppern</h2>' +
+        '<label class="field"><span class="field-label">Schnupper-Erfahrungen</span>' +
+        '<input class="input" type="text" data-snfield="schnupper" value="' + esc(App.schnupperErf) + '" placeholder="z.B. Raiffeisenbank (3 Tage)"></label></section>' +
+
+      '<section id="sec-dokumente" class="profil-sec"><h2 class="detail-h2">Dokumente</h2>' +
+        '<div class="doc-list">' +
+          '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><span>Lebenslauf</span><span class="dl-state ok">hochgeladen</span></div>' +
+          '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><span>Schulzeugnis</span><span class="dl-state ok">geprüft</span></div>' +
+          '<div class="doc-line"><svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg><span>Motivationsschreiben</span><span class="dl-state open">offen</span><button class="btn-text" data-action="upload-doc">Hochladen</button></div>' +
+        '</div>' +
+        '<p class="hint hint-trust"><svg class="ic" aria-hidden="true"><use href="#i-shield"></use></svg> Nur du und von dir freigegebene Betriebe sehen diese Daten.</p>' +
+        '<div class="profil-actions"><button class="btn btn-primary" data-action="save-profil">Profil speichern</button>' +
+          '<button class="btn btn-outline" data-route="cv" data-action="goto-cv">Lebenslauf-Vorschau</button></div>' +
+      '</section></div>';
+  };
+
+  function field(name, label, val, req) {
+    return '<label class="field"><span class="field-label">' + esc(label) + (req ? ' <em class="req">*</em>' : '') + '</span>' +
+      '<input class="input" type="text" data-field="' + name + '" value="' + esc(val || '') + '" placeholder="' + esc(label) + '"></label>';
+  }
+
+  function profilVollstaendigkeit() {
+    var pts = 0;
+    if (App.profile.vorname) pts += 15;
+    if (App.profile.nachname) pts += 15;
+    if (App.profile.kanton) pts += 10;
+    if (App.profile.beruf) pts += 25;
+    if (App.schnupperErf) pts += 15;
+    if (Object.keys(App.strengths).filter(function (k) { return App.strengths[k]; }).length >= 2) pts += 20;
+    return Math.min(100, pts);
+  }
+
+  // — LEBENSLAUF-VORSCHAU (A4) —
+  views.cv = function () {
+    var name = (App.profile.vorname + ' ' + App.profile.nachname).trim() || 'Dein Name';
+    var staerken = Object.keys(App.strengths).filter(function (k) { return App.strengths[k]; });
+    return '<div class="container narrow">' +
+      breadcrumb([{ route: 'profil', label: 'Mein Profil' }, { label: 'Lebenslauf' }]) +
+      '<div class="cv-toolbar"><h1 class="page-h1">Lebenslauf-Vorschau</h1>' +
+        '<button class="btn btn-outline" data-action="cv-print">Drucken / Exportieren</button></div>' +
+      '<div class="cv-sheet" id="cv-sheet">' +
+        '<header class="cv-head"><h2 class="cv-name">' + esc(name) + '</h2>' +
+          '<p class="cv-beruf">' + esc(App.profile.beruf || 'Berufswunsch noch offen') + '</p>' +
+          '<p class="cv-ort">' + esc((App.profile.plz + ' ' + App.profile.kanton).trim() || 'Schweiz') + '</p></header>' +
+        '<section class="cv-block"><h3>Stärken</h3>' +
+          (staerken.length ? '<div class="tag-row">' + staerken.map(function (s) { return '<span class="tag static on">' + esc(s) + '</span>'; }).join('') + '</div>'
+            : '<p class="muted">Noch keine Stärken gewählt.</p>') + '</section>' +
+        '<section class="cv-block"><h3>Schnupper-Erfahrung</h3>' +
+          '<p>' + esc(App.schnupperErf || 'Noch keine Angabe.') + '</p></section>' +
+        '<section class="cv-block"><h3>Schulnoten</h3>' +
+          zeugnisStrip([['Deutsch', 5.0], ['Mathematik', 5.5], ['Französisch', 4.8], ['Englisch', 5.5]]) + '</section>' +
+      '</div></div>';
+  };
+
+  // — KANDIDATEN SUCHEN (Betrieb) —
+  views.kandidaten = function () {
+    return '<div class="container">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Kandidaten suchen' }]) +
+      '<div class="search-page">' +
+        '<aside class="filter-col" aria-label="Filter">' + poolFilterPanel() + '</aside>' +
+        '<section class="results-col" aria-label="Kandidatenliste">' +
+          '<div class="results-bar">' +
+            '<div class="search-inline"><svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg>' +
+              '<input id="pool-q" class="search-inline-inp" type="text" placeholder="Beruf oder Stärke …" value="' + esc(App.poolFilters.q) + '" data-action="pool-q" aria-label="Kandidaten suchen"></div>' +
+            '<div class="results-meta"><span id="pool-count" class="results-count tnum"></span></div>' +
+          '</div>' +
+          '<p class="hint">Profile sind anonymisiert, bis die Kandidat/innen die Freigabe erteilen.</p>' +
+          '<div id="pool-list" class="list"></div>' +
+        '</section>' +
+      '</div></div>';
+  };
+
+  function poolFilterPanel() {
+    function group(title, key, opts) {
+      return '<fieldset class="filter-group"><legend class="filter-h">' + esc(title) + '</legend>' +
+        opts.map(function (o) {
+          var checked = App.poolFilters[key] === o.v;
+          return '<label class="filter-opt"><input type="radio" name="p-' + key + '" value="' + o.v + '"' +
+            (checked ? ' checked' : '') + ' data-poolfilter-key="' + key + '"><span>' + esc(o.l) + '</span></label>';
+        }).join('') + '</fieldset>';
+    }
+    return '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
+      '<button class="btn-text" data-action="reset-pool-filter">Zurücksetzen</button></div>' +
+      group('Region', 'region', [{ v: 'all', l: 'Ganze Schweiz' }, { v: 'zurich', l: 'Zürich' }, { v: 'bern', l: 'Bern' }]) +
+      group('Berufsfeld', 'feld', [{ v: 'all', l: 'Alle Felder' }, { v: 'kv', l: 'Kaufmännisch' }, { v: 'informatik', l: 'Informatik' }, { v: 'gesundheit', l: 'Gesundheit' }]) +
+      group('Noten', 'note', [{ v: 'all', l: 'Alle' }, { v: '5', l: 'Ø 5.0 und höher' }, { v: '55', l: 'Ø 5.5 und höher' }]);
+  }
+
+  function filteredPool() {
+    var f = App.poolFilters;
+    return KANDIDATEN.filter(function (k) {
+      if (f.region !== 'all' && k.region !== f.region) return false;
+      if (f.feld !== 'all' && k.feld !== f.feld) return false;
+      if (f.note === '5' && k.noteAvg < 5.0) return false;
+      if (f.note === '55' && k.noteAvg < 5.5) return false;
+      if (f.q) {
+        var hay = (k.beruf + ' ' + k.staerken.join(' ')).toLowerCase();
+        if (hay.indexOf(f.q.toLowerCase()) === -1) return false;
       }
+      return true;
     });
-  }, { passive: true });
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   9. EVENT-DELEGATION  (kein Inline-onclick — data-action am Shell)
-   ════════════════════════════════════════════════════════════════════ */
-function onAction(e) {
-  const t = e.target.closest('[data-action]');
-  if (!t) return;
-  const act = t.dataset.action;
-  switch (act) {
-    case 'home':            e.preventDefault(); gotoStation(stationsFor(App.role)[0].id); break;
-    case 'goto':            gotoStation(t.dataset.station); break;
-    case 'commander':       openCommander(); break;
-    case 'close-commander': closeCommander(); break;
-    case 'cmd-run':         runCommand(parseInt(t.dataset.idx, 10)); break;
-    case 'pane':            openPaneFromEl(t); break;
-    case 'pop-pane':        popPane(); break;
-    case 'save-steckbrief': saveSteckbrief(); break;
-    case 'toggle-strength': toggleStrength(t.dataset.tag, t); break;
-    case 'run-match':       runMatch(t); break;
-    case 'filter-pool':     filterPool(t.dataset.filter, t); break;
-    case 'upload-doc':      vermerk('Dokument hochgeladen', 'haken'); break;
-    case 'cv-done':         cvDone(); break;
-    case 'save-betrieb':    saveBetrieb(); break;
-    case 'publish-inserat': publishInserat(); break;
-    case 'submit-bewerbung':submitBewerbung(t); break;
-    case 'submit-schnupper':submitSchnupper(t); break;
-    case 'choose-plan':     vermerk('Paket „' + t.dataset.plan + '" gewählt', 'reiter'); break;
-    case 'send-msg':        break; /* via submit */
-    default: break;
   }
-}
 
-function openPaneFromEl(t) {
-  const type = t.dataset.pane;
-  let payload = t.dataset.key || null;
-  if (type === 'chat') payload = { key: t.dataset.key, role: t.dataset.chatrole || 'lernende' };
-  pushPane(type, payload);
-}
-
-/* Rollen-Switch */
-function onRoleSwitch(e) {
-  const b = e.target.closest('.role-opt');
-  if (!b) return;
-  switchRole(b.dataset.role);
-}
-
-/* Formular-Submit (Chat senden) */
-function onSubmit(e) {
-  const form = e.target.closest('[data-action="send-msg"]');
-  if (!form) return;
-  e.preventDefault();
-  sendMsg(form);
-}
-
-/* Steckbrief Live-Sync beim Tippen */
-function onInput(e) {
-  const f = e.target.closest('[data-field]');
-  if (f) { App.profile[f.dataset.field] = f.value.trim(); }
-  const bf = e.target.closest('[data-bfield]');
-  if (bf) { App.betrieb[bf.dataset.bfield] = bf.value.trim(); }
-  const sn = e.target.closest('[data-snfield]');
-  if (sn) { App.schnupperErf = sn.value.trim(); store.set('lehrly_schnupper', App.schnupperErf); }
-  if (e.target.id === 'cmd-input') filterCommands(e.target.value);
-}
-
-/* ── Tastatur: Cmd-K, Esc, Commander-Navigation, A11y für Index-Einträge ── */
-function onKeydown(ev) {
-  /* Commander öffnen */
-  if ((ev.metaKey || ev.ctrlKey) && (ev.key === 'k' || ev.key === 'K')) {
-    ev.preventDefault();
-    if ($('commander').hidden) openCommander(); else closeCommander();
-    return;
-  }
-  /* Commander aktiv? */
-  if (!$('commander').hidden) {
-    if (ev.key === 'Escape') { ev.preventDefault(); closeCommander(); return; }
-    if (ev.key === 'ArrowDown') { ev.preventDefault(); moveCmdActive(1); return; }
-    if (ev.key === 'ArrowUp') { ev.preventDefault(); moveCmdActive(-1); return; }
-    if (ev.key === 'Enter') { ev.preventDefault(); runCommand(App.cmdActive); return; }
-    return;
-  }
-  /* Esc schliesst oberste Pane */
-  if (ev.key === 'Escape' && App.paneStack.length) { ev.preventDefault(); popPane(); return; }
-  /* Fokus-Trap in oberster Pane */
-  if (ev.key === 'Tab' && App.paneStack.length) {
-    const pane = App.paneStack[App.paneStack.length - 1].el;
-    const isVisible = (x) => x === document.activeElement || (typeof x.getClientRects === 'function' && x.getClientRects().length > 0) || x.offsetParent !== null;
-    const items = Array.from(pane.querySelectorAll(FOCUSABLE)).filter(isVisible);
-    if (items.length) {
-      const f = items[0], l = items[items.length - 1];
-      if (ev.shiftKey && document.activeElement === f) { ev.preventDefault(); l.focus(); }
-      else if (!ev.shiftKey && document.activeElement === l) { ev.preventDefault(); f.focus(); }
-      else if (!pane.contains(document.activeElement)) { ev.preventDefault(); f.focus(); }
+  function renderPoolResults() {
+    var list = filteredPool();
+    var cnt = $('pool-count');
+    if (cnt) cnt.textContent = list.length + (list.length === 1 ? ' Kandidat' : ' Kandidaten');
+    var holder = $('pool-list');
+    if (!holder) return;
+    if (list.length === 0) {
+      holder.innerHTML = '<div class="empty-state"><h3>Keine Kandidaten gefunden</h3>' +
+        '<p class="muted">Passen Sie die Filter an oder setzen Sie sie zurück.</p>' +
+        '<button class="btn btn-outline" data-action="reset-pool-filter">Filter zurücksetzen</button></div>';
+    } else {
+      holder.innerHTML = list.map(kandidatCard).join('');
     }
   }
-}
 
-/* ════════════════════════════════════════════════════════════════════
-   INIT
-   ════════════════════════════════════════════════════════════════════ */
-function loadPersisted() {
-  try {
-    const p = store.get('lehrly_profile'); if (p) App.profile = JSON.parse(p) || {};
-    const s = store.get('lehrly_strengths'); if (s) App.strengths = JSON.parse(s) || {};
-    const b = store.get('lehrly_betrieb'); if (b) App.betrieb = JSON.parse(b) || {};
-    const i = store.get('lehrly_inserate'); if (i) App.inserate = JSON.parse(i) || [];
-    const sn = store.get('lehrly_schnupper'); if (sn) App.schnupperErf = sn;
-  } catch (e) { App.profile = App.profile || {}; App.strengths = App.strengths || {}; App.betrieb = App.betrieb || {}; App.inserate = App.inserate || []; }
-}
+  // — KANDIDAT-PROFIL —
+  views.kandidat = function (id) {
+    var k = KANDIDATEN.filter(function (x) { return x.id === id; })[0];
+    if (!k) return views.notfound();
+    var frei = k.freigegeben;
+    var name = kandKey(k);                 // Klarname nur bei Freigabe
+    var key = kandKey(k);                  // nie Klarname eines anonymen Profils
 
-function init() {
-  loadPersisted();
-  renderRail();
-  renderCanvas();
-  buildCommandIndex();
-  paintScoreRings();
+    // Zeugnis-Badge an echtes Datenfeld koppeln (nicht pauschal grün).
+    var zeugnisBadge = k.zeugnisGeprueft
+      ? '<span class="badge badge-ok" tabindex="0" title="Schulzeugnis durch Lehrly geprüft"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg> Zeugnis geprüft</span>'
+      : '<span class="badge badge-pending" tabindex="0" title="Zeugnis noch nicht geprüft">Zeugnis ausstehend</span>';
 
-  const shell = $('shell');
-  shell.addEventListener('click', onAction);
-  shell.addEventListener('submit', onSubmit);
-  $('commander').addEventListener('click', onAction);
-  $('pane-scrim').addEventListener('click', onAction);
-  $('role-switch').addEventListener('click', onRoleSwitch);
-  document.addEventListener('input', onInput);
-  document.addEventListener('keydown', onKeydown);
+    // Noten/Stärken/Berufswunsch nur bei Freigabe; sonst Platzhalter ohne sensible Daten.
+    var notenSec = frei
+      ? '<section class="detail-sec"><h2 class="detail-h2">Noten</h2>' + zeugnisStrip(k.noten) + '</section>'
+      : '<section class="detail-sec"><h2 class="detail-h2">Noten</h2>' +
+          '<p class="muted">Noten und Zeugnis sind erst nach Freigabe durch die Kandidat/in sichtbar.</p></section>';
+    var staerkenSec = frei
+      ? '<section class="detail-sec"><h2 class="detail-h2">Stärken</h2>' + staerkenTags(k.staerken, false) + '</section>'
+      : '';
+    var berufSec = '<section class="detail-sec"><h2 class="detail-h2">Berufswunsch</h2><p>' +
+      esc(frei ? k.beruf : k.berufFeld) + '</p></section>';
 
-  trackActiveStation();
-  gotoStation(App.station, { instant: true });
-}
+    var primCta = frei
+      ? '<button class="btn btn-primary btn-block" data-action="open-schnupper" data-id="' + k.id + '" data-key="' + esc(key) + '">Zum Schnuppern einladen</button>'
+      : '<button class="btn btn-primary btn-block" data-action="request-freigabe" data-id="' + k.id + '" data-key="' + esc(key) + '">Freigabe anfragen</button>';
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+    return '<div class="container">' +
+      breadcrumb([{ route: 'kandidaten', label: 'Kandidaten suchen' }, { label: name }]) +
+      '<div class="detail-grid">' +
+        '<article class="detail-main">' +
+          '<header class="detail-head"><h1 class="detail-h1">' + esc(name) + '</h1>' +
+            '<div class="detail-sub"><span>' + esc(frei ? k.beruf : k.berufFeld) + '</span><span class="dot">·</span><span>' + esc(kandRegion(k)) + '</span></div>' +
+            '<div class="badge-row">' + (frei
+              ? '<span class="badge badge-ok" tabindex="0" title="Kandidat/in hat das Profil freigegeben">Profil freigegeben</span>'
+              : '<span class="badge badge-pending" tabindex="0" title="Vollständiges Profil erst nach Freigabe sichtbar">Anonymisiert bis Freigabe</span>') +
+              zeugnisBadge + '</div>' +
+          '</header>' +
+          notenSec + staerkenSec + berufSec +
+        '</article>' +
+        '<aside class="detail-aside"><div class="aside-card">' +
+          scoreBlock(k.score, 'passt zu Berufsbild, Region und Notenprofil') +
+          primCta +
+          '<button class="btn btn-outline btn-block" data-action="msg-kandidat" data-id="' + k.id + '">Nachricht senden</button>' +
+        '</div></aside>' +
+      '</div></div>';
+  };
 
-/* ── expose für Tests & Power-User ── */
-window.App = App;
-window.DATA = DATA;
-window.gotoStation = gotoStation;
-window.switchRole = switchRole;
-window.pushPane = pushPane;
-window.popPane = popPane;
-window.openCommander = openCommander;
-window.closeCommander = closeCommander;
-window.filterCommands = filterCommands;
-window.runMatch = runMatch;
-window.filterPool = filterPool;
-window.sendMsg = sendMsg;
-window.vermerk = vermerk;
+  // — STELLE AUSSCHREIBEN (Betrieb) —
+  views.ausschreiben = function () {
+    return '<div class="container narrow">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Stelle ausschreiben' }]) +
+      '<h1 class="page-h1">Stelle ausschreiben</h1>' +
+      '<p class="hint">Strukturierte Angaben nach eidgenössischer Bildungsverordnung.</p>' +
+      '<section class="profil-sec"><h2 class="detail-h2">Betriebsprofil</h2>' +
+        '<form id="form-betrieb" class="form-grid" data-action="betrieb-form">' +
+          bfield('firma', 'Firma', App.betrieb.firma, true) +
+          bfield('branche', 'Branche', App.betrieb.branche, false) +
+          bfield('ort', 'Standort', App.betrieb.ort, false) +
+        '</form>' +
+        '<div class="vollstand vollstand-inline"><span class="vs-label">Betriebsprofil</span>' +
+          '<div class="vs-bar"><i id="betrieb-fill" style="width:' + betriebPct() + '%"></i></div>' +
+          '<span id="betrieb-pct" class="vs-pct tnum">' + betriebPct() + '%</span></div>' +
+        '<button class="btn btn-outline" data-action="save-betrieb">Betriebsprofil speichern</button></section>' +
+
+      '<section class="profil-sec"><h2 class="detail-h2">Neue Lehrstelle</h2>' +
+        '<form id="form-inserat" class="form-grid" data-action="inserat-form">' +
+          '<label class="field"><span class="field-label">Berufsbild (EFZ/EBA) <em class="req">*</em></span>' +
+            '<input class="input" type="text" data-ifield="beruf" placeholder="Berufsbild (EFZ/EBA)" aria-describedby="inserat-beruf-err">' +
+            '<span class="field-error" id="inserat-beruf-err" hidden>Bitte ein Berufsbild angeben.</span></label>' +
+          ifield('plaetze', 'Anzahl Plätze', '', false) +
+          ifield('beginn', 'Lehrbeginn', '', false) +
+          '<label class="field field-full"><span class="field-label">Beschreibung</span>' +
+            '<textarea class="textarea" data-ifield="beschreibung" rows="4" placeholder="Aufgaben, Anforderungen, Besonderheiten …"></textarea></label>' +
+        '</form>' +
+        '<div class="step-actions"><button class="btn btn-primary" data-action="publish-inserat">Lehrstelle veröffentlichen</button></div></section>' +
+
+      '<section class="profil-sec"><h2 class="detail-h2">Veröffentlichte Lehrstellen</h2>' +
+        '<div id="inserat-list" class="list"></div>' +
+        '<div id="inserat-empty" class="empty-state"><h3>Noch keine Lehrstellen</h3>' +
+          '<p class="muted">Veröffentlichte Lehrstellen erscheinen hier.</p></div></section>' +
+    '</div>';
+  };
+
+  function bfield(name, label, val, req) {
+    return '<label class="field"><span class="field-label">' + esc(label) + (req ? ' <em class="req">*</em>' : '') + '</span>' +
+      '<input class="input" type="text" data-bfield="' + name + '" value="' + esc(val || '') + '" placeholder="' + esc(label) + '"></label>';
+  }
+  function ifield(name, label, val, req) {
+    return '<label class="field"><span class="field-label">' + esc(label) + (req ? ' <em class="req">*</em>' : '') + '</span>' +
+      '<input class="input" type="text" data-ifield="' + name + '" value="' + esc(val || '') + '" placeholder="' + esc(label) + '"></label>';
+  }
+  function betriebPct() {
+    var p = 0;
+    if (App.betrieb.firma) p += 40;
+    if (App.betrieb.branche) p += 30;
+    if (App.betrieb.ort) p += 30;
+    return p;
+  }
+
+  function renderInserate() {
+    var holder = $('inserat-list');
+    var empty = $('inserat-empty');
+    if (!holder) return;
+    if (App.inserate.length === 0) {
+      holder.innerHTML = '';
+      if (empty) empty.hidden = false;
+      return;
+    }
+    if (empty) empty.hidden = true;
+    holder.innerHTML = App.inserate.map(function (i) {
+      return '<div class="list-item"><div class="li-main"><h3 class="li-title">' + esc(i.beruf) + '</h3>' +
+        '<div class="li-tags"><span class="chip-static">' + esc(i.plaetze || '1') + ' Plätze</span>' +
+        '<span class="chip-static">Start ' + esc(i.beginn || 'offen') + '</span>' +
+        '<span class="status-pill pending">veröffentlicht</span></div></div></div>';
+    }).join('');
+  }
+
+  // — CHAT (zweispaltig) —
+  var chatState = { activeId: null };
+  views.chat = function (id) {
+    var convs = KONVERSATIONEN[App.role];
+    if (!chatState.activeId || !convs.filter(function (c) { return c.id === chatState.activeId; })[0]) {
+      chatState.activeId = (id && convs.filter(function (c) { return c.id === id; })[0]) ? id : convs[0].id;
+    }
+    return '<div class="container">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Nachrichten' }]) +
+      '<div class="chat-grid">' +
+        '<aside class="chat-list" aria-label="Konversationen">' +
+          convs.map(function (c) {
+            var active = c.id === chatState.activeId;
+            return '<button class="conv' + (active ? ' active' : '') + '" data-action="open-conv" data-conv="' + c.id + '"' +
+              (active ? ' aria-current="true"' : '') + '>' +
+              '<span class="conv-top"><span class="conv-name">' + esc(c.partner) + '</span><span class="ie-time conv-time tnum">' + esc(c.time) + '</span></span>' +
+              '<span class="conv-kontext">' + esc(c.kontext) + '</span>' +
+              '<span class="conv-preview">' + esc(c.preview) + '</span></button>';
+          }).join('') +
+        '</aside>' +
+        '<section class="chat-pane" aria-label="Konversation">' +
+          '<div id="chat-head" class="chat-head"></div>' +
+          '<div id="chat-log" class="chat-log"></div>' +
+          '<form class="chat-compose" data-action="chat-send">' +
+            '<label class="sr-only" for="chat-inp">Nachricht</label>' +
+            '<input id="chat-inp" class="chat-inp" type="text" placeholder="Nachricht schreiben …" autocomplete="off">' +
+            '<button class="btn btn-primary chat-send" type="submit">Senden</button></form>' +
+        '</section>' +
+      '</div></div>';
+  };
+
+  function getChatMsgs(convId) {
+    if (App.chats[convId]) return App.chats[convId];
+    var conv = KONVERSATIONEN[App.role].filter(function (c) { return c.id === convId; })[0];
+    App.chats[convId] = conv ? conv.msgs.slice() : [];
+    return App.chats[convId];
+  }
+
+  function renderChatConversation() {
+    var conv = KONVERSATIONEN[App.role].filter(function (c) { return c.id === chatState.activeId; })[0];
+    if (!conv) return;
+    var head = $('chat-head');
+    if (head) head.innerHTML = '<div><strong>' + esc(conv.partner) + '</strong>' +
+      '<span class="chat-kontext"> · ' + esc(conv.kontext) + '</span></div>';
+    var log = $('chat-log');
+    if (!log) return;
+    var msgs = getChatMsgs(conv.id);
+    log.innerHTML = msgs.map(function (m) {
+      return '<div class="cm-row ' + (m.me ? 'right' : 'left') + '">' +
+        '<div class="bubble ' + (m.me ? 'me' : 'them') + '">' + esc(m.text) +
+        '<span class="cm-time tnum">' + esc(m.time) + (m.me ? ' · gesendet' : '') + '</span></div></div>';
+    }).join('');
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // — DASHBOARD / PIPELINE —
+  views.dashboard = function () {
+    if (App.role === 'betrieb') return views.bDashboard();
+    var metrics = [
+      ['Offene Bewerbungen', App.bewerbungen.length || 0],
+      ['Treffer', App.matched ? 3 : 0],
+      ['Ungelesene Nachrichten', 2],
+      ['Profil-Vollständigkeit', profilVollstaendigkeit() + '%']
+    ];
+    return '<div class="container">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Übersicht' }]) +
+      '<h1 class="page-h1">Deine Übersicht</h1>' +
+      metricRow(metrics) +
+      '<div class="dash-cols">' +
+        '<section class="dash-block"><h2 class="detail-h2">Bewerbungs-Status</h2>' +
+          (App.bewerbungen.length ? '<ul class="status-list">' + App.bewerbungen.map(function (b) {
+            return '<li><span>' + esc(b.betrieb) + ' – ' + esc(b.beruf) + '</span><span class="status-pill ' + esc(b.statusKind) + '">' + esc(b.status) + '</span></li>';
+          }).join('') + '</ul>'
+          : '<div class="empty-state"><h3>Noch keine Bewerbungen</h3><p class="muted">So findest du passende Stellen.</p>' +
+            '<button class="btn btn-primary" data-route="stellen" data-action="goto-stellen">Stellen finden</button></div>') +
+        '</section>' +
+        '<section class="dash-block"><h2 class="detail-h2">Aktivität</h2>' +
+          '<ul class="activity-list">' +
+            '<li><span class="act-dot"></span>ZKB hat dein Profil angesehen</li>' +
+            '<li><span class="act-dot"></span>Neue passende Stelle: Informatiker EFZ</li>' +
+            '<li><span class="act-dot"></span>Profil zu 80% vollständig</li>' +
+          '</ul></section>' +
+      '</div></div>';
+  };
+
+  views.bDashboard = function () {
+    var metrics = [
+      ['Veröffentlichte Stellen', App.inserate.length],
+      ['Eingegangene Bewerbungen', 4],
+      ['Schnupper-Einladungen', App.einladungen.length],
+      ['Ungelesene Nachrichten', 1]
+    ];
+    return '<div class="container">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Pipeline' }]) +
+      '<h1 class="page-h1">Pipeline-Übersicht</h1>' +
+      metricRow(metrics) +
+      '<div class="dash-cols">' +
+        '<section class="dash-block"><h2 class="detail-h2">Kandidaten-Status</h2>' +
+          '<ul class="status-list">' +
+            '<li><span>Lena M. – Kauffrau EFZ</span><span class="status-pill ok">Schnuppern eingeladen</span></li>' +
+            '<li><span>Noah B. – Informatiker EFZ</span><span class="status-pill pending">angesehen</span></li>' +
+            '<li><span>Sara K. – FaGe EFZ</span><span class="status-pill pending">eingegangen</span></li>' +
+            '<li><span>Tim R. – Detailhandel EFZ</span><span class="status-pill err">abgesagt</span></li>' +
+          '</ul></section>' +
+        '<section class="dash-block"><h2 class="detail-h2">Aktivität</h2>' +
+          '<ul class="activity-list">' +
+            '<li><span class="act-dot"></span>Neue Bewerbung für Kauffrau EFZ</li>' +
+            '<li><span class="act-dot"></span>Lena M. hat die Einladung angenommen</li>' +
+            '<li><span class="act-dot"></span>Stelle Informatiker EFZ veröffentlicht</li>' +
+          '</ul></section>' +
+      '</div></div>';
+  };
+
+  function metricRow(metrics) {
+    return '<div class="metric-row">' + metrics.map(function (m) {
+      return '<div class="metric"><span class="metric-num tnum">' + esc(m[1]) + '</span>' +
+        '<span class="metric-label">' + esc(m[0]) + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  // — PREISE —
+  views.preise = function () {
+    var betriebPlans = [
+      { name: 'Start', preis: 'CHF 0', sub: 'pro Monat', feats: ['1 aktive Lehrstelle', 'Bewerbungseingang', 'Basis-Profil'], hot: false },
+      { name: 'Betrieb', preis: 'CHF 49', sub: 'pro Monat', feats: ['Bis 10 Lehrstellen', 'Kandidatensuche & Filter', 'Schnupper-Einladungen', 'Verifizierungs-Badge'], hot: true },
+      { name: 'Enterprise', preis: 'auf Anfrage', sub: '', feats: ['Unbegrenzte Lehrstellen', 'Mehrere Standorte', 'API-Zugang', 'Persönlicher Support'], hot: false }
+    ];
+    return '<div class="container">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Preise' }]) +
+      '<h1 class="page-h1">Preise</h1>' +
+      '<div class="preise-frei"><div class="frei-card"><div><h2 class="detail-h2">Für Lernende</h2>' +
+        '<p class="muted">Lehrly ist für Lernende dauerhaft kostenlos. Profil, Suche, Bewerbungen und Nachrichten inklusive.</p></div>' +
+        '<span class="frei-tag">kostenlos</span></div></div>' +
+      '<h2 class="sec-h">Für Betriebe</h2>' +
+      '<div class="tarif-grid">' + betriebPlans.map(function (p) {
+        return '<div class="tarif-col' + (p.hot ? ' hot' : '') + '">' +
+          (p.hot ? '<span class="tarif-empf">empfohlen</span>' : '') +
+          '<h3 class="tarif-name">' + esc(p.name) + '</h3>' +
+          '<div class="tarif-preis"><span class="tp-num tnum">' + esc(p.preis) + '</span>' +
+            (p.sub ? '<span class="tp-sub">' + esc(p.sub) + '</span>' : '') + '</div>' +
+          '<ul class="tarif-feats">' + p.feats.map(function (f) {
+            return '<li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>' + esc(f) + '</li>';
+          }).join('') + '</ul>' +
+          '<button class="btn ' + (p.hot ? 'btn-primary' : 'btn-outline') + ' btn-block" data-action="choose-plan" data-plan="' + esc(p.name) + '">Wählen</button>' +
+        '</div>';
+      }).join('') + '</div></div>';
+  };
+
+  // — 404 —
+  views.notfound = function () {
+    return '<div class="container narrow">' +
+      '<div class="notfound"><h1 class="page-h1">Seite nicht gefunden</h1>' +
+        '<p class="muted">Die gesuchte Seite gibt es nicht. Versuch es mit der Stellensuche.</p>' +
+        searchBar('stellen') +
+        '<div class="nf-links"><a class="link-arrow" data-route="start" href="#/start">Zur Startseite</a>' +
+          '<a class="link-arrow" data-route="stellen" href="#/stellen">Stellen finden</a></div>' +
+      '</div></div>';
+  };
+
+  // — STATISCHE INFO-/LEGAL-SEITEN (Trust-Anker) —
+  var INFO = {
+    ueber: { titel: 'Über uns', body: [
+      'Lehrly ist ein Vorschau-Prototyp eines Schweizer Berufsbildungs-Registers. Ziel ist eine ruhige, transparente Plattform, die Lernende und Lehrbetriebe seriös zusammenbringt.',
+      'Diese Demo zeigt den Funktionsumfang ohne echtes Konto und ohne Live-Daten.'] },
+    funktioniert: { titel: 'So funktioniert es', body: [
+      'Lernende legen ein Profil an, suchen und filtern Lehrstellen mit transparentem Match-Score und bewerben sich direkt.',
+      'Betriebe schreiben Lehrstellen nach Bildungsverordnung aus und finden passende, bis zur Freigabe anonymisierte Profile.'] },
+    schulen: { titel: 'Für Schulen & Berufsberatung', body: [
+      'Schulen und Berufsberatungsstellen können Lernende auf dem Weg zur Lehrstelle begleiten.',
+      'In dieser Vorschau ist dieser Bereich als Platzhalter angelegt.'] },
+    impressum: { titel: 'Impressum', body: [
+      'Lehrly AG (Demo), Bahnhofstrasse 1, 8001 Zürich, Schweiz.',
+      'Diese Seite ist Teil einer Design-Vorschau und enthält keine rechtsverbindlichen Angaben.'] },
+    datenschutz: { titel: 'Datenschutzerklärung', body: [
+      'Diese Vorschau speichert Eingaben ausschliesslich lokal im Browser (localStorage) und überträgt keine Personendaten an Server.',
+      'Ein produktiver Betrieb würde Daten revDSG-konform in der Schweiz hosten. Es werden nur technisch notwendige Cookies verwendet.'] },
+    agb: { titel: 'AGB', body: [
+      'Allgemeine Geschäftsbedingungen folgen im produktiven Betrieb.',
+      'In dieser Vorschau dient dieser Abschnitt als Platzhalter.'] }
+  };
+  views.info = function (id) {
+    var d = INFO[id];
+    if (!d) return views.notfound();
+    return '<div class="container narrow">' +
+      breadcrumb([{ route: 'start', label: 'Start' }, { label: d.titel }]) +
+      '<h1 class="page-h1">' + esc(d.titel) + '</h1>' +
+      '<p class="hint">Vorschau-Inhalt — in Vorbereitung.</p>' +
+      d.body.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') +
+      '<div class="nf-links"><a class="link-arrow" data-route="start" href="#/start">Zur Startseite</a></div>' +
+    '</div>';
+  };
+
+  // ═══════════════════════ ROUTER ═══════════════════════
+  function parseHash() {
+    var h = (location.hash || '').replace(/^#\/?/, '');
+    var parts = h.split('/').filter(Boolean);
+    return { route: parts[0] || 'start', param: parts[1] || null };
+  }
+
+  function gotoRoute(route, param) {
+    var target = '#/' + route + (param ? '/' + param : '');
+    if (location.hash !== target) { location.hash = target; }
+    else { render(); }
+  }
+  window.gotoRoute = gotoRoute;
+
+  function render() {
+    var p = parseHash();
+    App.route = p.route;
+    App.param = p.param;
+
+    var rolesRoutes = {
+      lernende: ['start', 'stellen', 'stelle', 'bewerben', 'profil', 'cv', 'chat', 'dashboard', 'preise', 'info'],
+      betrieb: ['start', 'kandidaten', 'kandidat', 'ausschreiben', 'chat', 'dashboard', 'preise', 'info']
+    };
+    var allowed = rolesRoutes[App.role];
+    var fn, content;
+    if (allowed.indexOf(p.route) === -1) {
+      content = views.notfound();
+    } else {
+      fn = views[p.route];
+      content = fn ? fn(p.param) : views.notfound();
+    }
+
+    var view = $('view');
+    view.innerHTML = content;
+    if (!prefersReduced) {
+      view.classList.remove('view-in');
+      void view.offsetWidth;
+      view.classList.add('view-in');
+    }
+    renderChrome();
+    closeMobileMenu();
+
+    if (p.route === 'stellen') renderStellenResults();
+    if (p.route === 'kandidaten') renderPoolResults();
+    if (p.route === 'bewerben') { bewerbenState.step = 1; renderBewerbenForm(); }
+    if (p.route === 'ausschreiben') renderInserate();
+    if (p.route === 'chat') renderChatConversation();
+    if (p.route === 'profil') setupAnchorTabs();
+
+    try { view.focus({ preventScroll: true }); } catch (e) { try { view.focus(); } catch (e2) {} }
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  window.render = render;
+
+  // ═══════════════════════ ANKER-TABS (Scroll-Spy) ═══════════════════════
+  var anchorObserver = null;
+  function setActiveAtab(atab) {
+    qsa('.atab').forEach(function (a) {
+      var on = a === atab;
+      a.classList.toggle('active', on);
+      if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+    });
+  }
+  function setupAnchorTabs() {
+    if (anchorObserver) { try { anchorObserver.disconnect(); } catch (e) {} anchorObserver = null; }
+    var tabs = qsa('.anchor-tabs .atab');
+    if (!tabs.length) return;
+    setActiveAtab(tabs[0]);
+    if (prefersReduced || typeof window.IntersectionObserver !== 'function') return;
+    var byId = {};
+    tabs.forEach(function (a) {
+      var id = (a.getAttribute('href') || '').replace(/^#/, '');
+      if (id) byId[id] = a;
+    });
+    anchorObserver = new window.IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting && byId[en.target.id]) setActiveAtab(byId[en.target.id]);
+      });
+    }, { rootMargin: '-30% 0px -55% 0px', threshold: 0 });
+    qsa('.profil-sec').forEach(function (sec) { if (sec.id) anchorObserver.observe(sec); });
+  }
+
+  // ═══════════════════════ ROLLE / MENÜ ═══════════════════════
+  function setRole(role) {
+    if (role === App.role) return;
+    App.role = role;
+    chatState.activeId = null;
+    persist();
+    gotoRoute('start');
+    renderChrome();
+  }
+  window.setRole = setRole;
+
+  function toggleMobileMenu() {
+    var m = $('mobile-menu'), btn = $('nav-hamburger');
+    var open = !m.hidden;
+    m.hidden = open;
+    btn.setAttribute('aria-expanded', String(!open));
+    btn.setAttribute('aria-label', open ? 'Menü öffnen' : 'Menü schliessen');
+  }
+  function closeMobileMenu() {
+    var m = $('mobile-menu'), btn = $('nav-hamburger');
+    if (m && !m.hidden) { m.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', 'Menü öffnen'); }
+  }
+
+  function mapFeldToBranche(feld) {
+    var map = { kv: 'banken', informatik: 'it', gesundheit: 'gesundheit', detailhandel: 'detailhandel', technik: 'technik' };
+    return map[feld] || 'all';
+  }
+
+  // ═══════════════════════ EVENT-DELEGATION ═══════════════════════
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+
+    var roleOpt = t.closest && t.closest('.role-opt');
+    if (roleOpt) { e.preventDefault(); setRole(roleOpt.dataset.role); return; }
+
+    // Stärken-Tags
+    var tag = t.closest && t.closest('.tag.toggle');
+    if (tag && tag.dataset.strength) { toggleStrength(tag); return; }
+
+    // Anker-Tabs im Profil: aktiven Zustand sofort umschalten (Sprung bleibt nativ)
+    var atab = t.closest && t.closest('.atab');
+    if (atab) { setActiveAtab(atab); /* href-Sprung nicht verhindern */ }
+
+    var actEl = t.closest && t.closest('[data-action]');
+    if (actEl) {
+      var act = actEl.dataset.action;
+      if (handleAction(act, actEl, e)) return;
+    }
+
+    var routeEl = t.closest && t.closest('[data-route]');
+    if (routeEl && routeEl.dataset.route) {
+      if (routeEl.dataset.feld) App.stellenFilters.branche = mapFeldToBranche(routeEl.dataset.feld);
+      e.preventDefault();
+      gotoRoute(routeEl.dataset.route, routeEl.dataset.id || null);
+      return;
+    }
+  });
+
+  function handleAction(act, el, e) {
+    switch (act) {
+      case 'login':
+        toast('Login-Demo: Diese Vorschau läuft ohne echtes Konto.', 'neutral'); return true;
+      case 'skip-to-content': {
+        e.preventDefault();
+        var v = $('view');
+        if (v) { try { v.focus(); } catch (er) {} try { v.scrollIntoView(); } catch (er2) {} }
+        return true;
+      }
+      case 'toggle-menu':
+        toggleMobileMenu(); return true;
+      case 'switch-betrieb':
+        e.preventDefault(); setRole('betrieb'); gotoRoute('start'); return true;
+      case 'switch-lernende':
+        e.preventDefault(); setRole('lernende'); gotoRoute('start'); return true;
+      case 'hero-search': return false;
+      case 'goto-stellen': e.preventDefault(); gotoRoute('stellen'); return true;
+      case 'goto-cv': e.preventDefault(); gotoRoute('cv'); return true;
+
+      case 'reset-stellen-filter':
+        App.stellenFilters = { branche: 'all', region: 'all', typ: 'all', sort: 'score', q: '', ort: '' };
+        gotoRoute('stellen'); return true;
+      case 'clear-filter':
+        App.stellenFilters[el.dataset.key] = 'all'; renderStellenResults(); return true;
+
+      case 'goto-bewerben':
+        e.preventDefault(); gotoRoute('bewerben', el.dataset.id); return true;
+      case 'ask-stelle':
+        e.preventDefault(); openStelleChat(el.dataset.id); toast('Frage an den Betrieb gestartet.', 'neutral'); return true;
+      case 'bewerben-next': bewerbenNext(); return true;
+      case 'bewerben-prev': bewerbenState.step = Math.max(1, bewerbenState.step - 1); renderBewerbenForm(); return true;
+      case 'submit-bewerbung': submitBewerbung(el.dataset.id); return true;
+
+      case 'save-profil':
+      case 'save-steckbrief':
+        persist(); updateVollstand(); toast('Profil gesichert.', 'ok'); return true;
+      case 'upload-doc':
+        toast('Dokument hochgeladen.', 'ok'); return true;
+      case 'cv-print':
+        try { window.print(); } catch (er) {} toast('Lebenslauf bereit zum Drucken.', 'ok'); return true;
+
+      case 'save-betrieb':
+        persist(); updateBetriebPct(); toast('Betriebsprofil gespeichert: ' + (App.betrieb.firma || 'Betrieb') + '.', 'ok'); return true;
+      case 'publish-inserat': publishInserat(); return true;
+
+      case 'reset-pool-filter':
+        App.poolFilters = { region: 'all', note: 'all', feld: 'all', q: '' };
+        gotoRoute('kandidaten'); return true;
+      case 'open-schnupper': openSchnupper(el.dataset.key); return true;
+      case 'request-freigabe':
+        toast((el.dataset.key || 'Kandidat/in') + ': Freigabe angefragt.', 'ok'); return true;
+      case 'submit-schnupper': submitSchnupper(); return true;
+      case 'close-schnupper': closeSchnupper(); return true;
+      case 'msg-kandidat':
+        e.preventDefault(); openKandidatChat(el.dataset.id); return true;
+
+      case 'open-conv':
+        chatState.activeId = el.dataset.conv;
+        qsa('.conv').forEach(function (c) { c.classList.toggle('active', c.dataset.conv === el.dataset.conv); c.removeAttribute('aria-current'); });
+        el.setAttribute('aria-current', 'true');
+        renderChatConversation(); return true;
+
+      case 'choose-plan':
+        toast('Paket „' + (el.dataset.plan || '') + '" gewählt.', 'ok'); return true;
+
+      case 'consent-accept':
+        store.set('consent', true); $('consent').hidden = true; return true;
+    }
+    return false;
+  }
+
+  // ── Submit-Handler ──
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    var act = form.dataset && form.dataset.action;
+    if (act === 'hero-search') {
+      e.preventDefault();
+      var q = (qs('input[name="q"]', form) || {}).value || '';
+      var ort = (qs('input[name="ort"]', form) || {}).value || '';
+      var target = form.dataset.target;
+      if (target === 'kandidaten') { App.poolFilters.q = q.trim(); gotoRoute('kandidaten'); }
+      else { App.stellenFilters.q = q.trim(); App.stellenFilters.ort = ort.trim(); gotoRoute('stellen'); }
+      return;
+    }
+    if (act === 'chat-send') { e.preventDefault(); chatSend(); return; }
+    if (act === 'schnupper-form') { e.preventDefault(); submitSchnupper(); return; }
+    if (act) e.preventDefault();
+  });
+
+  // ── Input-Delegation (Live-Sync, Suche, Filter) ──
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.dataset && t.dataset.field) { App.profile[t.dataset.field] = t.value; updateVollstand(); }
+    if (t.dataset && t.dataset.snfield === 'schnupper') { App.schnupperErf = t.value; updateVollstand(); }
+    if (t.dataset && t.dataset.bfield) { App.betrieb[t.dataset.bfield] = t.value; updateBetriebPct(); }
+    if (t.id === 'bw-motivation') {
+      bewerbenState.motivation = t.value;
+      var err = $('bw-motivation-err'); if (err) err.hidden = true;
+      t.classList.remove('invalid'); t.removeAttribute('aria-invalid');
+    }
+    if (t.dataset && t.dataset.sfield === 'datum') {
+      t.classList.remove('invalid'); t.removeAttribute('aria-invalid');
+      var sde = $('schnupper-datum-err'); if (sde) sde.hidden = true;
+    }
+    if (t.dataset && t.dataset.ifield === 'beruf') {
+      t.classList.remove('invalid'); t.removeAttribute('aria-invalid');
+      var ibe = $('inserat-beruf-err'); if (ibe) ibe.hidden = true;
+    }
+    if (t.dataset && t.dataset.action === 'stellen-q') { App.stellenFilters.q = t.value; renderStellenResults(); }
+    if (t.dataset && t.dataset.action === 'pool-q') { App.poolFilters.q = t.value; renderPoolResults(); }
+  });
+
+  // ── Change-Delegation (Selects, Radios) ──
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.dataset && t.dataset.field === 'beruf') { App.profile.beruf = t.value; updateVollstand(); }
+    if (t.dataset && t.dataset.filterKey) { App.stellenFilters[t.dataset.filterKey] = t.value; renderStellenResults(); }
+    if (t.dataset && t.dataset.poolfilterKey) { App.poolFilters[t.dataset.poolfilterKey] = t.value; renderPoolResults(); }
+    if (t.dataset && t.dataset.action === 'stellen-sort') { App.stellenFilters.sort = t.value; renderStellenResults(); }
+  });
+
+  // ── Tastatur (Stärken-Tags, Esc) ──
+  document.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if ((e.key === 'Enter' || e.key === ' ') && t.classList && t.classList.contains('toggle') && t.dataset.strength) {
+      e.preventDefault(); toggleStrength(t);
+    }
+    if (e.key === 'Escape') { closeMobileMenu(); closeSchnupper(); }
+
+    // Rollen-Umschalter: Pfeiltasten-Navigation (radiogroup-Konvention)
+    if (t.classList && t.classList.contains('role-opt') &&
+        (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      var next = t.dataset.role === 'lernende' ? 'betrieb' : 'lernende';
+      var btn = qs('.role-opt[data-role="' + next + '"]');
+      if (btn) { try { btn.focus(); } catch (er) {} setRole(next); }
+    }
+  });
+
+  function toggleStrength(tag) {
+    var key = tag.dataset.strength;
+    App.strengths[key] = !App.strengths[key];
+    tag.classList.toggle('on', App.strengths[key]);
+    persist(); updateVollstand();
+  }
+
+  function updateVollstand() {
+    var v = profilVollstaendigkeit();
+    var fill = $('vs-fill'), pct = $('vs-pct');
+    if (fill) fill.style.width = v + '%';
+    if (pct) pct.textContent = v + '%';
+  }
+  function updateBetriebPct() {
+    var v = betriebPct();
+    var fill = $('betrieb-fill'), pct = $('betrieb-pct');
+    if (fill) fill.style.width = v + '%';
+    if (pct) pct.textContent = v + '%';
+  }
+
+  // ── Bewerben-Flow ──
+  function bewerbenNext() {
+    if (bewerbenState.step === 2) {
+      var ta = $('bw-motivation');
+      var val = ta ? ta.value.trim() : '';
+      if (val.length < 3) {
+        var err = $('bw-motivation-err');
+        if (err) err.hidden = false;
+        if (ta) { ta.classList.add('invalid'); ta.setAttribute('aria-invalid', 'true'); ta.focus(); }
+        return;
+      }
+      bewerbenState.motivation = val;
+    }
+    bewerbenState.step = Math.min(4, bewerbenState.step + 1);
+    renderBewerbenForm();
+  }
+  function submitBewerbung(id) {
+    var s = STELLEN.filter(function (x) { return x.id === id; })[0] || STELLEN[0];
+    App.bewerbungen.push({ id: s.id, betrieb: s.betrieb, beruf: s.beruf, status: 'eingegangen', statusKind: 'pending' });
+    persist();
+    toast('Bewerbung bei ' + s.betriebKurz + ' gesendet.', 'ok');
+    gotoRoute('dashboard');
+  }
+
+  // ── Inserat veröffentlichen ──
+  function publishInserat() {
+    var berufEl = qs('[data-ifield="beruf"]');
+    var beruf = berufEl ? berufEl.value : '';
+    if (!beruf.trim()) {
+      if (berufEl) { berufEl.classList.add('invalid'); berufEl.setAttribute('aria-invalid', 'true'); berufEl.focus(); }
+      var be = $('inserat-beruf-err'); if (be) be.hidden = false;
+      toast('Bitte ein Berufsbild angeben.', 'err');
+      return;
+    }
+    var be2 = $('inserat-beruf-err'); if (be2) be2.hidden = true;
+    if (berufEl) berufEl.removeAttribute('aria-invalid');
+    var plaetze = (qs('[data-ifield="plaetze"]') || {}).value || '';
+    var beginn = (qs('[data-ifield="beginn"]') || {}).value || '';
+    App.inserate.push({ beruf: beruf.trim(), plaetze: plaetze.trim(), beginn: beginn.trim() });
+    persist();
+    renderInserate();
+    qsa('[data-ifield]').forEach(function (i) { i.value = ''; i.classList.remove('invalid'); });
+    toast('Lehrstelle „' + beruf.trim() + '" veröffentlicht.', 'ok');
+  }
+
+  // ── Schnupper-Einladung (Modal) ──
+  var schnupperTrigger = null;
+  function focusables(root) {
+    return qsa('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])', root);
+  }
+  function openSchnupper(key) {
+    var existing = $('schnupper-dialog');
+    if (existing) existing.remove();
+    schnupperTrigger = (document.activeElement && document.activeElement !== document.body) ? document.activeElement : null;
+    var dlg = document.createElement('div');
+    dlg.id = 'schnupper-dialog';
+    dlg.className = 'modal-overlay';
+    dlg.innerHTML = '<div class="modal" role="dialog" aria-modal="true" aria-label="Zum Schnuppern einladen">' +
+      '<div class="modal-head"><h2 class="detail-h2">' + esc(key) + ' einladen</h2>' +
+        '<button class="icon-btn" data-action="close-schnupper" aria-label="Schliessen"><svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button></div>' +
+      '<form class="form-grid" data-action="schnupper-form" data-key="' + esc(key) + '">' +
+        '<label class="field field-full"><span class="field-label">Schnupper-Datum <em class="req">*</em></span>' +
+          '<input class="input" type="text" data-sfield="datum" placeholder="z.B. Mi 14. Mai" aria-describedby="schnupper-datum-err">' +
+          '<span class="field-error" id="schnupper-datum-err" hidden>Bitte ein Datum angeben.</span></label>' +
+        '<label class="field field-full"><span class="field-label">Nachricht (optional)</span>' +
+          '<textarea class="textarea" data-sfield="text" rows="3" placeholder="Kurze persönliche Notiz …"></textarea></label>' +
+        '<div class="step-actions field-full"><button type="button" class="btn btn-outline" data-action="close-schnupper">Abbrechen</button>' +
+          '<button type="submit" class="btn btn-primary" data-action="submit-schnupper">Einladung senden</button></div>' +
+      '</form></div>';
+    document.body.appendChild(dlg);
+    dlg.dataset.key = key;
+    document.body.style.overflow = 'hidden';
+    var inp = qs('[data-sfield="datum"]', dlg);
+    if (inp) try { inp.focus(); } catch (e) {}
+    dlg.addEventListener('click', function (ev) {
+      if (ev.target === dlg) closeSchnupper();
+    });
+    // Fokus-Falle: Tab/Shift+Tab innerhalb des Modals zyklisch halten
+    dlg.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Tab') return;
+      var f = focusables(dlg);
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); try { last.focus(); } catch (e) {} }
+      else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); try { first.focus(); } catch (e) {} }
+    });
+  }
+  function closeSchnupper() {
+    var d = $('schnupper-dialog');
+    if (d) d.remove();
+    document.body.style.overflow = '';
+    if (schnupperTrigger) { try { schnupperTrigger.focus(); } catch (e) {} schnupperTrigger = null; }
+  }
+  window.closeSchnupper = closeSchnupper;
+  window.openSchnupper = openSchnupper;
+
+  function submitSchnupper() {
+    var dlg = $('schnupper-dialog');
+    if (!dlg) return;
+    var datum = (qs('[data-sfield="datum"]', dlg) || {}).value || '';
+    var key = dlg.dataset.key || 'Kandidat';
+    if (!datum.trim()) {
+      var f = qs('[data-sfield="datum"]', dlg);
+      var ferr = $('schnupper-datum-err');
+      if (f) { f.classList.add('invalid'); f.setAttribute('aria-invalid', 'true'); try { f.focus(); } catch (e) {} }
+      if (ferr) ferr.hidden = false;
+      toast('Bitte ein Datum angeben.', 'err');
+      return;
+    }
+    App.einladungen.push({ key: key, datum: datum.trim() });
+    persist();
+    closeSchnupper();
+    toast(key + ' zum Schnuppern eingeladen: ' + datum.trim() + '.', 'ok');
+  }
+
+  // ── Chat senden (XSS-Escape via esc() im Render) ──
+  function chatSend() {
+    var inp = $('chat-inp');
+    if (!inp) return;
+    var val = inp.value;
+    if (!val.trim()) { inp.value = ''; return; }
+    var msgs = getChatMsgs(chatState.activeId);
+    var now = new Date();
+    var hh = ('0' + now.getHours()).slice(-2), mm = ('0' + now.getMinutes()).slice(-2);
+    msgs.push({ me: true, text: val.trim(), time: hh + ':' + mm });
+    inp.value = '';
+    renderChatConversation();
+  }
+  window.chatSend = chatSend;
+
+  // Kontextbezogene Konversation vorauswählen, dann in den Chat navigieren.
+  function openStelleChat(stelleId) {
+    var s = STELLEN.filter(function (x) { return x.id === stelleId; })[0];
+    var convs = KONVERSATIONEN[App.role] || [];
+    var match = s ? convs.filter(function (c) { return c.partner === s.betrieb; })[0] : null;
+    chatState.activeId = (match ? match.id : (convs[0] && convs[0].id)) || null;
+    gotoRoute('chat', chatState.activeId);
+  }
+  function openKandidatChat(kandId) {
+    var k = KANDIDATEN.filter(function (x) { return x.id === kandId; })[0];
+    var convs = KONVERSATIONEN[App.role] || [];
+    var match = k && k.freigegeben ? convs.filter(function (c) { return c.partner === k.name; })[0] : null;
+    chatState.activeId = (match ? match.id : (convs[0] && convs[0].id)) || null;
+    gotoRoute('chat', chatState.activeId);
+  }
+
+  // ── Consent ──
+  function maybeConsent() {
+    if (store.get('consent', false)) return;
+    var c = $('consent');
+    if (!c) return;
+    c.innerHTML = '<div class="consent-inner"><p>Wir verwenden nur technisch notwendige Cookies. ' +
+      'Mehr in der <a href="#/info/datenschutz" data-route="info" data-id="datenschutz">Datenschutzerklärung</a>.</p>' +
+      '<button class="btn btn-primary btn-sm" data-action="consent-accept">Verstanden</button></div>';
+    c.hidden = false;
+    var btn = qs('[data-action="consent-accept"]', c);
+    if (btn && !prefersReduced) { try { btn.focus(); } catch (e) {} }
+  }
+
+  // ═══════════════════════ INIT ═══════════════════════
+  window.addEventListener('hashchange', render);
+
+  function init() {
+    document.body.dataset.role = App.role;
+    renderFooter();
+    if (!location.hash) location.hash = '#/start';
+    render();
+    maybeConsent();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();

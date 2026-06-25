@@ -1,19 +1,19 @@
 /* ════════════════════════════════════════════════════════════════════
-   Headless Click-Through-Test für Lehrly Laufbahn — Studio Deck.
+   Headless Click-Through-Test für Lehrly — heller Top-Header-Stand (NEU).
 
    Lädt index.html + js/app.js in jsdom (app.js inline injiziert, Origin
    https://lehrly.ch/), fängt jeden JS-Laufzeitfehler ab und klickt jeden
    Navigationsweg sowie jeden interaktiven Flow der NEUEN Struktur real
-   durch — Rail-Reise, Rollen-Kippschalter, Commander (Maus + Tastatur),
-   Pane-Stack (inkl. Scrim & Esc), Steckbrief-Formular, Profil-Tiefe,
-   Unterlagen + CV, Matching, Stellen-Detail + Bewerben, Gespräche →
-   Konversation → Senden (mit XSS-Escape-Check), Cockpit, Tarife sowie den
-   kompletten Betriebs-Pfad (Profil, Ausschreiben, Talent-Pool-Filter,
-   Kandidaten-Akte, Einladen, Anschreiben, Pipeline).
+   durch — Top-Header-Nav, Hash-Routing, Rollen-Umschalter (Du/Sie +
+   CTA-Tausch), feste linke Filter-Spalte (Stellen), Stellen-Detail +
+   mehrstufiges Bewerben, Profil (Live-Sync, Stärken, Vollständigkeit), CV,
+   Kandidatensuche + Filter, Kandidat-Profil + Schnupper-Einladung, Stelle
+   ausschreiben, Chat (Liste → Konversation → Senden inkl. XSS-Escape),
+   Dashboard/Pipeline, Preise sowie Toast/States.
 
-   Schlägt bei jedem JS-Fehler oder kaputten Zustand fehl.
-   Ausgabe-Format ("Bestanden: X   Fehlgeschlagen: Y") wie gehabt, damit
-   npm test unverändert funktioniert.
+   Schlägt bei jedem JS-Fehler oder kaputten Zustand fehl. Ausgabe-Format
+   ("Bestanden: X   Fehlgeschlagen: Y") wie gehabt, damit npm test
+   unverändert funktioniert.
    ════════════════════════════════════════════════════════════════════ */
 const fs = require('fs');
 const path = require('path');
@@ -45,17 +45,18 @@ const dom = new JSDOM(html, {
 const { window } = dom;
 window.addEventListener('error', (e) => errors.push('window.error: ' + (e.error ? e.error.stack : e.message)));
 window.addEventListener('unhandledrejection', (e) => errors.push('unhandledrejection: ' + e.reason));
-// jsdom implementiert scrollIntoView/scrollTo nicht → still überschreiben
 window.HTMLElement.prototype.scrollIntoView = function () {};
 window.scrollTo = function () {};
+// matchMedia für prefers-reduced-motion-Guard
+window.matchMedia = window.matchMedia || function () { return { matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }; };
 
 const doc = window.document;
 const $ = (id) => doc.getElementById(id);
 const qs = (s, r) => (r || doc).querySelector(s);
 const qsa = (s, r) => Array.from((r || doc).querySelectorAll(s));
 const click = (el) => { if (!el) throw new Error('click on null'); el.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); };
-const fireKey = (el, key, mods) => { el.dispatchEvent(new window.KeyboardEvent('keydown', Object.assign({ key, bubbles: true }, mods || {}))); };
 const typeInto = (el, val) => { el.value = val; el.dispatchEvent(new window.Event('input', { bubbles: true })); };
+const changeTo = (el, val) => { el.value = val; el.dispatchEvent(new window.Event('change', { bubbles: true })); };
 const submit = (form) => form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
 
 function waitFor(cond, ms = 3000) {
@@ -69,410 +70,501 @@ function waitFor(cond, ms = 3000) {
   });
 }
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
-const topPane = () => qsa('#pane-stack .pane').slice(-1)[0];
-const stack = () => window.App.paneStack;
+
+// Navigation per Hash + Warten bis App.route stimmt
+async function go(route, param) {
+  window.gotoRoute(route, param || null);
+  await waitFor(() => window.App.route === route);
+  await delay(0);
+}
 
 (async function run() {
-  await waitFor(() => typeof window.gotoStation === 'function');
+  await waitFor(() => typeof window.gotoRoute === 'function' && window.App);
   console.log('\n── app.js geladen ──');
 
   // ═════════════ APP-SHELL / DIREKTSTART (kein Login-Gate) ═════════════
-  console.log('\n[App-Shell]');
-  ok('Shell-Grid vorhanden', !!$('shell'));
-  ok('Kein Login-Gate (#gate fehlt)', $('gate') === null);
-  ok('Rail-Schiene gerendert', !!$('rail'));
-  ok('Canvas gerendert', !!$('canvas'));
-  ok('Pane-Stack-Container leer beim Start', qsa('#pane-stack .pane').length === 0);
-  ok('Start-Rolle = lernende', window.App.role === 'lernende' && $('shell').dataset.role === 'lernende');
-  ok('Start-Station = steckbrief', window.App.station === 'steckbrief');
-  ok('Commander beim Start versteckt', $('commander').hidden === true);
-  // A11y: kein Live-Region-Anti-Pattern über dem ganzen Canvas-Strom
-  ok('#stations ohne aria-live (kein Anti-Pattern)', $('stations').getAttribute('aria-live') === null);
-  ok('#vermerk ist die einzige Status-Live-Region', $('vermerk').getAttribute('role') === 'status' && $('vermerk').getAttribute('aria-live') === 'polite');
+  console.log('\n[App-Shell · Top-Header]');
+  ok('Top-Header vorhanden', !!$('topbar'));
+  ok('Keine linke Rail (#rail fehlt)', $('rail') === null);
+  ok('Kein Cmd-K-Commander (#commander fehlt)', $('commander') === null);
+  ok('Router-Outlet #view vorhanden', !!$('view'));
+  ok('Footer-Trust-Block vorhanden', !!$('footer') && /Made in Switzerland/.test($('footer').textContent));
+  ok('Untere Tab-Bar vorhanden', !!$('tabbar'));
+  ok('Login nur als Button (kein Auth)', !!$('login-btn') && $('login-btn').tagName.toLowerCase() === 'button');
+  ok('Start-Rolle = lernende', window.App.role === 'lernende' && doc.body.dataset.role === 'lernende');
+  ok('Start-Route = start', window.App.route === 'start');
+  ok('Toast ist Status-Live-Region', $('toast').getAttribute('role') === 'status' && $('toast').getAttribute('aria-live') === 'polite');
+  ok('Rollen-Umschalter ist radiogroup', $('role-switch') && $('role-switch').getAttribute('role') === 'radiogroup');
 
-  // ═════════════ RAIL · LERNENDE (Stationen + Navigation) ═════════════
-  console.log('\n[Rail · Lernende — alle Stationen anklicken]');
-  const lStations = ['steckbrief', 'profil', 'unterlagen', 'treffer', 'gespraeche', 'cockpit'];
-  ok('6 Rail-Knoten (Lernende)', qsa('.rail-node').length === 6);
-  ok('Rail-Knoten tragen aria-label (Icon-only-A11y)', qsa('.rail-node').every((n) => !!n.getAttribute('aria-label')));
-  ok('Rail-Knoten tragen title-Tooltip', qsa('.rail-node').every((n) => !!n.getAttribute('title')));
-  lStations.forEach((id) => ok('Canvas-Section st-' + id + ' existiert', !!$('st-' + id)));
-  ok('Rail-Knoten in korrekter Reihenfolge', qsa('.rail-node').map((n) => n.dataset.station).join(',') === lStations.join(','));
-  lStations.forEach((id) => {
-    click(qs('.rail-node[data-station="' + id + '"]'));
-    const node = qs('.rail-node[data-station="' + id + '"]');
-    ok('Rail-Klick → ' + id + ' aktiv', window.App.station === id
-      && node.classList.contains('active')
-      && node.getAttribute('aria-current') === 'true');
-  });
+  // ═════════════ START-SEITE (Lernende) ═════════════
+  console.log('\n[Start · Lernende]');
+  await go('start');
+  ok('Hero-H1 "Finde deine Lehrstelle."', /Finde deine Lehrstelle\./.test($('view').textContent));
+  ok('Trust-Statistiken gerendert', qsa('.trust-stat').length === 4);
+  ok('Berufsfelder-Kacheln gerendert', qsa('.feld-tile').length === 8);
+  ok('Aktuelle Lehrstellen (3 Karten)', qsa('#view .list .list-item').length === 3);
+  ok('Hero-Suchformular vorhanden', !!qs('.search-hero'));
+  ok('Primär-Nav für Lernende (5 Links)', qsa('#primary-nav .nav-link').length === 5);
+  ok('Tab-Bar zeigt 4 Tabs', qsa('#tabbar .tab').length === 4);
 
-  // ═════════════ STECKBRIEF (Station 1) — Formular real ausfüllen ═════════════
-  console.log('\n[Station 1 · Steckbrief]');
-  window.gotoStation('steckbrief');
-  const sb = $('st-steckbrief');
-  ok('Steckbrief-Formular vorhanden', !!qs('#form-steckbrief', sb));
-  ok('Ring startet bei 0%', qs('#ring-steckbrief', sb).dataset.pct === '0');
-  // Live-Sync beim Tippen (onInput schreibt direkt in App.profile)
-  typeInto(qs('[data-field="vorname"]', sb), 'Lena');
-  ok('Live-Input-Sync in App.profile', window.App.profile.vorname === 'Lena');
-  typeInto(qs('[data-field="nachname"]', sb), 'Müller');
-  typeInto(qs('[data-field="kanton"]', sb), 'Zürich');
-  typeInto(qs('[data-field="beruf"]', sb), 'Kauffrau EFZ');
-  click(qs('[data-action="save-steckbrief"]', sb));
-  ok('Steckbrief im State gespeichert', window.App.profile.beruf === 'Kauffrau EFZ' && window.App.profile.kanton === 'Zürich');
-  ok('Vermerk-Toast erscheint', $('vermerk').classList.contains('show') && /gesichert/i.test($('vermerk').textContent));
-  ok('Ring auf 100% gefüllt', qs('#ring-steckbrief', sb).dataset.pct === '100');
-  ok('Rail-Knoten Steckbrief = done', qs('.rail-node[data-station="steckbrief"]').classList.contains('done'));
+  // Header-Nav: jeder Link einmal durchklicken
+  console.log('\n[Header-Navigation · alle Wege]');
+  const navRoutesLern = ['start', 'stellen', 'profil', 'chat', 'dashboard'];
+  for (const r of navRoutesLern) {
+    const link = qs('#primary-nav .nav-link[data-route="' + r + '"]');
+    click(link);
+    await waitFor(() => window.App.route === r);
+    ok('Nav → ' + r + ' aktiv', window.App.route === r && !!qs('#primary-nav .nav-link.active[data-route="' + r + '"]'));
+  }
+  // Wordmark → start
+  await go('dashboard');
+  click($('wordmark'));
+  await waitFor(() => window.App.route === 'start');
+  ok('Wordmark führt zur Startseite', window.App.route === 'start');
 
-  // ═════════════ PROFIL-TIEFE (Station 2) — Noten-Strip + Stärken-Tags ═════════════
-  console.log('\n[Station 2 · Profil-Tiefe]');
-  window.gotoStation('profil');
-  const pf = $('st-profil');
-  ok('Zeugnis-Strip mit 4 Zeilen', qsa('.zeugnis-strip .zrow', pf).length === 4);
-  ok('Notenbalken haben Breite gesetzt', qsa('.zeugnis-strip .ztrack i', pf).every((i) => /%/.test(i.style.width)));
-  const tags = qsa('#strength-tags .tag', pf);
-  ok('Mindestens 5 Stärken-Tags', tags.length >= 5);
-  const before0 = tags[0].classList.contains('on');
-  click(tags[0]); click(tags[1]); click(tags[2]);
-  ok('Stärke-Tag toggelt visuell', tags[0].classList.contains('on') !== before0);
-  ok('3 Stärken im State aktiv', Object.values(window.App.strengths).filter(Boolean).length >= 3);
-  click(tags[2]); // wieder aus → toggelt zurück
-  ok('Stärke-Tag re-toggelt aus', tags[2].classList.contains('on') === false);
-  ok('Profil-Ring gefüllt (>0%)', parseInt(qs('#ring-profil', pf).dataset.pct, 10) > 0);
-  ok('Rail-Knoten Profil = done (≥2 Stärken)', qs('.rail-node[data-station="profil"]').classList.contains('done'));
-  // Schnupper-Erfahrungsfeld wird wirklich gelesen (kein totes Feld mehr)
-  const snField = qs('[data-snfield="schnupper"]', pf);
-  ok('Schnupper-Erfahrungsfeld vorhanden', !!snField);
-  typeInto(snField, 'Raiffeisenbank (3 Tage)');
-  ok('Schnupper-Erfahrung im State', window.App.schnupperErf === 'Raiffeisenbank (3 Tage)');
+  // Tab-Bar-Navigation
+  const tabProfil = qs('#tabbar .tab[data-route="profil"]');
+  click(tabProfil);
+  await waitFor(() => window.App.route === 'profil');
+  ok('Tab-Bar → Profil', window.App.route === 'profil');
 
-  // ═════════════ UNTERLAGEN + CV-PANE (Station 3) ═════════════
-  console.log('\n[Station 3 · Unterlagen + CV-Pane]');
-  window.gotoStation('unterlagen');
-  const un = $('st-unterlagen');
-  ok('Doc-Liste hat 3 Einträge', qsa('.doc-line', un).length === 3);
-  ok('Genau ein offenes Dokument', qsa('.doc-line .dl-state.open', un).length === 1);
-  click(qs('[data-action="upload-doc"]', un));
-  ok('Upload zeigt Vermerk', $('vermerk').classList.contains('show') && /hochgeladen/i.test($('vermerk').textContent));
-  click(qs('[data-pane="cv"]', un));
-  ok('CV-Pane geöffnet (oben im Stack)', !!topPane() && topPane().dataset.pane === 'cv');
-  ok('CV übernimmt Namen aus Steckbrief', /Lena/.test(topPane().textContent) && /Müller/.test(topPane().textContent));
-  ok('CV übernimmt Beruf aus Steckbrief', /Kauffrau EFZ/.test(topPane().textContent));
-  ok('CV listet gewählte Stärken', qsa('.cv-sheet .tag.static', topPane()).length >= 1);
-  ok('CV übernimmt eingegebene Schnupper-Erfahrung', /Raiffeisenbank \(3 Tage\)/.test(topPane().textContent));
-  click(qs('[data-action="cv-done"]', topPane()));
-  ok('CV als bereit markiert → Unterlagen done', qs('.rail-node[data-station="unterlagen"]').classList.contains('done'));
-  ok('CV-fertig-Vermerk', /bereit/i.test($('vermerk').textContent));
-  window.popPane();
-  await delay(280);
-  ok('CV-Pane geschlossen', qsa('#pane-stack .pane').length === 0 && $('pane-scrim').hidden === true);
-
-  // ═════════════ TREFFER → MATCH → STELLE → BEWERBEN (Station 4) ═════════════
-  console.log('\n[Station 4 · Treffer / Match / Stelle / Bewerben]');
-  window.gotoStation('treffer');
-  const tr = $('st-treffer');
-  // VOR dem Matching: nur Teaser, keine echten (klickbaren) Treffer
-  ok('Vor Match: nur Teaser-Platzhalter', qsa('#match-list .index-entry.teaser', tr).length === 3);
-  ok('Vor Match: keine echten Match-Sprungziele', qsa('#match-list .index-entry[data-pane="stelle"]', tr).length === 0);
-  ok('Vor Match: App.matched = false', window.App.matched === false);
-  const matchBtn = $('btn-match');
-  ok('Match-Button initial „Matches finden"', /Matches finden/i.test(matchBtn.textContent));
-  click(matchBtn);
-  ok('Match-Button disabled während Suche', matchBtn.disabled === true);
-  ok('Match-Button zeigt Lauftext', /läuft/i.test(matchBtn.textContent));
-  await delay(1700);
-  ok('Match-Button meldet Ergebnis', /Matches gefunden/.test(matchBtn.textContent));
-  ok('App.matched = true', window.App.matched === true);
-  // NACH dem Matching: echte Treffer wurden erst jetzt eingefüllt (Button hatte echte Wirkung)
-  let entries = qsa('#match-list .index-entry[data-pane="stelle"]', $('st-treffer'));
-  ok('Nach Match: 3 echte Match-Einträge', entries.length === 3);
-  ok('Nach Match: keine Teaser mehr', qsa('#match-list .index-entry.teaser', $('st-treffer')).length === 0);
-  ok('Jeder Match hat Score-Ring', entries.every((e) => !!qs('.score-ring', e)));
-  ok('Score-Ring trägt --pct CSS-Var', entries.every((e) => qs('.score-ring', e).style.getPropertyValue('--pct') !== ''));
-  ok('Match-Vermerk (Siegel)', $('vermerk').classList.contains('show') && $('vermerk').dataset.kind === 'siegel');
-  ok('Rail-Knoten Treffer = done', qs('.rail-node[data-station="treffer"]').classList.contains('done'));
-  await delay(2700);
-  ok('Match-Button → „Match-Stream aktualisieren"', matchBtn.disabled === false && /aktualisieren/i.test(matchBtn.textContent));
-  // Stelle öffnen
-  click(qsa('#match-list .index-entry[data-pane="stelle"]', $('st-treffer'))[0]);
-  ok('Stelle-Pane geöffnet', topPane() && topPane().dataset.pane === 'stelle');
-  ok('Stelle-Pane hat Meta-Strip', !!qs('.strip-meta', topPane()));
-  ok('Stelle-Pane Abschnitt "Über die Stelle"', /Über die Stelle/.test(topPane().textContent));
-  ok('Stelle-Pane Abschnitt "Wir bieten"', /Wir bieten/.test(topPane().textContent));
-  // Bewerben (Pane auf Pane)
-  click(qs('[data-pane="bewerben"]', topPane()));
-  ok('Bewerben-Pane gestackt (2 Panes)', stack().length === 2 && topPane().dataset.pane === 'bewerben');
-  ok('Bewerben-Pane hat Motivations-Feld', !!qs('textarea', topPane()));
-  qs('textarea', topPane()).value = 'Sehr motiviert!';
-  click(qs('[data-action="submit-bewerbung"]', topPane()));
-  await delay(280);
-  ok('Bewerbung schliesst oberste Pane', stack().length === 1);
-  ok('Bewerbung-Vermerk nennt Betrieb (Siegel)', /ZKB/.test($('vermerk').textContent) && /gesendet/i.test($('vermerk').textContent) && $('vermerk').dataset.kind === 'siegel');
-  // "Frage stellen" aus der Stelle → Chat-Pane (lernende)
-  click(qs('[data-pane="chat"]', topPane()));
-  ok('Frage stellen öffnet Chat-Pane', stack().length === 2 && topPane().dataset.pane === 'chat');
-  window.popPane(); await delay(280);
-  window.popPane(); await delay(280);
-  ok('Stelle-Pfad vollständig geschlossen', stack().length === 0);
-
-  // ═════════════ GESPRÄCHE → CHAT → SENDEN + XSS (Station 5) ═════════════
-  console.log('\n[Station 5 · Gespräche / Chat / XSS-Escape]');
-  window.gotoStation('gespraeche');
-  const ge = $('st-gespraeche');
-  const conv = qsa('.conv', ge);
-  ok('3 Gespräche in der Liste', conv.length === 3);
-  ok('Gesprächs-Kacheln haben Zeit-Stempel', conv.every((c) => !!qs('.ie-time', c)));
-  click(conv[1]); // SBB
-  ok('Chat-Pane geöffnet', topPane() && topPane().dataset.pane === 'chat');
-  let log = qs('#chat-log', topPane());
-  const before = log.children.length;
-  ok('SBB-Chat lädt 2 Nachrichten', before === 2);
-  // Senden via Klick auf Send-Button
-  const inp = qs('#chat-inp', topPane());
-  inp.value = 'Hallo, sehr gerne!';
-  click(qs('.chat-send', topPane()));
-  ok('Nachricht angehängt', qs('#chat-log', topPane()).children.length === before + 1);
-  ok('Letzte Nachricht ist eigene (me)', !!qs('#chat-log .cm-row:last-child .bubble.me', topPane()));
-  ok('Eingabefeld geleert', inp.value === '');
-  // Leere Nachricht wird ignoriert
-  inp.value = '   ';
-  submit(qs('.chat-compose', topPane()));
-  ok('Leere Nachricht wird ignoriert', qs('#chat-log', topPane()).children.length === before + 1);
-  // XSS-Escape
-  inp.value = '<img src=x onerror=alert(1)>';
-  submit(qs('.chat-compose', topPane()));
-  const last = qs('#chat-log .cm-row:last-child .bubble.me', topPane());
-  ok('Gefährliches HTML escaped (kein <img>)', last && last.querySelector('img') === null);
-  ok('Roh-Markup als Text sichtbar', last && /<img/.test(last.textContent));
-  window.popPane(); await delay(280);
-  ok('Chat-Pane geschlossen', stack().length === 0);
-
-  // ═════════════ COCKPIT (Station 6) — Metriken / Ticker / Chips ═════════════
-  console.log('\n[Station 6 · Marktwert-Cockpit]');
-  window.gotoStation('cockpit');
-  const co = $('st-cockpit');
-  ok('4 Metric-Strips', qsa('.metric-strip', co).length === 4);
-  ok('Aktivitäts-Ticker (≥3 Einträge)', qsa('.tick', co).length >= 3);
-  const chips = qsa('.cmd-chip', co);
-  ok('4 Schnellaktion-Chips', chips.length === 4);
-  // Chip "Matches finden" → goto treffer
-  const chipMatch = chips.find((c) => /Matches/.test(c.textContent));
-  click(chipMatch);
-  ok('Cockpit-Chip navigiert zu Treffer', window.App.station === 'treffer');
-  window.gotoStation('cockpit');
-  // Chip "CV ansehen" → Pane
-  const chipCv = qsa('.cmd-chip', $('st-cockpit')).find((c) => /CV/.test(c.textContent));
-  click(chipCv);
-  ok('Cockpit-Chip öffnet CV-Pane', topPane() && topPane().dataset.pane === 'cv');
-  window.popPane(); await delay(280);
-
-  // ═════════════ COMMANDER (Cmd-K) — Maus + Tastatur + Esc ═════════════
-  console.log('\n[Commander · Lernende]');
-  window.gotoStation('cockpit');
-  fireKey(doc.body, 'k', { ctrlKey: true });
-  ok('Commander öffnet via Ctrl+K', $('commander').hidden === false);
-  ok('Commander hat Treffer', qsa('#cmd-results .cmd-item').length > 0);
-  ok('Commander gruppiert (Gehe zu / Aktion)', qsa('#cmd-results .cmd-group').length >= 2);
-  // A11y-Semantik: Optionen sind role=option auf DIV (nicht button), Combobox koppelt active descendant
-  ok('Treffer tragen role=option', qsa('#cmd-results .cmd-item').every((i) => i.getAttribute('role') === 'option'));
-  ok('Optionen sind keine <button>', qsa('#cmd-results .cmd-item').every((i) => i.tagName.toLowerCase() !== 'button'));
-  ok('Input ist combobox', $('cmd-input').getAttribute('role') === 'combobox');
-  ok('aria-activedescendant zeigt auf aktive Option', $('cmd-input').getAttribute('aria-activedescendant') === qs('#cmd-results .cmd-item.active').id);
-  // Filter
-  typeInto($('cmd-input'), 'ZKB');
-  ok('Filter findet ZKB-Stelle', qsa('#cmd-results .cmd-item').some((i) => /ZKB/.test(i.textContent)));
-  typeInto($('cmd-input'), 'völligunsinn123');
-  ok('Kein-Treffer-Zustand', !!qs('#cmd-results .cmd-empty'));
-  // Tastatur-Navigation + Enter öffnet Stelle
-  typeInto($('cmd-input'), 'ZKB');
-  fireKey(doc.body, 'ArrowDown');
-  ok('Pfeil-Nav aktualisiert aria-activedescendant', $('cmd-input').getAttribute('aria-activedescendant') === qs('#cmd-results .cmd-item.active').id);
-  fireKey(doc.body, 'ArrowUp');
-  fireKey(doc.body, 'Enter');
-  await delay(280);
-  ok('Enter schliesst Commander', $('commander').hidden === true);
-  ok('Enter führte ZKB-Stelle aus', topPane() && topPane().dataset.pane === 'stelle');
-  window.popPane(); await delay(280);
-  // Maus-Klick auf ein Item
-  window.openCommander();
-  typeInto($('cmd-input'), 'Lebenslauf ansehen');
-  const cvItem = qsa('#cmd-results .cmd-item').find((i) => /Lebenslauf ansehen/.test(i.textContent));
-  click(cvItem);
-  await delay(60);
-  ok('Commander-Klick öffnet CV-Pane', topPane() && topPane().dataset.pane === 'cv');
-  window.popPane(); await delay(280);
+  // Mobile-Menü (Hamburger)
+  console.log('\n[Mobile-Menü]');
+  await go('start');
+  ok('Mobile-Menü initial geschlossen', $('mobile-menu').hidden === true);
+  click($('nav-hamburger'));
+  ok('Hamburger öffnet Menü', $('mobile-menu').hidden === false && $('nav-hamburger').getAttribute('aria-expanded') === 'true');
+  ok('Mobile-Menü enthält Preise-Link', !!qs('#mobile-menu .mm-link[data-route="preise"]'));
   // Esc schliesst
-  window.openCommander();
-  ok('Commander erneut offen', $('commander').hidden === false);
-  fireKey(doc.body, 'Escape');
-  await delay(240);
-  ok('Esc schliesst Commander', $('commander').hidden === true);
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  ok('Esc schliesst Mobile-Menü', $('mobile-menu').hidden === true);
+  // Klick auf Menü-Link navigiert + schliesst (render → closeMobileMenu)
+  click($('nav-hamburger'));
+  click(qs('#mobile-menu .mm-link[data-route="chat"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('Mobile-Menü-Link navigiert + schliesst', window.App.route === 'chat' && $('mobile-menu').hidden === true);
 
-  // ═════════════ TARIFE (Rail-Quereinstieg) — Lernende ═════════════
-  console.log('\n[Tarife / Pakete · Lernende]');
-  click($('rail-tarife'));
-  ok('Tarife-Pane geöffnet', topPane() && topPane().dataset.pane === 'tarife');
-  ok('Lernende-Tarife: 2 Spalten', qsa('.tarif-col', topPane()).length === 2);
-  ok('Genau eine Empfehlung (hot)', qsa('.tarif-col.hot', topPane()).length === 1);
-  click(qs('[data-action="choose-plan"]', topPane()));
-  ok('Plan-Wahl zeigt Vermerk', $('vermerk').classList.contains('show') && /Paket/i.test($('vermerk').textContent));
-  // Pane-Scrim schliesst Pane
-  click($('pane-scrim'));
-  await delay(280);
-  ok('Scrim-Klick schliesst Tarife-Pane', stack().length === 0);
-
-  // ═════════════ ESC schliesst oberste Pane ═════════════
-  console.log('\n[Pane-Stack · Esc-Verhalten]');
-  window.gotoStation('treffer');
-  click(qsa('#match-list .index-entry[data-pane="stelle"]', $('st-treffer'))[0]);
-  ok('Stelle-Pane für Esc-Test offen', stack().length === 1);
-  fireKey(doc.body, 'Escape');
-  await delay(280);
-  ok('Esc schliesst oberste Pane', stack().length === 0);
-
-  // ═════════════ ROLLEN-WECHSEL → BETRIEB ═════════════
-  console.log('\n[Rollen-Kippschalter · Betrieb]');
+  // ═════════════ ROLLEN-UMSCHALTER (Du/Sie + CTA-Tausch) ═════════════
+  console.log('\n[Rollen-Umschalter · Du/Sie · CTA]');
+  await go('start');
+  ok('Sprache Lernende = du', window.lang().anrede === 'du' && window.lang().findCta === 'Lehrstelle finden');
+  ok('Login-Label Lernende = Anmelden', $('login-btn').textContent === 'Anmelden');
+  // Auf Betrieb umschalten
   click(qs('.role-opt[data-role="betrieb"]'));
-  ok('App.role = betrieb', window.App.role === 'betrieb' && $('shell').dataset.role === 'betrieb');
-  ok('Rollen-Schalter ist radiogroup', $('role-switch').getAttribute('role') === 'radiogroup');
-  ok('Rollen-Radio spiegelt Auswahl (aria-checked)', qs('.role-opt[data-role="betrieb"]').getAttribute('aria-checked') === 'true'
-    && qs('.role-opt[data-role="lernende"]').getAttribute('aria-checked') === 'false');
-  const bStations = ['betriebsprofil', 'ausschreiben', 'pool', 'b-gespraeche', 'pipeline'];
-  ok('5 Rail-Knoten (Betrieb)', qsa('.rail-node').length === 5);
-  bStations.forEach((id) => ok('Betrieb-Section st-' + id + ' existiert', !!$('st-' + id)));
-  ok('Station auf erste Betrieb-Station gesetzt', window.App.station === 'betriebsprofil');
+  await waitFor(() => window.App.role === 'betrieb' && window.App.route === 'start');
+  ok('Umschalten → Rolle betrieb', window.App.role === 'betrieb' && doc.body.dataset.role === 'betrieb');
+  ok('aria-checked folgt Rolle', qs('.role-opt[data-role="betrieb"]').getAttribute('aria-checked') === 'true' && qs('.role-opt[data-role="lernende"]').getAttribute('aria-checked') === 'false');
+  ok('Sprache Betrieb = Sie', window.lang().anrede === 'Sie' && window.lang().applyCta === 'Zum Schnuppern einladen');
+  ok('Login-Label Betrieb = Betriebs-Login', $('login-btn').textContent === 'Betriebs-Login');
+  ok('Betrieb-Hero-H1 "Finden Sie passende Lernende."', /Finden Sie passende Lernende\./.test($('view').textContent));
+  ok('Betrieb-Nav enthält "Kandidaten suchen"', !!qs('#primary-nav .nav-link[data-route="kandidaten"]'));
+  ok('Betrieb-Nav enthält "Stelle ausschreiben"', !!qs('#primary-nav .nav-link[data-route="ausschreiben"]'));
+  ok('Empfohlene Kandidaten gerendert', qsa('#view .list .list-item').length === 3);
 
-  // ═════════════ BETRIEB: PROFIL + STELLE AUSSCHREIBEN (echte Felder, kein Theater) ═════════════
-  console.log('\n[Betrieb · Profil / Stelle ausschreiben]');
-  window.gotoStation('betriebsprofil');
-  const bp = $('st-betriebsprofil');
-  ok('Betriebsprofil-Felder tragen data-bfield', qsa('[data-bfield]', bp).length === 3);
-  ok('Betrieb-Ring startet bei 0%', qs('#ring-betrieb', bp).dataset.pct === '0');
-  typeInto(qs('[data-bfield="firma"]', bp), 'Muster AG');
-  ok('Betrieb-Live-Sync in App.betrieb', window.App.betrieb.firma === 'Muster AG');
-  typeInto(qs('[data-bfield="branche"]', bp), 'Banken');
-  typeInto(qs('[data-bfield="ort"]', bp), 'Zürich');
-  click(qs('[data-action="save-betrieb"]', bp));
-  ok('Betriebsprofil persistiert (State)', window.App.betrieb.branche === 'Banken' && window.App.betrieb.ort === 'Zürich');
-  ok('Betrieb-Ring nach Sichern auf 100%', qs('#ring-betrieb', bp).dataset.pct === '100');
-  ok('Betrieb-Vermerk spielt Firmennamen zurück', /Muster AG/.test($('vermerk').textContent));
-
-  window.gotoStation('ausschreiben');
-  const au = $('st-ausschreiben');
-  ok('Inserat-Felder tragen data-ifield', qsa('[data-ifield]', au).length === 3);
-  ok('Inserat-Stream initial leer', $('inserat-empty').hidden === false && qsa('#inserat-list .index-entry', au).length === 0);
-  // Leere Berufsbezeichnung wird abgelehnt
-  click(qs('[data-action="publish-inserat"]', au));
-  ok('Leeres Inserat wird abgelehnt', qsa('#inserat-list .index-entry', au).length === 0);
-  // Echte Eingaben → erscheint im Stream
-  typeInto(qs('[data-ifield="beruf"]', au), 'Informatiker EFZ');
-  typeInto(qs('[data-ifield="plaetze"]', au), '3');
-  typeInto(qs('[data-ifield="beginn"]', au), 'August 2026');
-  click(qs('[data-action="publish-inserat"]', au));
-  ok('Inserat veröffentlichen → Vermerk (Siegel)', /Informatiker EFZ/.test($('vermerk').textContent) && $('vermerk').dataset.kind === 'siegel');
-  ok('Inserat erscheint im Stream (State)', window.App.inserate.length === 1 && window.App.inserate[0].beruf === 'Informatiker EFZ');
-  ok('Inserat-Eintrag im Markup sichtbar', qsa('#inserat-list .index-entry', $('st-ausschreiben')).length === 1
-    && /Informatiker EFZ/.test($('inserat-list').textContent));
-  ok('Inserat-Empty-State verschwunden', $('inserat-empty').hidden === true);
-  ok('Inserat-Felder nach Veröffentlichung geleert', qs('[data-ifield="beruf"]', $('st-ausschreiben')).value === '');
-
-  // ═════════════ BETRIEB: TALENT-POOL + FILTER ═════════════
-  console.log('\n[Betrieb · Talent-Pool / Filter]');
-  window.gotoStation('pool');
-  const cards = () => qsa('#pool-list .index-entry', $('st-pool'));
-  const visible = () => cards().filter((c) => !c.hidden);
-  const fchip = (f) => qs('#pool-filters .fchip[data-filter="' + f + '"]', $('st-pool'));
-  ok('4 Kandidaten im Pool', cards().length === 4);
-  ok('Filter "Alle" initial aktiv', fchip('all').classList.contains('on'));
-  click(fchip('zurich'));
-  ok('Filter Zürich aktiv (genau einer on)', fchip('zurich').classList.contains('on') && qsa('#pool-filters .fchip.on', $('st-pool')).length === 1);
-  ok('Zürich filtert Winterthur aus → 3', visible().length === 3);
-  click(fchip('note5'));
-  ok('Filter Note 5+ → 2', visible().length === 2);
-  click(fchip('informatik'));
-  ok('Filter Informatik → 0', visible().length === 0);
-  ok('Empty-State sichtbar', $('pool-empty').hidden === false);
-  ok('Pool-Zähler zeigt 0', /^0 /.test($('pool-count').textContent));
-  click(fchip('all'));
-  ok('Filter Alle → 4 sichtbar', visible().length === 4);
-  ok('Empty-State wieder versteckt', $('pool-empty').hidden === true);
-
-  // ═════════════ BETRIEB: KANDIDAT-AKTE + EINLADEN + ANSCHREIBEN ═════════════
-  console.log('\n[Betrieb · Kandidat-Akte / Einladen / Anschreiben]');
-  click(cards()[0]); // Lena Müller
-  ok('Kandidat-Pane geöffnet', topPane() && topPane().dataset.pane === 'kandidat');
-  ok('Kandidat-Pane Key gemerkt', topPane().dataset.key === 'Lena Müller');
-  ok('Kandidat-Pane zeigt Noten-Strip (4 Zeilen)', qsa('.zeugnis-strip .zrow', topPane()).length === 4);
-  ok('Kandidat-Pane zeigt Stärken', qsa('.tag.static', topPane()).length >= 1);
-  ok('Kandidat-Pane hat Score-Ring', !!qs('.score-ring', topPane()));
-  // Einladen (Schnupper-Pane gestackt)
-  click(qs('[data-pane="schnupper"]', topPane()));
-  ok('Schnupper-Pane gestackt', stack().length === 2 && topPane().dataset.pane === 'schnupper');
-  ok('Schnupper-Pane hat Datum-Feld (data-sfield)', !!qs('[data-sfield="datum"]', topPane()));
-  qs('[data-sfield="datum"]', topPane()).value = 'Mi 14. Mai';
-  click(qs('[data-action="submit-schnupper"]', topPane()));
-  await delay(280);
-  ok('Einladung schliesst Pane', stack().length === 1);
-  ok('Einladung-Vermerk spielt Datum + Name zurück', /Mi 14\. Mai/.test($('vermerk').textContent) && /Lena/.test($('vermerk').textContent) && $('vermerk').dataset.kind === 'siegel');
-  // Anschreiben → Chat-Pane (Betrieb)
-  click(qs('[data-pane="chat"]', topPane()));
-  ok('Anschreiben öffnet Chat-Pane', stack().length === 2 && topPane().dataset.pane === 'chat');
-  ok('Betrieb-Chat hat ≥1 Nachricht', qsa('#chat-log .cm-row', topPane()).length >= 1);
-  const binp = qs('#chat-inp', topPane());
-  const bcount = qs('#chat-log', topPane()).children.length;
-  binp.value = 'Willkommen bei uns!';
-  submit(qs('.chat-compose', topPane()));
-  ok('Betrieb-Chat Nachricht via Submit gesendet', qs('#chat-log', topPane()).children.length === bcount + 1);
-  window.popPane(); await delay(280);
-  window.popPane(); await delay(280);
-  ok('Alle Betrieb-Panes geschlossen', stack().length === 0);
-
-  // ═════════════ BETRIEB: PIPELINE-COCKPIT ═════════════
-  console.log('\n[Betrieb · Pipeline-Cockpit]');
-  window.gotoStation('pipeline');
-  const pip = $('st-pipeline');
-  ok('Pipeline: 4 Metric-Strips', qsa('.metric-strip', pip).length === 4);
-  ok('Pipeline: 4 Schnellaktionen', qsa('.cmd-chip', pip).length === 4);
-  ok('Pipeline-Titel korrekt', /Pipeline-Cockpit/.test(pip.textContent));
-
-  // ═════════════ BETRIEB: TARIFE (3 Spalten) + COMMANDER (Kandidaten) ═════════════
-  console.log('\n[Betrieb · Tarife / Commander-Register]');
-  click($('rail-tarife'));
-  ok('Betrieb-Tarife: 3 Spalten', qsa('.tarif-col', topPane()).length === 3);
-  ok('Betrieb-Tarife: eine Empfehlung', qsa('.tarif-col.hot', topPane()).length === 1);
-  window.popPane(); await delay(280);
-  window.openCommander();
-  typeInto($('cmd-input'), 'Noah');
-  ok('Commander findet Kandidat Noah', qsa('#cmd-results .cmd-item').some((i) => /Noah/.test(i.textContent)));
-  click(qsa('#cmd-results .cmd-item').find((i) => /Noah/.test(i.textContent)));
-  await delay(60);
-  ok('Commander öffnet Kandidat Noah', topPane() && topPane().dataset.pane === 'kandidat' && /Noah/.test(topPane().textContent));
-  window.popPane(); await delay(280);
-
-  // ═════════════ ZURÜCK ZU LERNENDE + WORDMARK-HOME ═════════════
-  console.log('\n[Rolle zurück · Lernende / Wordmark]');
+  // Zurück zu Lernende über Umschalter
   click(qs('.role-opt[data-role="lernende"]'));
-  ok('App.role = lernende', window.App.role === 'lernende');
-  ok('Wieder 6 Rail-Knoten', qsa('.rail-node').length === 6);
-  window.gotoStation('cockpit');
-  click(qs('.wordmark'));
-  ok('Wordmark navigiert zur Startstation', window.App.station === 'steckbrief');
+  await waitFor(() => window.App.role === 'lernende');
+  ok('Zurück → Rolle lernende', window.App.role === 'lernende');
+  // CTA "Für Betriebe" auf der Startseite (switch-betrieb)
+  await go('start');
+  const ctaBetrieb = qs('[data-action="switch-betrieb"]');
+  click(ctaBetrieb);
+  await waitFor(() => window.App.role === 'betrieb');
+  ok('Start-CTA "Für Betriebe" wechselt Rolle', window.App.role === 'betrieb');
+  // wieder Lernende für die nächsten Lernenden-Flows
+  click(qs('.role-opt[data-role="lernende"]'));
+  await waitFor(() => window.App.role === 'lernende');
 
-  // ═════════════ KEINE WAISEN-PANES / SAUBERER END-ZUSTAND ═════════════
-  console.log('\n[End-Zustand]');
-  ok('Kein Pane mehr offen', qsa('#pane-stack .pane').length === 0 && stack().length === 0);
-  ok('Scrim versteckt', $('pane-scrim').hidden === true);
-  ok('Commander geschlossen', $('commander').hidden === true);
+  // ═════════════ STELLEN-SUCHE + FILTER-SPALTE ═════════════
+  console.log('\n[Stellen-Suche · Filter-Spalte · Treffer]');
+  await go('stellen');
+  ok('Linke Filter-Spalte vorhanden', !!qs('.filter-col') && qsa('.filter-group').length === 3);
+  await waitFor(() => qsa('#stellen-list .list-item').length > 0);
+  const allCount = qsa('#stellen-list .list-item').length;
+  ok('Alle 6 Stellen gelistet', allCount === 6);
+  ok('Treffer-Zähler zeigt 6 Lehrstellen', /6 Lehrstellen/.test($('stellen-count').textContent));
+  ok('Sortierung Score: ZKB (92%) zuerst', qs('#stellen-list .list-item').dataset.id === 'zkb-kauffrau');
 
-  // ═════════════ ERGEBNIS ═════════════
+  // Branche-Filter (Radio) → nur IT
+  changeTo(qs('input[data-filter-key="branche"][value="it"]'), 'it');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 1);
+  ok('Branche=IT filtert auf 1 Treffer', qsa('#stellen-list .list-item').length === 1 && qs('#stellen-list .list-item').dataset.id === 'sbb-informatiker');
+  ok('Aktiver Filter-Chip sichtbar', qsa('#active-chips .chip-active').length >= 1);
+  // Chip wegklicken → wieder alle
+  click(qs('#active-chips .chip-active[data-key="branche"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('Filter-Chip entfernen stellt 6 Treffer wieder her', qsa('#stellen-list .list-item').length === 6);
+
+  // Region-Filter
+  changeTo(qs('input[data-filter-key="region"][value="zurich"]'), 'zurich');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 3);
+  ok('Region=Zürich → 3 Treffer', qsa('#stellen-list .list-item').length === 3);
+  // Abschluss EBA kombiniert → 0 Treffer (Zürich hat kein EBA) → Empty-State
+  changeTo(qs('input[data-filter-key="typ"][value="eba"]'), 'eba');
+  await waitFor(() => qsa('#stellen-list .empty-state').length === 1);
+  ok('Zürich + EBA → leerer Zustand', !!qs('#stellen-list .empty-state'));
+  // Filter über Empty-State-Button zurücksetzen
+  click(qs('#stellen-list .empty-state [data-action="reset-stellen-filter"]'));
+  await waitFor(() => window.App.route === 'stellen' && qsa('#stellen-list .list-item').length === 6);
+  ok('Reset-Button stellt alle Treffer her', qsa('#stellen-list .list-item').length === 6 && window.App.stellenFilters.branche === 'all');
+
+  // Inline-Suche (Live)
+  typeInto($('stellen-q'), 'informatik');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 1);
+  ok('Inline-Suche "informatik" → 1 Treffer', qsa('#stellen-list .list-item').length === 1);
+  typeInto($('stellen-q'), '');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  // Sortierung Beruf A–Z
+  changeTo($('stellen-sort'), 'beruf');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  const titles = qsa('#stellen-list .li-title').map((e) => e.textContent);
+  const sorted = titles.slice().sort((a, b) => a.localeCompare(b));
+  ok('Sortierung Beruf A–Z greift', JSON.stringify(titles) === JSON.stringify(sorted));
+  changeTo($('stellen-sort'), 'score');
+  await delay(0);
+
+  // Hero-Suche von der Startseite aus
+  await go('start');
+  const heroForm = qs('.search-hero');
+  typeInto(qs('input[name="q"]', heroForm), 'Kauffrau');
+  submit(heroForm);
+  await waitFor(() => window.App.route === 'stellen' && qsa('#stellen-list .list-item').length === 1);
+  ok('Hero-Suche füllt Filter + navigiert', window.App.route === 'stellen' && window.App.stellenFilters.q === 'Kauffrau' && qsa('#stellen-list .list-item').length === 1);
+  // Filter wieder leeren
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+
+  // Berufsfeld-Kachel von Start → setzt Branche
+  await go('start');
+  click(qs('.feld-tile[data-feld="informatik"]'));
+  await waitFor(() => window.App.route === 'stellen');
+  ok('Berufsfeld-Kachel setzt Branche-Filter', window.App.stellenFilters.branche === 'it' && qsa('#stellen-list .list-item').length === 1);
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+
+  // ═════════════ STELLEN-DETAIL + BEWERBEN-STEPS ═════════════
+  console.log('\n[Stellen-Detail · Bewerben-Flow]');
+  click(qs('#stellen-list .list-item[data-id="zkb-kauffrau"]'));
+  await waitFor(() => window.App.route === 'stelle' && window.App.param === 'zkb-kauffrau');
+  ok('Stellen-Detail geöffnet', window.App.route === 'stelle');
+  ok('Detail-H1 zeigt Beruf', /Kauffrau\/Kaufmann EFZ/.test(qs('.detail-h1').textContent));
+  ok('Verifiziert-Badge sichtbar', /Betrieb verifiziert/.test($('view').textContent));
+  ok('Score-Block 92%', /92%/.test(qs('.score-block').textContent));
+  ok('Eckdaten-Liste (4 Einträge)', qsa('.eckdaten > div').length === 4);
+  ok('Bewerben-Button vorhanden', !!qs('[data-action="goto-bewerben"]'));
+
+  // Ähnliche Stellen: Detailhandel hat Geschwister (Migros + Coop)
+  await go('stelle', 'migros-detail');
+  ok('Ähnliche Stellen vorhanden (Detailhandel)', qsa('.detail-sec .list .list-item').length >= 1);
+  await go('stelle', 'zkb-kauffrau');
+
+  // Frage stellen → Chat + Toast
+  click(qs('[data-action="ask-stelle"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('"Frage stellen" → Chat', window.App.route === 'chat');
+  ok('Toast nach Frage stellen', /Frage an den Betrieb/.test($('toast').textContent));
+
+  // zurück zu Detail → bewerben
+  await go('stelle', 'zkb-kauffrau');
+  click(qs('[data-action="goto-bewerben"]'));
+  await waitFor(() => window.App.route === 'bewerben');
+  ok('Bewerben-Stepper Step 1', !!qs('#bewerben-stepper .step-node.current') && /Profil prüfen/.test($('bewerben-stepper').textContent));
+  // Step 1 → 2
+  click(qs('[data-action="bewerben-next"]'));
+  await waitFor(() => !!$('bw-motivation'));
+  ok('Step 2 (Motivation) aktiv', !!$('bw-motivation'));
+  // Leere Motivation blockt
+  click(qs('[data-action="bewerben-next"]'));
+  await delay(0);
+  ok('Leere Motivation zeigt Fehler', $('bw-motivation-err') && $('bw-motivation-err').hidden === false && !!$('bw-motivation'));
+  // Motivation füllen → weiter
+  typeInto($('bw-motivation'), 'Ich interessiere mich sehr für den Bankberuf und die Beratung.');
+  ok('Fehler verschwindet bei Eingabe', $('bw-motivation-err').hidden === true);
+  click(qs('[data-action="bewerben-next"]'));
+  await waitFor(() => /Unterlagen/.test($('bewerben-form').textContent));
+  ok('Step 3 (Unterlagen) aktiv', /Lebenslauf/.test($('bewerben-form').textContent));
+  click(qs('[data-action="bewerben-next"]'));
+  await waitFor(() => !!qs('[data-action="submit-bewerbung"]'));
+  ok('Step 4 (Absenden) aktiv', !!qs('[data-action="submit-bewerbung"]') && /Zürcher Kantonalbank/.test($('bewerben-form').textContent));
+  // Zurück-Navigation prüfen
+  click(qs('[data-action="bewerben-prev"]'));
+  await waitFor(() => /Unterlagen/.test($('bewerben-form').textContent));
+  ok('Zurück führt zu Step 3', /Unterlagen/.test($('bewerben-form').textContent));
+  click(qs('[data-action="bewerben-next"]'));
+  await waitFor(() => !!qs('[data-action="submit-bewerbung"]'));
+  // Absenden
+  const bewVorher = window.App.bewerbungen.length;
+  click(qs('[data-action="submit-bewerbung"]'));
+  await waitFor(() => window.App.route === 'dashboard');
+  ok('Bewerbung absenden → Dashboard', window.App.route === 'dashboard');
+  ok('Bewerbung gespeichert', window.App.bewerbungen.length === bewVorher + 1);
+  ok('Toast "Bewerbung gesendet"', /Bewerbung bei ZKB gesendet/.test($('toast').textContent));
+
+  // ═════════════ DASHBOARD (Lernende) ═════════════
+  console.log('\n[Dashboard · Lernende]');
+  ok('Dashboard-H1 "Deine Übersicht"', /Deine Übersicht/.test($('view').textContent));
+  ok('Metrik-Reihe (4 Kennzahlen)', qsa('.metric').length === 4);
+  ok('Bewerbungs-Status-Liste zeigt Eintrag', qsa('.status-list li').length >= 1 && /Zürcher Kantonalbank/.test($('view').textContent));
+
+  // ═════════════ PROFIL-FORMULAR ═════════════
+  console.log('\n[Profil · Live-Sync · Stärken · Vollständigkeit]');
+  await go('profil');
+  ok('Profil-H1 vorhanden', /Mein Profil/.test($('view').textContent));
+  ok('Vollständigkeit-Anzeige vorhanden', !!$('vs-pct') && !!$('vs-fill'));
+  const voll0 = $('vs-pct').textContent;
+  // Personalien live tippen
+  typeInto(qs('[data-field="vorname"]'), 'Lena');
+  typeInto(qs('[data-field="nachname"]'), 'Muster');
+  typeInto(qs('[data-field="kanton"]'), 'Zürich');
+  ok('Vorname live in State', window.App.profile.vorname === 'Lena' && window.App.profile.nachname === 'Muster');
+  ok('Vollständigkeit steigt nach Eingabe', $('vs-pct').textContent !== voll0);
+  // Berufswunsch (Select → change)
+  changeTo(qs('[data-field="beruf"]'), 'Kauffrau/Kaufmann EFZ');
+  ok('Berufswunsch in State', window.App.profile.beruf === 'Kauffrau/Kaufmann EFZ');
+  // Schnupper-Erfahrung
+  typeInto(qs('[data-snfield="schnupper"]'), 'Raiffeisenbank (3 Tage)');
+  ok('Schnupper-Erfahrung in State', window.App.schnupperErf === 'Raiffeisenbank (3 Tage)');
+  // Stärken-Tags toggeln
+  const tag1 = qs('.tag.toggle[data-strength="Organisation"]');
+  const tag2 = qs('.tag.toggle[data-strength="Kommunikation"]');
+  click(tag1); click(tag2);
+  ok('Zwei Stärken aktiviert', window.App.strengths['Organisation'] === true && window.App.strengths['Kommunikation'] === true);
+  ok('Tag bekommt .on-Klasse', tag1.classList.contains('on'));
+  // Tastatur-Toggle (Enter)
+  const tag3 = qs('.tag.toggle[data-strength="Zuverlässigkeit"]');
+  tag3.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  ok('Stärke per Tastatur (Enter) toggelt', window.App.strengths['Zuverlässigkeit'] === true);
+  const vollVoll = parseInt($('vs-pct').textContent, 10);
+  ok('Volles Profil ergibt 100%', vollVoll === 100);
+  // Speichern
+  click(qs('[data-action="save-profil"]'));
+  ok('Profil speichern → Toast', /Profil gesichert/.test($('toast').textContent));
+  // Upload-Dokument
+  click(qs('[data-action="upload-doc"]'));
+  ok('Dokument-Upload → Toast', /Dokument hochgeladen/.test($('toast').textContent));
+
+  // ═════════════ LEBENSLAUF-VORSCHAU (CV) ═════════════
+  console.log('\n[CV · Lebenslauf-Vorschau]');
+  click(qs('[data-action="goto-cv"]'));
+  await waitFor(() => window.App.route === 'cv');
+  ok('CV-Route aktiv', window.App.route === 'cv' && !!$('cv-sheet'));
+  ok('CV zeigt Namen aus Profil', /Lena Muster/.test($('cv-sheet').textContent));
+  ok('CV zeigt Berufswunsch', /Kauffrau\/Kaufmann EFZ/.test($('cv-sheet').textContent));
+  ok('CV zeigt gewählte Stärken', /Organisation/.test($('cv-sheet').textContent));
+  ok('CV zeigt Schnupper-Erfahrung', /Raiffeisenbank/.test($('cv-sheet').textContent));
+  // Drucken
+  let printed = false; window.print = function () { printed = true; };
+  click(qs('[data-action="cv-print"]'));
+  ok('CV Drucken ruft window.print + Toast', printed === true && /zum Drucken/.test($('toast').textContent));
+
+  // ═════════════ CHAT (Lernende) · Senden · XSS ═════════════
+  console.log('\n[Chat · Liste → Konversation → Senden · XSS]');
+  await go('chat');
+  ok('Chat-Liste mit Konversationen', qsa('.conv').length === 3);
+  ok('Erste Konversation aktiv', !!qs('.conv.active') && window.App.route === 'chat');
+  ok('Chat-Log zeigt Nachrichten', qsa('#chat-log .bubble').length >= 1);
+  ok('Chat-Kopf zeigt Partner', /Zürcher Kantonalbank/.test($('chat-head').textContent));
+  // Andere Konversation öffnen
+  const convSbb = qs('.conv[data-conv="c-sbb"]');
+  click(convSbb);
+  await delay(0);
+  ok('Konversation wechseln (SBB)', window.lang && /SBB AG/.test($('chat-head').textContent) && convSbb.classList.contains('active'));
+  // Nachricht senden
+  const logBefore = qsa('#chat-log .bubble').length;
+  typeInto($('chat-inp'), 'Guten Tag, ich habe noch eine Frage.');
+  submit(qs('[data-action="chat-send"]'));
+  await waitFor(() => qsa('#chat-log .bubble').length === logBefore + 1);
+  ok('Nachricht senden fügt Bubble hinzu', qsa('#chat-log .bubble.me').length >= 1);
+  ok('Eingabefeld nach Senden geleert', $('chat-inp').value === '');
+  ok('Gesendete Bubble zeigt "gesendet"', /gesendet/.test(qs('#chat-log .bubble.me').textContent));
+  // Leere Nachricht wird nicht gesendet
+  const logNow = qsa('#chat-log .bubble').length;
+  typeInto($('chat-inp'), '   ');
+  submit(qs('[data-action="chat-send"]'));
+  await delay(0);
+  ok('Leere Nachricht wird ignoriert', qsa('#chat-log .bubble').length === logNow);
+  // XSS-Escape: HTML-Payload darf nicht als Markup landen
+  const xss = '<img src=x onerror="window.__xss=1">';
+  window.__xss = 0;
+  typeInto($('chat-inp'), xss);
+  submit(qs('[data-action="chat-send"]'));
+  await waitFor(() => qsa('#chat-log .bubble').length === logNow + 1);
+  ok('XSS-Payload nicht als <img> gerendert', qsa('#chat-log img').length === 0);
+  const meBubbles = qsa('#chat-log .bubble.me');
+  ok('XSS-Payload als Text escaped', /&lt;img/.test(meBubbles[meBubbles.length - 1].innerHTML));
+  ok('XSS-Handler nicht ausgeführt', window.__xss === 0);
+
+  // ═════════════ PREISE ═════════════
+  console.log('\n[Preise]');
+  await go('preise');
+  ok('Preise-H1 vorhanden', /Preise/.test(qs('.page-h1').textContent));
+  ok('Lernende-Frei-Karte vorhanden', /kostenlos/.test($('view').textContent));
+  ok('Drei Betriebs-Tarife', qsa('.tarif-col').length === 3);
+  ok('Empfohlener Tarif markiert', !!qs('.tarif-col.hot') && /empfohlen/.test($('view').textContent));
+  click(qs('.tarif-col.hot [data-action="choose-plan"]'));
+  ok('Tarif wählen → Toast', /gewählt/.test($('toast').textContent));
+
+  // ═════════════ BETRIEB-FLOWS ═════════════
+  console.log('\n[Betrieb · Kandidaten · Filter · Profil · Einladen]');
+  click(qs('.role-opt[data-role="betrieb"]'));
+  await waitFor(() => window.App.role === 'betrieb' && window.App.route === 'start');
+  ok('Rolle betrieb für Betriebs-Flows', window.App.role === 'betrieb');
+
+  // Header-Nav (Betrieb) jeden Link
+  const navRoutesBetr = ['start', 'kandidaten', 'ausschreiben', 'chat', 'dashboard'];
+  for (const r of navRoutesBetr) {
+    const link = qs('#primary-nav .nav-link[data-route="' + r + '"]');
+    click(link);
+    await waitFor(() => window.App.route === r);
+    ok('Betrieb-Nav → ' + r, window.App.route === r);
+  }
+
+  // Kandidaten suchen + Filter
+  await go('kandidaten');
+  ok('Kandidaten-Filter-Spalte', !!qs('.filter-col') && qsa('.filter-group').length === 3);
+  await waitFor(() => qsa('#pool-list .list-item').length > 0);
+  ok('Alle 4 Kandidaten gelistet', qsa('#pool-list .list-item').length === 4);
+  ok('Anonyme Kandidaten maskiert', /anonym/.test($('pool-list').textContent));
+  // Region-Filter
+  changeTo(qs('input[data-poolfilter-key="region"][value="bern"]'), 'bern');
+  await waitFor(() => qsa('#pool-list .list-item').length === 1);
+  ok('Region=Bern → 1 Kandidat', qsa('#pool-list .list-item').length === 1);
+  click(qs('[data-action="reset-pool-filter"]'));
+  await waitFor(() => qsa('#pool-list .list-item').length === 4);
+  // Noten-Filter
+  changeTo(qs('input[data-poolfilter-key="note"][value="55"]'), '55');
+  await waitFor(() => qsa('#pool-list .list-item').length === 1);
+  ok('Noten Ø≥5.5 → 1 Kandidat (Noah)', qsa('#pool-list .list-item').length === 1 && /Noah/.test($('pool-list').textContent));
+  click(qs('[data-action="reset-pool-filter"]'));
+  await waitFor(() => qsa('#pool-list .list-item').length === 4);
+  // Inline-Suche
+  typeInto($('pool-q'), 'Empathie');
+  await waitFor(() => qsa('#pool-list .list-item').length === 1);
+  ok('Suche "Empathie" → 1 Kandidat', qsa('#pool-list .list-item').length === 1);
+  // Empty-State + Reset
+  typeInto($('pool-q'), 'gibtsnicht');
+  await waitFor(() => !!qs('#pool-list .empty-state'));
+  ok('Kandidaten-Empty-State', !!qs('#pool-list .empty-state'));
+  click(qs('#pool-list .empty-state [data-action="reset-pool-filter"]'));
+  await waitFor(() => qsa('#pool-list .list-item').length === 4);
+  ok('Pool-Reset stellt 4 Kandidaten her', qsa('#pool-list .list-item').length === 4);
+
+  // Kandidat-Profil öffnen
+  click(qs('#pool-list .list-item[data-id="k-lena"]'));
+  await waitFor(() => window.App.route === 'kandidat' && window.App.param === 'k-lena');
+  ok('Kandidat-Profil geöffnet', window.App.route === 'kandidat');
+  ok('Zeugnis-Strip mit Noten', qsa('.zeugnis-strip .zrow').length === 4);
+  ok('Stärken-Tags (statisch) sichtbar', qsa('.detail-sec .tag.static').length >= 1);
+  ok('Einladen-Button vorhanden', !!qs('[data-action="open-schnupper"]'));
+
+  // Schnupper-Einladung (Modal)
+  console.log('\n[Schnupper-Einladung · Modal]');
+  click(qs('[data-action="open-schnupper"]'));
+  await waitFor(() => !!$('schnupper-dialog'));
+  ok('Schnupper-Modal geöffnet', !!$('schnupper-dialog') && /einladen/.test($('schnupper-dialog').textContent));
+  // Leeres Datum blockt
+  const einlVorher = window.App.einladungen.length;
+  submit(qs('[data-action="schnupper-form"]'));
+  await delay(0);
+  ok('Leeres Datum blockt Einladung', window.App.einladungen.length === einlVorher && !!$('schnupper-dialog'));
+  ok('Toast fordert Datum', /Datum angeben/.test($('toast').textContent));
+  // Datum füllen → senden
+  typeInto(qs('[data-sfield="datum"]', $('schnupper-dialog')), 'Mi 14. Mai');
+  submit(qs('[data-action="schnupper-form"]'));
+  await waitFor(() => !$('schnupper-dialog'));
+  ok('Einladung gesendet schliesst Modal', !$('schnupper-dialog') && window.App.einladungen.length === einlVorher + 1);
+  ok('Toast bestätigt Einladung', /zum Schnuppern eingeladen/.test($('toast').textContent));
+  // Modal erneut öffnen + Esc schliesst
+  await go('kandidat', 'k-lena');
+  click(qs('[data-action="open-schnupper"]'));
+  await waitFor(() => !!$('schnupper-dialog'));
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  ok('Esc schliesst Schnupper-Modal', !$('schnupper-dialog'));
+
+  // Nachricht senden (msg-kandidat) → Chat
+  await go('kandidat', 'k-noah');
+  click(qs('[data-action="msg-kandidat"]'));
+  await waitFor(() => window.App.route === 'chat');
+  ok('"Nachricht senden" → Betriebs-Chat', window.App.route === 'chat' && qsa('.conv').length === 2);
+
+  // ═════════════ STELLE AUSSCHREIBEN ═════════════
+  console.log('\n[Stelle ausschreiben · Betriebsprofil · Inserat]');
+  await go('ausschreiben');
+  ok('Ausschreiben-H1 vorhanden', /Stelle ausschreiben/.test($('view').textContent));
+  ok('Betriebsprofil-Vollständigkeit vorhanden', !!$('betrieb-pct'));
+  const bp0 = $('betrieb-pct').textContent;
+  // Betriebsprofil live tippen
+  typeInto(qs('[data-bfield="firma"]'), 'Muster AG');
+  typeInto(qs('[data-bfield="branche"]'), 'IT');
+  typeInto(qs('[data-bfield="ort"]'), 'Zürich');
+  ok('Betrieb-State live', window.App.betrieb.firma === 'Muster AG');
+  ok('Betriebs-Vollständigkeit steigt', $('betrieb-pct').textContent !== bp0 && $('betrieb-pct').textContent === '100%');
+  click(qs('[data-action="save-betrieb"]'));
+  ok('Betriebsprofil speichern → Toast', /Betriebsprofil gespeichert/.test($('toast').textContent));
+  // Inserat ohne Beruf blockt
+  ok('Inserat-Empty-State initial sichtbar', $('inserat-empty') && $('inserat-empty').hidden === false);
+  const insVorher = window.App.inserate.length;
+  click(qs('[data-action="publish-inserat"]'));
+  await delay(0);
+  ok('Inserat ohne Berufsbild blockt', window.App.inserate.length === insVorher && /Berufsbild angeben/.test($('toast').textContent));
+  // Inserat füllen + veröffentlichen
+  typeInto(qs('[data-ifield="beruf"]'), 'Informatiker/in EFZ');
+  typeInto(qs('[data-ifield="plaetze"]'), '2');
+  typeInto(qs('[data-ifield="beginn"]'), 'August 2026');
+  click(qs('[data-action="publish-inserat"]'));
+  await waitFor(() => qsa('#inserat-list .list-item').length === insVorher + 1);
+  ok('Inserat veröffentlicht erscheint in Liste', qsa('#inserat-list .list-item').length === 1 && /Informatiker\/in EFZ/.test($('inserat-list').textContent));
+  ok('Inserat-Empty-State danach versteckt', $('inserat-empty').hidden === true);
+  ok('Veröffentlicht-Toast', /veröffentlicht/.test($('toast').textContent));
+  ok('Inserat-Felder zurückgesetzt', qs('[data-ifield="beruf"]').value === '');
+
+  // ═════════════ BETRIEB-DASHBOARD / PIPELINE ═════════════
+  console.log('\n[Pipeline · Betrieb-Dashboard]');
+  await go('dashboard');
+  ok('Pipeline-H1 vorhanden', /Pipeline-Übersicht/.test($('view').textContent));
+  ok('Pipeline-Metriken (4)', qsa('.metric').length === 4);
+  ok('Veröffentlichte Stellen zählt Inserat', /1/.test(qsa('.metric .metric-num')[0].textContent));
+  ok('Kandidaten-Status-Liste', qsa('.status-list li').length === 4);
+
+  // ═════════════ 404 / NOTFOUND ═════════════
+  console.log('\n[Sonderfälle · 404 · Rollen-Routen-Schutz]');
+  // Lernende-Route als Betrieb aufrufen → notfound
+  await go('profil');
+  ok('Lernende-Route als Betrieb → 404', /Seite nicht gefunden/.test($('view').textContent));
+  // unbekannte Stellen-ID → 404
+  click(qs('.role-opt[data-role="lernende"]'));
+  await waitFor(() => window.App.role === 'lernende');
+  await go('stelle', 'gibtsnicht');
+  ok('Unbekannte Stellen-ID → 404', /Seite nicht gefunden/.test($('view').textContent));
+  // komplett unbekannte Route
+  await go('quatsch');
+  ok('Unbekannte Route → 404', /Seite nicht gefunden/.test($('view').textContent));
+
+  // ═════════════ FOOTER-NAV + LOGIN-TOAST ═════════════
+  console.log('\n[Footer-Nav · Login-Toast · Consent]');
+  await go('start');
+  click(qs('#footer a[data-route="preise"]'));
+  await waitFor(() => window.App.route === 'preise');
+  ok('Footer-Link → Preise', window.App.route === 'preise');
+  click($('login-btn'));
+  ok('Login-Button zeigt Demo-Toast', /Login-Demo/.test($('toast').textContent));
+  // Consent (falls eingeblendet) wegklicken
+  if (!$('consent').hidden) {
+    click(qs('[data-action="consent-accept"]'));
+    ok('Consent-Banner schliesst', $('consent').hidden === true);
+  } else {
+    ok('Consent bereits akzeptiert/ausgeblendet', true);
+  }
+
+  // ═════════════ KEINE JS-FEHLER ═════════════
+  console.log('\n[JS-Fehler-Bilanz]');
+  ok('Keine JS-Laufzeitfehler während Click-Through', errors.length === 0);
+  if (errors.length) errors.slice(0, 8).forEach((e) => console.log('     ! ' + e));
+
+  // ═════════════ AUSGABE ═════════════
   console.log('\n════════════════════════════');
   console.log(`  Bestanden: ${passed}   Fehlgeschlagen: ${failed}`);
-  if (errors.length) {
-    console.log('\n  ⚠️  Laufzeit-/Assert-Fehler:');
-    errors.forEach((e) => console.log('   - ' + e));
-  } else {
-    console.log('  ✅ Keine JS-Laufzeitfehler.');
-  }
+  console.log(failed === 0 ? '  ✅ Click-Through grün.' : '  ❌ Click-Through rot.');
   console.log('════════════════════════════');
-  process.exit(failed === 0 && errors.length === 0 ? 0 : 1);
-})().catch((e) => { console.error('FATAL im Testlauf:', e); process.exit(2); });
+  process.exit(failed === 0 ? 0 : 1);
+})().catch((e) => { console.error('FATAL:', e && e.stack ? e.stack : e); process.exit(2); });
