@@ -205,14 +205,20 @@ async function go(route, param) {
   changeTo(qs('input[data-filter-key="region"][value="zurich"]'), 'zurich');
   await waitFor(() => qsa('#stellen-list .list-item').length === 3);
   ok('Region=Zürich → 3 Treffer', qsa('#stellen-list .list-item').length === 3);
-  // Abschluss EBA kombiniert → 0 Treffer (Zürich hat kein EBA) → Empty-State
+  // Abschluss EBA kombiniert → 0 Treffer (Zürich hat kein EBA) → kontextbezogener Empty-State (R5)
   changeTo(qs('input[data-filter-key="typ"][value="eba"]'), 'eba');
   await waitFor(() => qsa('#stellen-list .empty-state').length === 1);
   ok('Zürich + EBA → leerer Zustand', !!qs('#stellen-list .empty-state'));
-  // Filter über Empty-State-Button zurücksetzen
-  click(qs('#stellen-list .empty-state [data-action="reset-stellen-filter"]'));
-  await waitFor(() => window.App.route === 'stellen' && qsa('#stellen-list .list-item').length === 6);
-  ok('Reset-Button stellt alle Treffer her', qsa('#stellen-list .list-item').length === 6 && window.App.stellenFilters.branche === 'all');
+  ok('Empty-State: kontextbezogene Headline nennt Region (R5)', /Zürich/i.test(qs('#stellen-list .empty-state h3').textContent));
+  ok('Empty-State: "Ganze Schweiz durchsuchen"-Aktion bei gesetzter Region (R5)', !!qs('#stellen-list .empty-state [data-action="widen-stellen-region"]'));
+  // Region erweitern → region=all, EBA bleibt → coop-eba erscheint
+  click(qs('#stellen-list .empty-state [data-action="widen-stellen-region"]'));
+  await waitFor(() => window.App.stellenFilters.region === 'all');
+  ok('Region erweitern: region=all + Treffer kehren zurück (R5)', window.App.stellenFilters.region === 'all' && qsa('#stellen-list .list-item').length >= 1);
+  // Typ-Chip entfernen → wieder alle 6
+  click(qs('#active-chips .chip-active[data-key="typ"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('Filter komplett zurück → 6 Treffer', qsa('#stellen-list .list-item').length === 6);
 
   // Inline-Suche (Live)
   typeInto($('stellen-q'), 'informatik');

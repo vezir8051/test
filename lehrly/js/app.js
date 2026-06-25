@@ -553,9 +553,23 @@
     var holder = $('stellen-list');
     if (!holder) return;
     if (list.length === 0) {
-      holder.innerHTML = '<div class="empty-state"><h3>Keine Treffer</h3>' +
-        '<p class="muted">Passe deine Filter an oder setze sie zurück.</p>' +
-        '<button class="btn btn-outline" data-action="reset-stellen-filter">Filter zurücksetzen</button></div>';
+      var sf = App.stellenFilters;
+      var parts = [];
+      if (sf.q) parts.push('„' + esc(sf.q) + '“');
+      if (sf.branche !== 'all') parts.push(esc(stellenOptLabel('branche', sf.branche)));
+      if (sf.region !== 'all') parts.push('in Region ' + esc(stellenOptLabel('region', sf.region)));
+      if (sf.typ !== 'all') parts.push('(' + esc(stellenOptLabel('typ', sf.typ)) + ')');
+      var head = parts.length ? 'Keine Lehrstellen für ' + parts.join(' ') : 'Keine Lehrstellen gefunden';
+      var actions;
+      if (sf.region !== 'all') {
+        actions = '<button class="btn btn-primary" data-action="widen-stellen-region">Ganze Schweiz durchsuchen</button>' +
+          '<button class="btn btn-outline" data-action="reset-stellen-filter">Alle Filter zurücksetzen</button>';
+      } else {
+        actions = '<button class="btn btn-primary" data-action="reset-stellen-filter">Filter zurücksetzen</button>';
+      }
+      holder.innerHTML = '<div class="empty-state"><h3>' + head + '</h3>' +
+        '<p class="muted">Der Lehrstellenmarkt ist regional unterschiedlich. So findest du wieder Treffer:</p>' +
+        actions + '</div>';
     } else {
       holder.innerHTML = list.map(stelleCard).join('');
     }
@@ -787,6 +801,18 @@
       '</div></div>';
   };
 
+  // Pool-Filter-Optionen zentral (für Panel UND Empty-State-Labels)
+  var POOL_FILTER_OPTS = {
+    region: [{ v: 'all', l: 'Ganze Schweiz' }, { v: 'zurich', l: 'Zürich' }, { v: 'bern', l: 'Bern' }],
+    feld: [{ v: 'all', l: 'Alle Felder' }, { v: 'kv', l: 'Kaufmännisch' }, { v: 'informatik', l: 'Informatik' }, { v: 'gesundheit', l: 'Gesundheit' }],
+    note: [{ v: 'all', l: 'Alle' }, { v: '5', l: 'Ø 5.0 und höher' }, { v: '55', l: 'Ø 5.5 und höher' }]
+  };
+  function poolOptLabel(key, val) {
+    var opts = POOL_FILTER_OPTS[key] || [];
+    for (var i = 0; i < opts.length; i++) if (opts[i].v === val) return opts[i].l;
+    return val;
+  }
+
   function poolFilterPanel() {
     function group(title, key, opts) {
       return '<fieldset class="filter-group"><legend class="filter-h">' + esc(title) + '</legend>' +
@@ -798,9 +824,9 @@
     }
     return '<div class="filter-head"><h3 class="filter-title">Filter</h3>' +
       '<button class="btn-text" data-action="reset-pool-filter">Zurücksetzen</button></div>' +
-      group('Region', 'region', [{ v: 'all', l: 'Ganze Schweiz' }, { v: 'zurich', l: 'Zürich' }, { v: 'bern', l: 'Bern' }]) +
-      group('Berufsfeld', 'feld', [{ v: 'all', l: 'Alle Felder' }, { v: 'kv', l: 'Kaufmännisch' }, { v: 'informatik', l: 'Informatik' }, { v: 'gesundheit', l: 'Gesundheit' }]) +
-      group('Noten', 'note', [{ v: 'all', l: 'Alle' }, { v: '5', l: 'Ø 5.0 und höher' }, { v: '55', l: 'Ø 5.5 und höher' }]);
+      group('Region', 'region', POOL_FILTER_OPTS.region) +
+      group('Berufsfeld', 'feld', POOL_FILTER_OPTS.feld) +
+      group('Noten', 'note', POOL_FILTER_OPTS.note);
   }
 
   function filteredPool() {
@@ -825,9 +851,23 @@
     var holder = $('pool-list');
     if (!holder) return;
     if (list.length === 0) {
-      holder.innerHTML = '<div class="empty-state"><h3>Keine Kandidaten gefunden</h3>' +
-        '<p class="muted">Passen Sie die Filter an oder setzen Sie sie zurück.</p>' +
-        '<button class="btn btn-outline" data-action="reset-pool-filter">Filter zurücksetzen</button></div>';
+      var pf = App.poolFilters;
+      var parts = [];
+      if (pf.q) parts.push('„' + esc(pf.q) + '“');
+      if (pf.region !== 'all') parts.push('in Region ' + esc(poolOptLabel('region', pf.region)));
+      if (pf.feld !== 'all') parts.push('(' + esc(poolOptLabel('feld', pf.feld)) + ')');
+      if (pf.note !== 'all') parts.push('(' + esc(poolOptLabel('note', pf.note)) + ')');
+      var head = parts.length ? 'Keine Kandidaten ' + parts.join(' ') : 'Keine Kandidaten gefunden';
+      var actions;
+      if (pf.region !== 'all') {
+        actions = '<button class="btn btn-primary" data-action="widen-pool-region">Ganze Schweiz durchsuchen</button>' +
+          '<button class="btn btn-outline" data-action="reset-pool-filter">Alle Filter zurücksetzen</button>';
+      } else {
+        actions = '<button class="btn btn-primary" data-action="reset-pool-filter">Filter zurücksetzen</button>';
+      }
+      holder.innerHTML = '<div class="empty-state"><h3>' + head + '</h3>' +
+        '<p class="muted">Erweitern Sie die Region oder das Berufsfeld, um mehr Profile zu sehen.</p>' +
+        actions + '</div>';
     } else {
       holder.innerHTML = list.map(kandidatCard).join('');
     }
@@ -1309,6 +1349,12 @@
         gotoRoute('stellen'); return true;
       case 'clear-filter':
         App.stellenFilters[el.dataset.key] = 'all'; renderStellenResults(); return true;
+      case 'widen-stellen-region': {
+        App.stellenFilters.region = 'all';
+        var rr = qs('input[name="f-region"][value="all"]');
+        if (rr) rr.checked = true;
+        renderStellenResults(); return true;
+      }
 
       case 'goto-bewerben':
         e.preventDefault(); gotoRoute('bewerben', el.dataset.id); return true;
@@ -1333,6 +1379,12 @@
       case 'reset-pool-filter':
         App.poolFilters = { region: 'all', note: 'all', feld: 'all', q: '' };
         gotoRoute('kandidaten'); return true;
+      case 'widen-pool-region': {
+        App.poolFilters.region = 'all';
+        var pr = qs('input[name="p-region"][value="all"]');
+        if (pr) pr.checked = true;
+        renderPoolResults(); return true;
+      }
       case 'open-schnupper': openSchnupper(el.dataset.key); return true;
       case 'request-freigabe':
         toast((el.dataset.key || 'Kandidat/in') + ': Freigabe angefragt.', 'ok'); return true;
