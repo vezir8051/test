@@ -560,6 +560,25 @@ async function go(route, param) {
   ok('Metrik-Reihe (4 Kennzahlen)', qsa('.metric').length === 4);
   ok('Bewerbungs-Status-Liste zeigt Eintrag', qsa('.status-list li').length >= 1 && /Zürcher Kantonalbank/.test($('view').textContent));
 
+  // idx 4/5/19/27: Kennzahlen + Aktivität aus echtem State (keine Fantasiewerte)
+  const unreadLernMetric = qsa('.metric').find((m) => /Ungelesene Nachrichten/.test(m.textContent));
+  ok('"Ungelesene Nachrichten" (Lernende) = unreadCount (kein fixer Wert)',
+    !!unreadLernMetric &&
+    unreadLernMetric.querySelector('.metric-num').textContent.trim() === String(window.unreadCount('lernende')));
+  ok('"Ungelesene Nachrichten" (Lernende) deterministisch = 3 Demo-Konversationen',
+    window.unreadCount('lernende') === 3 &&
+    unreadLernMetric.querySelector('.metric-num').textContent.trim() === '3');
+  // Aktivität spiegelt echten State: Profil-%-Zeile = profilVollstaendigkeit(), KEINE fixe "80%"
+  const aktBlock = qsa('.dash-block').find((b) => /Aktivität/.test(b.querySelector('.detail-h2') ? b.querySelector('.detail-h2').textContent : ''));
+  ok('Aktivität: keine erfundene "80%"-Zeile', !!aktBlock && !/80% vollständig/.test(aktBlock.textContent));
+  // Profil-%-Zeile in Aktivität MUSS dem Metrik-Wert "Profil-Vollständigkeit" entsprechen (kein Widerspruch)
+  const profilMetric = qsa('.metric').find((m) => /Profil-Vollständigkeit/.test(m.textContent));
+  const profilPctVal = profilMetric.querySelector('.metric-num').textContent.trim().replace('%', '');
+  ok('Aktivität: Profil-%-Zeile entspricht Metrik (kein Widerspruch)',
+    new RegExp('Profil zu ' + profilPctVal + '% vollständig').test(aktBlock.textContent));
+  ok('Aktivität: Bewerbungszeile aus App.bewerbungen abgeleitet',
+    window.App.bewerbungen.length >= 1 && /Beworben: .* bei Zürcher Kantonalbank/.test(aktBlock.textContent));
+
   // Merkliste-Block + echte "Gemerkte Lehrstellen"-Metrik (statt Mock "Treffer")
   console.log('\n[Dashboard · Merkliste-Block]');
   ok('Metrik "Gemerkte Lehrstellen" vorhanden (keine Mock-Treffer)',
@@ -800,6 +819,9 @@ async function go(route, param) {
   await waitFor(() => qsa('#chat-log .bubble').length === logBefore + 1);
   ok('Nachricht senden fügt Bubble hinzu', qsa('#chat-log .bubble.me').length >= 1);
   ok('Eingabefeld nach Senden geleert', $('chat-inp').value === '');
+  // idx 4/19: nach eigener Antwort sinkt unreadCount (letzte Nachricht c-sbb ist nun me=true)
+  ok('unreadCount(lernende) sinkt nach gesendeter Antwort (c-sbb gelesen)',
+    window.unreadCount('lernende') === 2);
   ok('Gesendete Bubble zeigt "gesendet"', /gesendet/.test(qs('#chat-log .bubble.me').textContent));
   // idx 18: Sidebar-Vorschau/Zeit der aktiven Konversation aktualisiert sich nach dem Senden
   ok('Sidebar-Preview der aktiven Konversation zeigt gesendeten Text',
@@ -1307,8 +1329,16 @@ async function go(route, param) {
   console.log('\n[Pipeline · Betrieb-Dashboard]');
   await go('dashboard');
   ok('Pipeline-H1 vorhanden', /Pipeline-Übersicht/.test($('view').textContent));
-  ok('Pipeline-Metriken (4)', qsa('.metric').length === 4);
+  // idx 19/27: erfundene "Eingegangene Bewerbungen=4"-Kachel entfernt → 3 echte Metriken
+  ok('Pipeline-Metriken (3, keine erfundene Bewerbungseingangs-Kachel)', qsa('.metric').length === 3);
+  ok('Keine "Eingegangene Bewerbungen"-Kachel mehr (erfundene 4 entfernt)',
+    !qsa('.metric-label').some((l) => /Eingegangene Bewerbungen/.test(l.textContent)));
   ok('Veröffentlichte Stellen zählt Inserate', qsa('.metric .metric-num')[0].textContent.trim() === String(window.App.inserate.length) && window.App.inserate.length === 2);
+  // idx 4/19: "Ungelesene Nachrichten" (Betrieb) = unreadCount, kein fixer Wert "1"
+  const unreadBetrMetric = qsa('.metric').find((m) => /Ungelesene Nachrichten/.test(m.textContent));
+  ok('"Ungelesene Nachrichten" (Betrieb) = unreadCount(betrieb)',
+    !!unreadBetrMetric &&
+    unreadBetrMetric.querySelector('.metric-num').textContent.trim() === String(window.unreadCount('betrieb')));
   ok('Kandidaten-Status-Liste', qsa('.status-list li').length === 4);
 
   // ═════════════ 404 / NOTFOUND ═════════════

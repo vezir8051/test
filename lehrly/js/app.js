@@ -1333,6 +1333,19 @@
     return App.chats[convId];
   }
 
+  // Eine Konversation gilt als ungelesen, wenn ihre letzte effektive Nachricht
+  // NICHT von 'me' stammt. getChatMsgs berücksichtigt App.chats-Overrides, also
+  // sinkt der Wert nach dem Senden einer eigenen Antwort.
+  function unreadCount(role) {
+    var convs = KONVERSATIONEN[role] || [];
+    return convs.filter(function (c) {
+      var msgs = getChatMsgs(c.id);
+      var last = msgs[msgs.length - 1];
+      return last ? !last.me : false;
+    }).length;
+  }
+  window.unreadCount = unreadCount;
+
   function renderChatConversation() {
     var conv = KONVERSATIONEN[App.role].filter(function (c) { return c.id === chatState.activeId; })[0];
     if (!conv) return;
@@ -1360,12 +1373,27 @@
     var metrics = [
       ['Offene Bewerbungen', App.bewerbungen.length || 0],
       ['Gemerkte Lehrstellen', App.gemerkt.length],
-      ['Ungelesene Nachrichten', 2],
+      ['Ungelesene Nachrichten', unreadCount('lernende')],
       ['Profil-Vollständigkeit', profilVollstaendigkeit() + '%']
     ];
     var gemerkteStellen = App.gemerkt.map(function (id) {
       return STELLEN.filter(function (x) { return x.id === id; })[0];
     }).filter(Boolean);
+    // Aktivität aus echtem App-State ableiten (keine erfundenen Zeilen).
+    var aktivitaet = [];
+    App.bewerbungen.forEach(function (b) {
+      aktivitaet.push('Beworben: ' + b.beruf + ' bei ' + b.betrieb);
+    });
+    aktivitaet.push('Profil zu ' + profilVollstaendigkeit() + '% vollständig');
+    App.gemerkt.slice(0, 2).forEach(function (id) {
+      var s = STELLEN.filter(function (x) { return x.id === id; })[0];
+      if (s) aktivitaet.push('Gemerkt: ' + s.beruf);
+    });
+    var aktivitaetHtml = aktivitaet.length
+      ? '<ul class="activity-list">' + aktivitaet.map(function (t) {
+          return '<li><span class="act-dot"></span>' + esc(t) + '</li>';
+        }).join('') + '</ul>'
+      : '<div class="empty-state"><p class="muted">Noch keine Aktivität.</p></div>';
     var savedBlock = '<section class="dash-block dash-saved"><h2 class="detail-h2">Gespeicherte Suchen</h2>' +
       (App.savedSearches.length
         ? '<ul class="saved-search-list">' + App.savedSearches.map(function (s) {
@@ -1399,11 +1427,7 @@
             '<button class="btn btn-primary" data-route="stellen" data-action="goto-stellen">Stellen finden</button></div>') +
         '</section>' +
         '<section class="dash-block"><h2 class="detail-h2">Aktivität</h2>' +
-          '<ul class="activity-list">' +
-            '<li><span class="act-dot"></span>ZKB hat dein Profil angesehen</li>' +
-            '<li><span class="act-dot"></span>Neue passende Stelle: Informatiker EFZ</li>' +
-            '<li><span class="act-dot"></span>Profil zu 80% vollständig</li>' +
-          '</ul></section>' +
+          aktivitaetHtml + '</section>' +
         savedBlock +
       '</div></div>';
   };
@@ -1411,9 +1435,8 @@
   views.bDashboard = function () {
     var metrics = [
       ['Veröffentlichte Stellen', App.inserate.length],
-      ['Eingegangene Bewerbungen', 4],
       ['Schnupper-Einladungen', App.einladungen.length],
-      ['Ungelesene Nachrichten', 1]
+      ['Ungelesene Nachrichten', unreadCount('betrieb')]
     ];
     return '<div class="container">' +
       breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Pipeline' }]) +
