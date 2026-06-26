@@ -838,6 +838,106 @@ async function go(route, param) {
   ok('Profil-Enter-Submit → Toast ist role=status', $('toast').getAttribute('role') === 'status');
   ok('Profil-Enter-Submit erhält Feldwert (kein Reset/Datenverlust)',
     qs('[data-field="vorname"]').value === 'Lena' && window.App.profile.vorname === 'Lena');
+
+  // ── idx 6: Stiller Datenverlust — JEDER Profil-Input persistiert sofort (ohne "Speichern"-Klick) ──
+  console.log('\n[Profil · Sofort-Persistenz pro Tastendruck · kein stiller Datenverlust]');
+  // Frischen Profil-State aufbauen und OHNE save-Klick tippen
+  window.localStorage.removeItem('lehrly:profile');
+  window.localStorage.removeItem('lehrly:schnupperErf');
+  window.App.profile = { vorname: '', nachname: '', kanton: '', plz: '', beruf: '', noten: { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' } };
+  window.App.schnupperErf = '';
+  await go('cv'); await go('profil');
+  // Personalien tippen (data-field, input-Handler)
+  typeInto(qs('[data-field="vorname"]'), 'Noa');
+  typeInto(qs('[data-field="nachname"]'), 'Berger');
+  typeInto(qs('[data-field="kanton"]'), 'Bern');
+  typeInto(qs('[data-field="plz"]'), '3000');
+  // Berufswunsch wählen (data-field beruf, change-Handler)
+  changeTo(qs('[data-field="beruf"]'), 'Informatiker/in EFZ');
+  // Note tippen (data-nfield, input-Handler)
+  typeInto(qs('[data-nfield="deutsch"]', $('sec-noten')), '4.8');
+  // Schnupper-Erfahrung tippen (data-snfield, input-Handler)
+  typeInto(qs('[data-snfield="schnupper"]'), 'Coop (2 Tage)');
+  // KEIN Klick auf "Profil speichern" — trotzdem muss alles im localStorage liegen
+  ok('idx6: Vorname/Nachname ohne Speichern-Klick in localStorage', (() => {
+    const p = JSON.parse(window.localStorage.getItem('lehrly:profile'));
+    return p && p.vorname === 'Noa' && p.nachname === 'Berger';
+  })());
+  ok('idx6: Kanton/PLZ ohne Speichern-Klick in localStorage', (() => {
+    const p = JSON.parse(window.localStorage.getItem('lehrly:profile'));
+    return p && p.kanton === 'Bern' && p.plz === '3000';
+  })());
+  ok('idx6: Berufswunsch (change) ohne Speichern-Klick in localStorage', (() => {
+    const p = JSON.parse(window.localStorage.getItem('lehrly:profile'));
+    return p && p.beruf === 'Informatiker/in EFZ';
+  })());
+  ok('idx6: Note (Rohwert) ohne Speichern-Klick in localStorage', (() => {
+    const p = JSON.parse(window.localStorage.getItem('lehrly:profile'));
+    return p && p.noten && p.noten.deutsch === '4.8';
+  })());
+  ok('idx6: Schnupper-Erfahrung ohne Speichern-Klick in localStorage',
+    JSON.parse(window.localStorage.getItem('lehrly:schnupperErf')) === 'Coop (2 Tage)');
+  // Reload simulieren: Werte überleben Neu-Render
+  await go('cv'); await go('profil');
+  ok('idx6: Nach Reload bleiben alle getippten Werte erhalten',
+    qs('[data-field="vorname"]').value === 'Noa' &&
+    qs('[data-field="plz"]').value === '3000' &&
+    qs('[data-field="beruf"]').value === 'Informatiker/in EFZ' &&
+    qs('[data-nfield="deutsch"]', $('sec-noten')).value === '4.8' &&
+    qs('[data-snfield="schnupper"]').value === 'Coop (2 Tage)');
+
+  // ── idx 6: Out-of-Range-Note bleibt sichtbarer Fehler, wird aber dennoch persistiert (kein Verlust) ──
+  typeInto(qs('[data-nfield="mathematik"]', $('sec-noten')), '9');
+  ok('idx6: Out-of-Range-Note zeigt Inline-Fehlerhinweis', !$('note-err-mathematik').hidden &&
+    qs('[data-nfield="mathematik"]', $('sec-noten')).getAttribute('aria-invalid') === 'true');
+  ok('idx6: Out-of-Range-Rohwert wird trotzdem persistiert (kein Tipp-Verlust)', (() => {
+    const p = JSON.parse(window.localStorage.getItem('lehrly:profile'));
+    return p && p.noten && p.noten.mathematik === '9';
+  })());
+  // Explizites Speichern normalisiert/klemmt wie bisher
+  click(qs('[data-action="save-profil"]'));
+  ok('idx6: Explizites Speichern klemmt Out-of-Range-Note auf CH-Skala', (() => {
+    const p = JSON.parse(window.localStorage.getItem('lehrly:profile'));
+    return p && p.noten && parseFloat(p.noten.mathematik) >= 1 && parseFloat(p.noten.mathematik) <= 6;
+  })());
+
+  // ── idx 7: Enter speichert in JEDEM Profil-Abschnitt (Beruf, Noten, Erfahrung), nicht nur Personalien ──
+  console.log('\n[Profil · Enter speichert in allen Abschnitten · keine toten Tastendrücke]');
+  // Jeder Abschnitt liegt nun in einem profil-form
+  ok('idx7: Beruf-Abschnitt in profil-form gehüllt', !!qs('#sec-beruf form[data-action="profil-form"]'));
+  ok('idx7: Noten-Abschnitt in profil-form gehüllt', !!qs('#sec-noten form[data-action="profil-form"]'));
+  ok('idx7: Erfahrung-Abschnitt in profil-form gehüllt', !!qs('#sec-erfahrung form[data-action="profil-form"]'));
+  // Enter im Noten-Feld → Submit des umschliessenden Forms → Toast
+  $('toast').textContent = '';
+  submit(qs('#sec-noten form[data-action="profil-form"]'));
+  await delay(0);
+  ok('idx7: Enter im Noten-Abschnitt → Toast "Profil gesichert."', $('toast').textContent === 'Profil gesichert.');
+  // Enter im Berufs-Abschnitt → Toast
+  $('toast').textContent = '';
+  submit(qs('#sec-beruf form[data-action="profil-form"]'));
+  await delay(0);
+  ok('idx7: Enter im Berufs-Abschnitt → Toast "Profil gesichert."', $('toast').textContent === 'Profil gesichert.');
+  // Enter im Schnupper-/Erfahrung-Feld → Toast
+  $('toast').textContent = '';
+  submit(qs('#sec-erfahrung form[data-action="profil-form"]'));
+  await delay(0);
+  ok('idx7: Enter im Erfahrung-Abschnitt → Toast "Profil gesichert."', $('toast').textContent === 'Profil gesichert.');
+
+  // Profil-State auf die von den Folge-Tests erwartete Belegung zurücksetzen
+  // (Lena Muster · Kauffrau/Kaufmann EFZ · Raiffeisenbank · Deutsch 5.2 · Mathematik 4.5)
+  typeInto(qs('[data-field="vorname"]'), 'Lena');
+  typeInto(qs('[data-field="nachname"]'), 'Muster');
+  typeInto(qs('[data-field="kanton"]'), 'Zürich');
+  typeInto(qs('[data-field="plz"]'), '');
+  changeTo(qs('[data-field="beruf"]'), 'Kauffrau/Kaufmann EFZ');
+  typeInto(qs('[data-snfield="schnupper"]'), 'Raiffeisenbank (3 Tage)');
+  typeInto(qs('[data-nfield="deutsch"]', $('sec-noten')), '5.2');
+  typeInto(qs('[data-nfield="mathematik"]', $('sec-noten')), '4.5');
+  typeInto(qs('[data-nfield="franzoesisch"]', $('sec-noten')), '');
+  typeInto(qs('[data-nfield="englisch"]', $('sec-noten')), '');
+  click(qs('[data-action="save-profil"]'));
+  await delay(0);
+
   // ── Dokumente: ehrlicher Status + echter Upload-Toggle (toter-Klick-Fix) ──
   console.log('\n[Profil · Dokumente · ehrlicher Status · Upload-Toggle · Persistenz]');
   // Frischer Demozustand: keine vorgetäuschten "hochgeladen"/"geprüft"-Status
