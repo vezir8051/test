@@ -1488,6 +1488,68 @@ async function go(route, param) {
   ok('Ungültige Note (abc) → kein JS-Fehler', errors.length === errBeforeInvalid);
   ok('Ungültige Note (abc) → kein Strip, Leerzustand im CV', /Noch keine Noten erfasst/.test(cvEmptyBlock.textContent) && !qs('.zeugnis-strip', cvEmptyBlock));
 
+  // ═════════════ NOTEN-VALIDIERUNG & BALKEN-CLAMP (CH-Skala 1.0–6.0) ═════════════
+  console.log('\n[Profil/CV · Noten-Validierung & Balken-Clamp · CH-Skala 1.0–6.0]');
+  // Sauberer Ausgangszustand
+  window.App.profile.noten = { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
+  await go('profil');
+  const sNotenV = $('sec-noten');
+
+  // (a) '9' eintippen → Inline-Hinweis + invalid am Feld, Rohwert bleibt im State (kein Springen)
+  const inpMath = qs('[data-nfield="mathematik"]', sNotenV);
+  typeInto(inpMath, '9');
+  ok('Out-of-Range (9): Rohwert bleibt im State während des Tippens', window.App.profile.noten.mathematik === '9');
+  ok('Out-of-Range (9): Feld bekommt .invalid + aria-invalid', inpMath.classList.contains('invalid') && inpMath.getAttribute('aria-invalid') === 'true');
+  ok('Out-of-Range (9): Inline-Hinweis sichtbar', !$('note-err-mathematik').hidden && /1\.0 und 6\.0/.test($('note-err-mathematik').textContent));
+
+  // Gültigen Wert für ein zweites Feld erfassen (für den ~83%-Balken-Check)
+  typeInto(qs('[data-nfield="deutsch"]', sNotenV), '5.0');
+
+  // (b) Speichern → '9' wird auf 6.0 geklemmt, '5.0' bleibt; korrigierter Wert ins Input gespiegelt
+  click(qs('[data-action="save-profil"]'));
+  ok('Speichern klemmt 9 → 6.0 im State', window.App.profile.noten.mathematik === '6.0');
+  ok('Speichern spiegelt 6.0 ins Inputfeld', qs('[data-nfield="mathematik"]', $('sec-noten')).value === '6.0');
+  ok('Speichern räumt invalid/Inline-Hinweis ab', !qs('[data-nfield="mathematik"]', $('sec-noten')).classList.contains('invalid') && $('note-err-mathematik').hidden);
+  ok('Gültige 5.0 bleibt nach Speichern unverändert', window.App.profile.noten.deutsch === '5.0');
+  ok('Geklemmte Note 6.0 in localStorage persistiert', (() => {
+    const p = JSON.parse(window.localStorage.getItem('lehrly:profile'));
+    return p.noten && p.noten.mathematik === '6.0' && p.noten.deutsch === '5.0';
+  })());
+
+  // (c) '0.5' eintippen → beim Speichern auf 1.0 korrigiert (kein Balken <0, keine 0.5 auf dem CV)
+  await go('profil');
+  typeInto(qs('[data-nfield="franzoesisch"]', $('sec-noten')), '0.5');
+  click(qs('[data-action="save-profil"]'));
+  ok('Speichern korrigiert 0.5 → 1.0 im State', window.App.profile.noten.franzoesisch === '1.0');
+
+  // (d) CV-Vorschau: kein '9.0', kein '0.5', Balken nie breiter als .ztrack (w<=100%)
+  await go('cv');
+  const cvVBlock = qsa('.cv-block').filter((b) => /Schulnoten/.test(b.textContent))[0];
+  ok('CV: keine Schrott-Note 9.0 auf dem Lebenslauf', !/9\.0/.test(cvVBlock.textContent));
+  ok('CV: keine Schrott-Note 0.5 auf dem Lebenslauf', !/0\.5/.test(cvVBlock.textContent));
+  ok('CV: Mathematik zeigt geklemmte 6.0', /Mathematik/.test(cvVBlock.textContent) && /6\.0/.test(cvVBlock.textContent));
+  ok('CV: Deutsch 5.0 → Balken ~83% (gültig, unverändert)', (() => {
+    const rows = qsa('.zeugnis-strip .zrow', cvVBlock);
+    const deutschRow = rows.filter((r) => /Deutsch/.test(r.textContent))[0];
+    const w = parseInt((deutschRow.querySelector('.ztrack i').style.width || '0'), 10);
+    return w === 83;
+  })());
+  ok('CV: kein Balken überläuft .ztrack (alle w<=100%)', qsa('.zeugnis-strip .ztrack i', cvVBlock).every((i) => parseInt(i.style.width || '0', 10) <= 100));
+
+  // (e) Render-Seiten-Clamp direkt: unplausible Werte im State werden NICHT als gültig gerendert
+  window.App.profile.noten = { deutsch: '9.0', mathematik: '0.5', franzoesisch: '5.0', englisch: '' };
+  await go('cv');
+  const cvRawBlock = qsa('.cv-block').filter((b) => /Schulnoten/.test(b.textContent))[0];
+  ok('CV-Render verwirft 9.0/0.5 direkt aus State (nur gültige 5.0 als Zeile)',
+    qsa('.zeugnis-strip .zrow', cvRawBlock).length === 1 && /5\.0/.test(cvRawBlock.textContent) && !/9\.0/.test(cvRawBlock.textContent) && !/0\.5/.test(cvRawBlock.textContent));
+
+  // (f) Leeres Feld → kein Render, Leerzustand bleibt funktionsfähig
+  window.App.profile.noten = { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
+  await go('cv');
+  const cvAllEmpty = qsa('.cv-block').filter((b) => /Schulnoten/.test(b.textContent))[0];
+  ok('Leere Noten → Leerzustand "Noch keine Noten erfasst." bleibt funktionsfähig',
+    /Noch keine Noten erfasst/.test(cvAllEmpty.textContent) && !qs('.zeugnis-strip', cvAllEmpty));
+
   // ═════════════ KEINE JS-FEHLER ═════════════
   console.log('\n[JS-Fehler-Bilanz]');
   ok('Keine JS-Laufzeitfehler während Click-Through', errors.length === 0);

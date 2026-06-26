@@ -313,12 +313,25 @@
     return '<span class="badge badge-pending" tabindex="0" title="Prüfung der Angaben noch ausstehend">Prüfung ausstehend</span>';
   }
 
+  // CH-Notenskala 1.0–6.0 erzwingen. Rohwert -> '' (leer bleibt leer) oder auf 1.0–6.0
+  // geklemmte, auf eine Nachkommastelle normalisierte Note. Schrott (NaN) wird verworfen.
+  function clampNote(raw) {
+    if (raw === null || raw === undefined) return '';
+    if (typeof raw === 'string' && raw.trim() === '') return '';
+    var v = parseFloat(raw);
+    if (isNaN(v)) return '';
+    return Math.min(6, Math.max(1, v)).toFixed(1);
+  }
+
   function zeugnisStrip(noten) {
-    // Nur Faecher mit gueltiger Zahl rendern (toFixed-Guard gegen leere/ungueltige Werte).
+    // Nur Faecher mit gueltiger Zahl auf der CH-Skala 1.0–6.0 rendern.
     var rows = noten.map(function (n) {
       var v = parseFloat(n[1]);
       if (isNaN(v)) return '';
-      var w = Math.round((v / 6) * 100);
+      // Werte ausserhalb der CH-Skala verwerfen, damit auf dem CV nie '9.0'/'0.5' erscheint.
+      if (v < 1 || v > 6) return '';
+      // Balken hart auf 0–100% begrenzen, kein Ueberlauf des .ztrack.
+      var w = Math.min(100, Math.max(0, Math.round((v / 6) * 100)));
       return '<div class="zrow"><span class="zfach">' + esc(n[0]) + '</span>' +
         '<span class="ztrack"><i style="width:' + w + '%"></i></span>' +
         '<span class="znote tnum">' + v.toFixed(1) + '</span></div>';
@@ -351,8 +364,28 @@
       NOTEN_FAECHER.map(function (f) {
         return '<label class="field"><span class="field-label">' + esc(f[1]) + '</span>' +
           '<input class="input" type="number" step="0.1" min="1" max="6" inputmode="decimal" ' +
-          'data-nfield="' + f[0] + '" value="' + esc(n[f[0]] || '') + '" placeholder="z.B. 5.0"></label>';
+          'data-nfield="' + f[0] + '" aria-describedby="note-err-' + f[0] + '" ' +
+          'value="' + esc(n[f[0]] || '') + '" placeholder="z.B. 5.0">' +
+          '<span class="field-error" id="note-err-' + f[0] + '" hidden>Note muss zwischen 1.0 und 6.0 liegen.</span></label>';
       }).join('') + '</div>';
+  }
+
+  // Beim Speichern alle vier Noten auf die CH-Skala 1.0–6.0 klemmen/verwerfen und den
+  // korrigierten Wert ins jeweilige Inputfeld spiegeln (kein Re-Render noetig).
+  function normalizeNotenOnSave() {
+    App.profile.noten = App.profile.noten || { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
+    NOTEN_FAECHER.forEach(function (f) {
+      var key = f[0];
+      var clamped = clampNote(App.profile.noten[key]);
+      App.profile.noten[key] = clamped;
+      var input = qs('input[data-nfield="' + key + '"]');
+      if (input) {
+        input.value = clamped;
+        input.classList.remove('invalid'); input.removeAttribute('aria-invalid');
+      }
+      var ner = $('note-err-' + key);
+      if (ner) ner.hidden = true;
+    });
   }
 
   // CHF-Format mit Schweizer Tausender-Apostroph (U+2019) und Strich fuer ".–"
@@ -1833,7 +1866,7 @@
 
       case 'save-profil':
       case 'save-steckbrief':
-        persist(); updateVollstand(); toast('Profil gesichert.', 'ok'); return true;
+        normalizeNotenOnSave(); persist(); updateVollstand(); toast('Profil gesichert.', 'ok'); return true;
       case 'upload-doc': {
         var docKey = el.dataset.doc;
         if (docKey && !App.docsUploaded[docKey]) {
@@ -1931,7 +1964,7 @@
     }
     if (act === 'chat-send') { e.preventDefault(); chatSend(); return; }
     if (act === 'schnupper-form') { e.preventDefault(); submitSchnupper(); return; }
-    if (act === 'profil-form') { e.preventDefault(); persist(); updateVollstand(); toast('Profil gesichert.', 'ok'); return; }
+    if (act === 'profil-form') { e.preventDefault(); normalizeNotenOnSave(); persist(); updateVollstand(); toast('Profil gesichert.', 'ok'); return; }
     if (act === 'betrieb-form') { e.preventDefault(); persist(); updateBetriebPct(); toast('Betriebsprofil gespeichert: ' + (App.betrieb.firma || 'Betrieb') + '.', 'ok'); return; }
     if (act === 'inserat-form') { e.preventDefault(); publishInserat(); return; }
     if (act) e.preventDefault();
@@ -1943,7 +1976,19 @@
     if (t.dataset && t.dataset.field) { App.profile[t.dataset.field] = t.value; updateVollstand(); }
     if (t.dataset && t.dataset.nfield) {
       App.profile.noten = App.profile.noten || { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
+      // Rohwert speichern, damit Tippen nicht springt; Klemmung erst beim Speichern.
       App.profile.noten[t.dataset.nfield] = t.value;
+      // Inline-Hinweis bei Out-of-Range; gueltige/leere Werte raeumen den Hinweis ab.
+      var ner = $('note-err-' + t.dataset.nfield);
+      var nv = parseFloat(t.value);
+      var outOfRange = t.value.trim() !== '' && !isNaN(nv) && (nv < 1 || nv > 6);
+      if (outOfRange) {
+        if (ner) ner.hidden = false;
+        t.classList.add('invalid'); t.setAttribute('aria-invalid', 'true');
+      } else {
+        if (ner) ner.hidden = true;
+        t.classList.remove('invalid'); t.removeAttribute('aria-invalid');
+      }
     }
     if (t.dataset && t.dataset.snfield === 'schnupper') { App.schnupperErf = t.value; updateVollstand(); }
     if (t.dataset && t.dataset.bfield) { App.betrieb[t.dataset.bfield] = t.value; updateBetriebPct(); }
