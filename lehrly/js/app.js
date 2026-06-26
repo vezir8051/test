@@ -602,9 +602,9 @@
             '<div class="results-meta"><span id="stellen-count" class="results-count tnum"></span>' +
               '<label class="sort-label">Sortieren ' +
                 '<select id="stellen-sort" class="sort-select" data-action="stellen-sort">' +
-                  '<option value="score">Beste Übereinstimmung</option>' +
-                  '<option value="beruf">Beruf A–Z</option>' +
-                  '<option value="ort">Ort A–Z</option>' +
+                  [{ v: 'score', l: 'Beste Übereinstimmung' }, { v: 'beruf', l: 'Beruf A–Z' }, { v: 'ort', l: 'Ort A–Z' }].map(function (o) {
+                    return '<option value="' + o.v + '"' + (App.stellenFilters.sort === o.v ? ' selected' : '') + '>' + o.l + '</option>';
+                  }).join('') +
                 '</select></label></div>' +
           '</div>' +
           '<div id="active-chips" class="active-chips"></div>' +
@@ -616,7 +616,7 @@
 
   // Filter-Optionen zentral (für Panel UND Chip-Labels)
   var STELLEN_FILTER_OPTS = {
-    branche: [{ v: 'all', l: 'Alle Branchen' }, { v: 'banken', l: 'Banken / Finanz' }, { v: 'it', l: 'Informatik' }, { v: 'gesundheit', l: 'Gesundheit' }, { v: 'detailhandel', l: 'Detailhandel' }, { v: 'technik', l: 'Technik' }],
+    branche: [{ v: 'all', l: 'Alle Branchen' }, { v: 'banken', l: 'Banken / Finanz' }, { v: 'it', l: 'Informatik' }, { v: 'gesundheit', l: 'Gesundheit' }, { v: 'detailhandel', l: 'Detailhandel' }, { v: 'technik', l: 'Technik' }, { v: 'bau', l: 'Bau / Gewerbe' }, { v: 'gastro', l: 'Gastronomie / Hotellerie' }, { v: 'soziales', l: 'Soziales / Betreuung' }],
     region: [{ v: 'all', l: 'Ganze Schweiz' }, { v: 'zurich', l: 'Zürich' }, { v: 'bern', l: 'Bern / Mittelland' }, { v: 'zentral', l: 'Zentralschweiz' }],
     typ: [{ v: 'all', l: 'EFZ und EBA' }, { v: 'efz', l: 'Nur EFZ' }, { v: 'eba', l: 'Nur EBA' }],
     lehrjahr: [{ v: 'all', l: 'Alle Jahrgänge' }, { v: '2026', l: 'Lehrstart 2026' }, { v: '2027', l: 'Lehrstart 2027' }]
@@ -1707,7 +1707,7 @@
   }
 
   function mapFeldToBranche(feld) {
-    var map = { kv: 'banken', informatik: 'it', gesundheit: 'gesundheit', detailhandel: 'detailhandel', technik: 'technik' };
+    var map = { kv: 'banken', informatik: 'it', gesundheit: 'gesundheit', detailhandel: 'detailhandel', technik: 'technik', bau: 'bau', gastro: 'gastro', soziales: 'soziales' };
     return map[feld] || 'all';
   }
 
