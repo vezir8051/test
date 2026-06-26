@@ -1175,6 +1175,13 @@
         ? '<button class="btn btn-primary btn-block" disabled>Freigabe angefragt - ausstehend</button>'
         : '<button class="btn btn-primary btn-block" data-action="request-freigabe" data-id="' + k.id + '" data-key="' + esc(key) + '">Freigabe anfragen</button>');
 
+    // Kontakt erst nach Freigabe: "Nachricht senden" nur bei freigegebenen Profilen,
+    // sonst gesperrter Button + Hinweis (Anonymitaets-Versprechen durchsetzen).
+    var msgCta = frei
+      ? '<button class="btn btn-outline btn-block" data-action="msg-kandidat" data-id="' + k.id + '">Nachricht senden</button>'
+      : '<button class="btn btn-outline btn-block" disabled title="Kontakt erst nach Freigabe moeglich">Nachricht erst nach Freigabe</button>' +
+        '<p class="hint">Kontakt ist erst nach Freigabe durch die Kandidat/in moeglich.</p>';
+
     return '<div class="container">' +
       breadcrumb([{ route: 'kandidaten', label: 'Kandidaten suchen' }, { label: name }]) +
       '<div class="detail-grid">' +
@@ -1191,7 +1198,7 @@
         '<aside class="detail-aside"><div class="aside-card">' +
           scoreBlock(k.score, 'passt zu Berufsbild, Region und Notenprofil') +
           primCta +
-          '<button class="btn btn-outline btn-block" data-action="msg-kandidat" data-id="' + k.id + '">Nachricht senden</button>' +
+          msgCta +
         '</div></aside>' +
       '</div></div>';
   };
@@ -1469,12 +1476,21 @@
 
   // — 404 —
   views.notfound = function () {
+    // Rollenabhaengig: 'stellen' ist nicht in rolesRoutes.betrieb -> Betrieben die
+    // Kandidatensuche anbieten, damit Submit/Link nicht erneut auf 404 faellt.
+    var isBetrieb = App.role === 'betrieb';
+    var sb = isBetrieb ? searchBar('kandidaten') : searchBar('stellen');
+    var primaryRoute = isBetrieb ? 'kandidaten' : 'stellen';
+    var primaryLabel = isBetrieb ? 'Kandidaten suchen' : 'Stellen finden';
+    var hinweis = isBetrieb
+      ? 'Die gesuchte Seite gibt es nicht. Versuch es mit der Kandidatensuche.'
+      : 'Die gesuchte Seite gibt es nicht. Versuch es mit der Stellensuche.';
     return '<div class="container narrow">' +
       '<div class="notfound"><h1 class="page-h1">Seite nicht gefunden</h1>' +
-        '<p class="muted">Die gesuchte Seite gibt es nicht. Versuch es mit der Stellensuche.</p>' +
-        searchBar('stellen') +
+        '<p class="muted">' + hinweis + '</p>' +
+        sb +
         '<div class="nf-links"><a class="link-arrow" data-route="start" href="#/start">Zur Startseite</a>' +
-          '<a class="link-arrow" data-route="stellen" href="#/stellen">Stellen finden</a></div>' +
+          '<a class="link-arrow" data-route="' + primaryRoute + '" href="#/' + primaryRoute + '">' + primaryLabel + '</a></div>' +
       '</div></div>';
   };
 
@@ -1839,8 +1855,12 @@
       }
       case 'submit-schnupper': submitSchnupper(); return true;
       case 'close-schnupper': closeSchnupper(); return true;
-      case 'msg-kandidat':
-        e.preventDefault(); openKandidatChat(el.dataset.id); return true;
+      case 'msg-kandidat': {
+        e.preventDefault();
+        var kMsg = KANDIDATEN.filter(function (x) { return x.id === el.dataset.id; })[0];
+        if (kMsg && !kMsg.freigegeben) { toast('Kontakt erst nach Freigabe moeglich.', 'err'); return true; }
+        openKandidatChat(el.dataset.id); return true;
+      }
 
       case 'open-conv':
         chatState.activeId = el.dataset.conv;
@@ -2139,6 +2159,7 @@
     chatState.activeId = match ? match.id : ensureKandConv(k);
     gotoRoute('chat', chatState.activeId);
   }
+  window.openKandidatChat = openKandidatChat;
 
   // ── Consent ──
   function maybeConsent() {

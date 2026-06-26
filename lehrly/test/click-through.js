@@ -1052,46 +1052,94 @@ async function go(route, param) {
   window.App.freigabeAnfragen = {};
   window.localStorage.removeItem('lehrly:freigabeAnfragen');
 
-  // Nachricht senden (msg-kandidat) → Chat
-  await go('kandidat', 'k-noah');
-  click(qs('[data-action="msg-kandidat"]'));
-  await waitFor(() => window.App.route === 'chat');
-  ok('"Nachricht senden" → Betriebs-Chat', window.App.route === 'chat' && qsa('.conv').length === 2);
-
-  // Anonymer Kandidat (Sara K., freigegeben=false) → kein Lena-M.-Fallback, keine Klarname-Leak
-  console.log('\n[Chat-Kontext · Betrieb · anonymer Kandidat · kandKey statt Fallback]');
-  const bConvBefore = qsa('.conv').length;
+  // ── Nachricht-Sperre: Kontakt erst nach Freigabe (Anonymitäts-Versprechen durchsetzen) ──
+  console.log('\n[Kandidat · Nachricht-Sperre bei nicht freigegebenen Profilen]');
+  // T1: Sara K. (freigegeben=false, zeugnisGeprüft=true) → kein aktiver "Nachricht senden"
   await go('kandidat', 'k-sara');
+  ok('T1: Sara K. Primär-CTA = "Freigabe anfragen"',
+    !!qs('[data-action="request-freigabe"][data-id="k-sara"]'));
+  ok('T1: Kein aktiver "Nachricht senden"-Button bei Sara K.',
+    !qs('.detail-aside [data-action="msg-kandidat"]'));
+  ok('T1: Stattdessen disabled "Nachricht erst nach Freigabe" + Hinweis', (() => {
+    const dis = qs('.detail-aside .btn-outline.btn-block[disabled]');
+    return !!dis && /Nachricht erst nach Freigabe/.test(dis.textContent) &&
+      qsa('.detail-aside .hint').some((h) => /erst nach Freigabe durch die Kandidat\/in/.test(h.textContent));
+  })());
+  // T2: Tim R. (freigegeben=false, zeugnisGeprüft=false) → identisches Sperrverhalten
+  await go('kandidat', 'k-tim');
+  ok('T2: Tim R. ebenfalls ohne aktiven "Nachricht senden"-Button',
+    !qs('.detail-aside [data-action="msg-kandidat"]') &&
+    !!qs('.detail-aside .btn-outline.btn-block[disabled]') &&
+    /Nachricht erst nach Freigabe/.test(qs('.detail-aside .btn-outline.btn-block[disabled]').textContent));
+
+  // T3: freigegebene Kandidaten (Lena, Noah) — aktiver "Nachricht senden" → Chat (Regression)
+  await go('kandidat', 'k-lena');
+  ok('T3: Lena M. (freigegeben) hat "Zum Schnuppern einladen"',
+    !!qs('[data-action="open-schnupper"][data-id="k-lena"]'));
+  ok('T3: Lena M. hat aktiven "Nachricht senden"-Button (kein disabled)',
+    !!qs('.detail-aside [data-action="msg-kandidat"][data-id="k-lena"]') &&
+    !qs('.detail-aside .btn-outline.btn-block[disabled]'));
+  await go('kandidat', 'k-noah');
+  ok('T3: Noah B. (freigegeben) hat aktiven "Nachricht senden"-Button',
+    !!qs('.detail-aside [data-action="msg-kandidat"][data-id="k-noah"]'));
   click(qs('[data-action="msg-kandidat"]'));
   await waitFor(() => window.App.route === 'chat');
-  ok('Anonymer Kandidat → Chat', window.App.route === 'chat');
-  ok('Aktive Konversation ist NICHT Lena M. (kein Fallback)',
-    !/Lena M\./.test($('chat-head').textContent) && !qs('.conv.active[data-conv="b-lena"]'));
+  ok('T3: "Nachricht senden" (freigegeben) → Betriebs-Chat via openKandidatChat',
+    window.App.route === 'chat' && qsa('.conv').length === 2);
+
+  // T4: Defense-in-depth — direkter Handler-Hit auf anonymen Kandidaten löst KEINEN Chat aus
+  console.log('\n[Kandidat · Handler-Härtung (Defense-in-depth)]');
+  await go('kandidat', 'k-sara');
+  const routeBeforeHandler = window.App.route;
+  const convBeforeHandler = qsa('.conv').length;
+  $('toast').textContent = '';
+  // Synthetischer msg-kandidat-Klick mit data-id eines anonymen Kandidaten (Button existiert real nicht)
+  const fakeBtn = doc.createElement('button');
+  fakeBtn.setAttribute('data-action', 'msg-kandidat');
+  fakeBtn.setAttribute('data-id', 'k-sara');
+  qs('.detail-aside').appendChild(fakeBtn);
+  click(fakeBtn);
+  await delay(0);
+  ok('T4: Handler blockt anonymen Kandidaten (kein gotoRoute chat)',
+    window.App.route === routeBeforeHandler && window.App.route === 'kandidat');
+  ok('T4: Fehler-Toast "Kontakt erst nach Freigabe"', /Kontakt erst nach Freigabe/.test($('toast').textContent));
+  ok('T4: Keine neue anonyme Konversation durch Handler-Hit angelegt',
+    qsa('.conv').length === convBeforeHandler);
+  fakeBtn.remove();
+
+  // Anonymitäts-Garantie der Chat-Logik bleibt load-bearing: openKandidatChat direkt geprüft
+  // (freigegebener Pfad nutzt sie; Anonymisierung muss auch hier ohne Klarname-Leak greifen).
+  console.log('\n[Chat-Kontext · Betrieb · openKandidatChat · kandKey statt Fallback]');
+  ok('openKandidatChat ist als window-Funktion verfügbar', typeof window.openKandidatChat === 'function');
+  // Zuerst in den Chat eintreten (freigegebener Kandidat), um die Konversationszahl auf der Chat-Ansicht zu zählen
+  window.openKandidatChat('k-noah');
+  await waitFor(() => window.App.route === 'chat');
+  const saraExistsBefore = !!qs('.conv[data-conv="b-k-sara"]');
+  const bConvBefore = qsa('.conv').length;
+  window.openKandidatChat('k-sara');
+  await waitFor(() => window.App.route === 'chat' && !!qs('.conv.active[data-conv="b-k-sara"]'));
+  ok('openKandidatChat(anonym) → Chat ohne Lena-M.-Fallback',
+    window.App.route === 'chat' && !/Lena M\./.test($('chat-head').textContent) && !qs('.conv.active[data-conv="b-lena"]'));
   ok('Header zeigt anonymisierte Kennung (kandKey)', /S\. \(anonymisiert\)/.test($('chat-head').textContent));
   ok('Listentitel der aktiven Konversation = kandKey', /S\. \(anonymisiert\)/.test(qs('.conv.active .conv-name').textContent));
   ok('Kein Klarname "Sara K." im Chat-DOM (Anonymität gewahrt)',
     !/Sara K\./.test($('chat-head').textContent) && !/Sara K\./.test(qs('.conv.active').textContent));
-  ok('Header zeigt Berufsfeld (kein Klarbezug) statt konkretem Beruf', /Gesundheit \/ Pflege/.test($('chat-head').textContent));
+  ok('Header zeigt Berufsfeld (kein Klarbezug)', /Gesundheit \/ Pflege/.test($('chat-head').textContent));
   ok('Neue anonyme Konversation in der Liste vorhanden',
-    qsa('.conv').length === bConvBefore + 1 && !!qs('.conv[data-conv="b-k-sara"]'));
+    qsa('.conv').length === bConvBefore + (saraExistsBefore ? 0 : 1) && !!qs('.conv[data-conv="b-k-sara"]'));
   ok('Anonyme Konversation zeigt Empty-State im chat-log', !!qs('#chat-log .chat-log-empty'));
-  // Senden in der anonymen Konversation funktioniert (Anonymität bleibt, Bubble erscheint)
   typeInto($('chat-inp'), 'Guten Tag, wir würden Sie gerne kennenlernen.');
   submit(qs('[data-action="chat-send"]'));
   await waitFor(() => qsa('#chat-log .bubble.me').length === 1);
   ok('Senden an anonymen Kandidaten hängt Bubble an', qsa('#chat-log .bubble.me').length === 1);
-  // Kein doppeltes Anlegen bei erneutem Klick
   const bConvAfter = qsa('.conv').length;
-  await go('kandidat', 'k-sara');
-  click(qs('[data-action="msg-kandidat"]'));
+  window.openKandidatChat('k-sara');
   await waitFor(() => window.App.route === 'chat');
-  ok('Erneuter Klick legt KEINE zweite anonyme Konversation an',
+  ok('Erneuter openKandidatChat legt KEINE zweite anonyme Konversation an',
     qsa('.conv').length === bConvAfter && qsa('.conv[data-conv="b-k-sara"]').length === 1 &&
     !!qs('.conv.active[data-conv="b-k-sara"]'));
-  // Zweiter anonymer Kandidat (Tim R.) → eigene Konversation, ebenfalls anonymisiert
-  await go('kandidat', 'k-tim');
-  click(qs('[data-action="msg-kandidat"]'));
-  await waitFor(() => window.App.route === 'chat');
+  window.openKandidatChat('k-tim');
+  await waitFor(() => window.App.route === 'chat' && !!qs('.conv.active[data-conv="b-k-tim"]'));
   ok('Zweiter anonymer Kandidat → eigene anonyme Konversation',
     /T\. \(anonymisiert\)/.test($('chat-head').textContent) && !!qs('.conv.active[data-conv="b-k-tim"]') &&
     !/Tim R\./.test(qs('.conv.active').textContent));
@@ -1268,6 +1316,43 @@ async function go(route, param) {
   // Lernende-Route als Betrieb aufrufen → notfound
   await go('profil');
   ok('Lernende-Route als Betrieb → 404', /Seite nicht gefunden/.test($('view').textContent));
+
+  // ── T5: 404 für Betrieb ist rollenrichtig (Kandidatensuche statt Stellen-Sackgasse) ──
+  console.log('\n[404 · Rolle betrieb · rollenrichtige Suche/Links (keine Endlosschleife)]');
+  ok('T5: Rolle ist betrieb', window.App.role === 'betrieb');
+  await go('quatsch');
+  ok('T5: 404 für Betrieb sichtbar', /Seite nicht gefunden/.test($('view').textContent));
+  ok('T5: 404 zeigt Kandidaten-Suchleiste (data-target=kandidaten)',
+    !!qs('.notfound .search-hero[data-target="kandidaten"]') && !qs('.notfound .search-hero[data-target="stellen"]'));
+  ok('T5: Hinweistext nennt Kandidatensuche',
+    /Kandidatensuche/.test(qs('.notfound .muted').textContent));
+  ok('T5: Primär-Link "Kandidaten suchen" → #/kandidaten',
+    !!qs('.notfound .nf-links a[data-route="kandidaten"]') &&
+    /Kandidaten suchen/.test(qs('.notfound .nf-links a[data-route="kandidaten"]').textContent) &&
+    qs('.notfound .nf-links a[data-route="kandidaten"]').getAttribute('href') === '#/kandidaten' &&
+    !qs('.notfound .nf-links a[data-route="stellen"]'));
+  ok('T5: "Zur Startseite"-Link unverändert → #/start',
+    !!qs('.notfound .nf-links a[data-route="start"]') &&
+    qs('.notfound .nf-links a[data-route="start"]').getAttribute('href') === '#/start');
+  // Such-Submit aus dem 404 landet auf #/kandidaten (nicht erneut 404)
+  const nf404Form = qs('.notfound .search-hero[data-target="kandidaten"]');
+  typeInto(qs('input[name="q"]', nf404Form), 'Pflege');
+  submit(nf404Form);
+  await waitFor(() => window.App.route === 'kandidaten');
+  ok('T5: 404-Such-Submit landet auf #/kandidaten (keine Endlosschleife)',
+    window.App.route === 'kandidaten' && !/Seite nicht gefunden/.test($('view').textContent));
+  // Primär-Link führt ebenfalls auf #/kandidaten
+  await go('quatsch');
+  click(qs('.notfound .nf-links a[data-route="kandidaten"]'));
+  await waitFor(() => window.App.route === 'kandidaten');
+  ok('T5: 404-Link "Kandidaten suchen" führt auf #/kandidaten',
+    window.App.route === 'kandidaten' && !/Seite nicht gefunden/.test($('view').textContent));
+  // "Zur Startseite" führt auf #/start
+  await go('quatsch');
+  click(qs('.notfound .nf-links a[data-route="start"]'));
+  await waitFor(() => window.App.route === 'start');
+  ok('T5: 404-Link "Zur Startseite" führt auf #/start', window.App.route === 'start');
+
   // unbekannte Stellen-ID → 404
   click(qs('.role-opt[data-role="lernende"]'));
   await waitFor(() => window.App.role === 'lernende');
@@ -1276,6 +1361,25 @@ async function go(route, param) {
   // komplett unbekannte Route
   await go('quatsch');
   ok('Unbekannte Route → 404', /Seite nicht gefunden/.test($('view').textContent));
+
+  // ── T6: 404 für Lernende bleibt unverändert (Stellen-Suche → #/stellen) ──
+  console.log('\n[404 · Rolle lernende · unverändert (Regression)]');
+  ok('T6: 404 zeigt Stellen-Suchleiste (data-target=stellen)',
+    !!qs('.notfound .search-hero[data-target="stellen"]') && !qs('.notfound .search-hero[data-target="kandidaten"]'));
+  ok('T6: Hinweistext nennt Stellensuche', /Stellensuche/.test(qs('.notfound .muted').textContent));
+  ok('T6: Primär-Link "Stellen finden" → #/stellen',
+    !!qs('.notfound .nf-links a[data-route="stellen"]') &&
+    /Stellen finden/.test(qs('.notfound .nf-links a[data-route="stellen"]').textContent) &&
+    qs('.notfound .nf-links a[data-route="stellen"]').getAttribute('href') === '#/stellen' &&
+    !qs('.notfound .nf-links a[data-route="kandidaten"]'));
+  const nf404Lern = qs('.notfound .search-hero[data-target="stellen"]');
+  typeInto(qs('input[name="q"]', nf404Lern), 'Informatik');
+  submit(nf404Lern);
+  await waitFor(() => window.App.route === 'stellen');
+  ok('T6: 404-Such-Submit (Lernende) landet auf #/stellen',
+    window.App.route === 'stellen' && !/Seite nicht gefunden/.test($('view').textContent));
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
 
   // ═════════════ FOOTER-NAV + LOGIN-TOAST ═════════════
   console.log('\n[Footer-Nav · Login-Toast · Consent]');
