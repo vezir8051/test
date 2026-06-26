@@ -874,6 +874,7 @@
             scoreBlock(s.score, s.grund) +
             '<button class="btn btn-primary btn-block" data-action="goto-bewerben" data-id="' + s.id + '">Jetzt bewerben</button>' +
             '<button class="btn btn-outline btn-block" data-action="ask-stelle" data-id="' + s.id + '">Frage stellen</button>' +
+            merkenButton(s) +
           '</div>' +
         '</aside>' +
       '</div></div>';
@@ -1855,8 +1856,8 @@
         e.preventDefault();
         var askS = STELLEN.filter(function (x) { return x.id === el.dataset.id; })[0];
         openStelleChat(el.dataset.id);
-        // Toast erst NACH dem Öffnen — Erfolg ist nun immer wahr (Stub angelegt).
-        toast(askS ? ('Frage an ' + askS.betrieb + ' gestartet.') : 'Frage an den Betrieb gestartet.', 'neutral');
+        // Toast erst NACH dem Öffnen — ehrlich: es wird nur ein (leerer) Chat geöffnet, keine Frage gesendet.
+        toast(askS ? ('Chat mit ' + askS.betrieb + ' geöffnet.') : 'Chat mit dem Betrieb geöffnet.', 'neutral');
         return true;
       }
       case 'bewerben-next': bewerbenNext(); return true;
