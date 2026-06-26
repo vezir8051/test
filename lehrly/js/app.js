@@ -1487,24 +1487,53 @@
       ['Schnupper-Einladungen', App.einladungen.length],
       ['Ungelesene Nachrichten', unreadCount('betrieb')]
     ];
+    // Kandidaten-Status aus echtem State ableiten (keine erfundenen Namen/Status).
+    // Beruf bei anonymen Profilen generalisieren (Berufsfeld statt Klarberuf), kein PII-Leak.
+    var statusHtml = KANDIDATEN.length
+      ? '<ul class="status-list">' + KANDIDATEN.map(function (k) {
+          var key = kandKey(k);
+          var eingeladen = App.einladungen.some(function (e) { return e.key === key; });
+          var status, kind;
+          if (eingeladen) { status = 'Schnuppern eingeladen'; kind = 'ok'; }
+          else if (k.freigegeben) { status = 'freigegeben'; kind = 'ok'; }
+          else if (k.zeugnisGeprueft) { status = 'Zeugnis geprüft'; kind = 'pending'; }
+          else { status = 'anonym'; kind = 'pending'; }
+          var berufZeile = k.freigegeben ? k.beruf : k.berufFeld;
+          return '<li><a class="status-link" data-route="kandidat" data-id="' + k.id + '" data-key="' + esc(key) + '" href="#/kandidat/' + k.id + '">' +
+            '<span>' + esc(kandName(k, '(anonym)')) + ' – ' + esc(berufZeile) + '</span>' +
+            '<span class="status-pill ' + kind + '">' + esc(status) + '</span></a></li>';
+        }).join('') + '</ul>'
+      : '<div class="empty-state"><p class="muted">Noch keine Kandidaten.</p></div>';
+
+    // Aktivität aus echtem State zusammensetzen (Muster wie views.dashboard).
+    var aktivitaet = [];
+    KONVERSATIONEN.betrieb.forEach(function (c) {
+      var msgs = getChatMsgs(c.id);
+      var last = msgs[msgs.length - 1];
+      if (last && !last.me) aktivitaet.push('Neue Nachricht von ' + c.partner);
+    });
+    App.einladungen.slice().reverse().forEach(function (e) {
+      aktivitaet.push('Schnupper-Einladung: ' + e.key + ' (' + e.datum + ')');
+    });
+    App.inserate.slice().reverse().forEach(function (i) {
+      aktivitaet.push('Stelle veröffentlicht: ' + i.beruf);
+    });
+    aktivitaet = aktivitaet.slice(0, 5);
+    var aktivitaetHtml = aktivitaet.length
+      ? '<ul class="activity-list">' + aktivitaet.map(function (t) {
+          return '<li><span class="act-dot"></span>' + esc(t) + '</li>';
+        }).join('') + '</ul>'
+      : '<div class="empty-state"><p class="muted">Noch keine Aktivität.</p></div>';
+
     return '<div class="container">' +
       breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Pipeline' }]) +
       '<h1 class="page-h1">Pipeline-Übersicht</h1>' +
       metricRow(metrics) +
       '<div class="dash-cols">' +
         '<section class="dash-block"><h2 class="detail-h2">Kandidaten-Status</h2>' +
-          '<ul class="status-list">' +
-            '<li><span>Lena M. – Kauffrau EFZ</span><span class="status-pill ok">Schnuppern eingeladen</span></li>' +
-            '<li><span>Noah B. – Informatiker EFZ</span><span class="status-pill pending">angesehen</span></li>' +
-            '<li><span>Sara K. – FaGe EFZ</span><span class="status-pill pending">eingegangen</span></li>' +
-            '<li><span>Tim R. – Detailhandel EFZ</span><span class="status-pill err">abgesagt</span></li>' +
-          '</ul></section>' +
+          statusHtml + '</section>' +
         '<section class="dash-block"><h2 class="detail-h2">Aktivität</h2>' +
-          '<ul class="activity-list">' +
-            '<li><span class="act-dot"></span>Neue Bewerbung für Kauffrau EFZ</li>' +
-            '<li><span class="act-dot"></span>Lena M. hat die Einladung angenommen</li>' +
-            '<li><span class="act-dot"></span>Stelle Informatiker EFZ veröffentlicht</li>' +
-          '</ul></section>' +
+          aktivitaetHtml + '</section>' +
       '</div></div>';
   };
 
