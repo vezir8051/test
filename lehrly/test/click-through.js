@@ -570,6 +570,29 @@ async function go(route, param) {
   ok('Lohn-Eckdaten zeigt Spanne (CHF)', /CHF 800.– – CHF 1’200.–/.test($('view').textContent));
   ok('Bewerben-Button vorhanden', !!qs('[data-action="goto-bewerben"]'));
 
+  // Merken-Button auch auf der Detailseite (aside-card), nicht nur auf Listenkarten
+  // Ausgangslage definieren: zkb-kauffrau nicht gemerkt, Detail neu rendern
+  window.App.gemerkt.length = 0;
+  await go('stelle', 'zkb-kauffrau');
+  const detailMerk = qs('.detail-aside .merken-btn');
+  ok('Detail-aside-card hat einen Merken-Button', !!detailMerk && detailMerk.dataset.id === 'zkb-kauffrau');
+  ok('Detail-Merken-Button initial nicht gemerkt', detailMerk.getAttribute('aria-pressed') === 'false' && /Merken/.test(detailMerk.textContent));
+  click(detailMerk);
+  await waitFor(() => window.App.gemerkt.indexOf('zkb-kauffrau') !== -1);
+  ok('Detail-Merken-Klick navigiert NICHT (bleibt auf stelle)', window.App.route === 'stelle' && window.App.param === 'zkb-kauffrau');
+  ok('Detail-Merken merkt die passende Stelle', window.App.gemerkt.indexOf('zkb-kauffrau') !== -1);
+  const detailMerkAfter = qs('.detail-aside .merken-btn');
+  ok('Detail-Merken-Button in-place aktualisiert (on, aria-pressed=true, Label "Gemerkt")',
+    detailMerkAfter === detailMerk && detailMerk.classList.contains('on') &&
+    detailMerk.getAttribute('aria-pressed') === 'true' && /Gemerkt/.test(detailMerk.textContent));
+  click(detailMerk);
+  await waitFor(() => window.App.gemerkt.indexOf('zkb-kauffrau') === -1);
+  ok('Detail-Merken erneut klicken entmerkt (Label "Merken")',
+    window.App.route === 'stelle' && /Merken/.test(detailMerk.textContent) && !detailMerk.classList.contains('on'));
+  // Ausgangslage für Dashboard-Merkliste-Test wiederherstellen: genau zkb-kauffrau gemerkt
+  click(detailMerk);
+  await waitFor(() => window.App.gemerkt.indexOf('zkb-kauffrau') !== -1);
+
   // Ähnliche Stellen: Detailhandel hat Geschwister (Migros + Coop)
   await go('stelle', 'migros-detail');
   ok('Ähnliche Stellen vorhanden (Detailhandel)', qsa('.detail-sec .list .list-item').length >= 1);
@@ -585,7 +608,7 @@ async function go(route, param) {
   click(qs('[data-action="ask-stelle"]'));
   await waitFor(() => window.App.route === 'chat');
   ok('"Frage stellen" → Chat', window.App.route === 'chat');
-  ok('Toast nennt konkreten Betrieb (ZKB-Match)', /Frage an Zürcher Kantonalbank gestartet\./.test($('toast').textContent));
+  ok('Toast nennt konkreten Betrieb (ZKB-Match)', /Chat mit Zürcher Kantonalbank geöffnet\./.test($('toast').textContent));
   ok('ZKB-Frage öffnet die ZKB-Konversation (kein Fallback)',
     /Zürcher Kantonalbank/.test($('chat-head').textContent) && !!qs('.conv.active[data-conv="c-zkb"]'));
 
@@ -971,7 +994,7 @@ async function go(route, param) {
   ok('Chat-Header zeigt Stellenkontext (Beruf)', /Polymechaniker/.test($('chat-head').textContent));
   ok('Aktive Konversation hat partner = s.betrieb', /Bosch Schweiz/.test(qs('.conv.active .conv-name').textContent));
   ok('Neue Konversation in der Liste vorhanden', qsa('.conv').length === convCountBefore + 1 && !!qs('.conv[data-conv="c-bosch-poly"]'));
-  ok('Toast nennt Bosch Schweiz', /Frage an Bosch Schweiz gestartet\./.test($('toast').textContent));
+  ok('Toast nennt Bosch Schweiz', /Chat mit Bosch Schweiz geöffnet\./.test($('toast').textContent));
   // Neue Konversation mit msgs:[] → Empty-State im chat-log
   ok('Neue Konversation zeigt Empty-State im chat-log', !!qs('#chat-log .chat-log-empty') &&
     /Noch keine Nachrichten/.test($('chat-log').textContent));
