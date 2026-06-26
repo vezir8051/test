@@ -1571,6 +1571,33 @@ async function go(route, param) {
     ok('Consent bereits akzeptiert/ausgeblendet', true);
   }
 
+  // ═════════════ INFO/LEGAL · "in Vorbereitung"-Banner nur auf echten Platzhalterseiten ═════════════
+  console.log('\n[Info/Legal · Vorbereitung-Banner nur auf Platzhalterseiten]');
+  const VORB = 'Vorschau-Inhalt — in Vorbereitung.';
+  // Gepflegte Trust-/Rechtsseiten: KEIN Banner
+  await go('info', 'impressum');
+  ok('Impressum: kein "in Vorbereitung"-Banner', window.App.route === 'info' && !$('view').textContent.includes(VORB) && !qs('#view .hint'));
+  ok('Impressum: h1 + zwei gepflegte Absätze sichtbar', /Impressum/.test(qs('.page-h1').textContent) && qsa('#view .container.narrow > p').length === 2);
+  await go('info', 'datenschutz');
+  ok('Datenschutz: kein "in Vorbereitung"-Banner', !$('view').textContent.includes(VORB) && !qs('#view .hint'));
+  await go('info', 'ueber');
+  ok('Über uns: kein "in Vorbereitung"-Banner', !$('view').textContent.includes(VORB) && !qs('#view .hint'));
+  await go('info', 'funktioniert');
+  ok('So funktioniert es: kein "in Vorbereitung"-Banner', !$('view').textContent.includes(VORB) && !qs('#view .hint'));
+  // Echte Platzhalterseiten: Banner WEITERHIN sichtbar
+  await go('info', 'schulen');
+  ok('Für Schulen: "in Vorbereitung"-Banner weiterhin sichtbar', $('view').textContent.includes(VORB) && !!qs('#view .hint'));
+  await go('info', 'agb');
+  ok('AGB: "in Vorbereitung"-Banner weiterhin sichtbar', $('view').textContent.includes(VORB) && !!qs('#view .hint'));
+  // Unbekannte info-id fällt weiter auf notfound (unverändert)
+  await go('info', 'gibtsnicht');
+  ok('Unbekannte info-id → notfound (kein Banner)', /Seite nicht gefunden/i.test($('view').textContent) && !$('view').textContent.includes(VORB));
+  // Footer-Link real durchklicken: Impressum führt zur bannerfreien Seite
+  await go('start');
+  click(qs('#footer a[data-route="info"][data-id="impressum"]'));
+  await waitFor(() => window.App.route === 'info' && window.App.param === 'impressum');
+  ok('Footer → Impressum: bannerfrei nach echtem Klick', !$('view').textContent.includes(VORB) && !qs('#view .hint'));
+
   // ═════════════ NOTEN · LEERZUSTAND + UNGÜLTIG-GUARD ═════════════
   console.log('\n[Profil/CV · Noten-Leerzustand · toFixed-Guard]');
   // Noten leeren und Profil neu rendern → Leerzustand statt Fremdnoten
