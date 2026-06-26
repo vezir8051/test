@@ -1584,6 +1584,64 @@ async function go(route, param) {
     !!unreadBetrMetric &&
     unreadBetrMetric.querySelector('.metric-num').textContent.trim() === String(window.unreadCount('betrieb')));
   ok('Kandidaten-Status-Liste', qsa('.status-list li').length === 4);
+  // idx 18: Status-Zeilen aus echtem State, jede Zeile ist verlinktes Kandidatenprofil (idx 4: kein toter Klick)
+  const statusLinks = qsa('.status-list a.status-link[data-route="kandidat"]');
+  ok('idx18/4: Jede Status-Zeile ist verlinkt (data-route=kandidat)',
+    statusLinks.length === 4 &&
+    statusLinks.every((a) => /^#\/kandidat\//.test(a.getAttribute('href')) && !!a.dataset.id));
+  // PII: anonyme Kandidaten (Sara K., Tim R. — nicht freigegeben) erscheinen NICHT mit Klarnamen
+  const statusText = qs('.status-list').textContent;
+  ok('idx18: anonyme Kandidaten ohne Klarnamen (kein "Sara"/"Tim", aber "(anonym)")',
+    !/Sara|Tim/.test(statusText) && /\(anonym\)/.test(statusText));
+  // Lena wurde zuvor zum Schnuppern eingeladen → Status-abgeleitet "Schnuppern eingeladen" (ok)
+  const lenaRow = statusLinks.find((a) => a.dataset.id === 'k-lena');
+  ok('idx18: Lenas Status state-abgeleitet "Schnuppern eingeladen" (ok)',
+    !!lenaRow && /Schnuppern eingeladen/.test(lenaRow.textContent) &&
+    !!lenaRow.querySelector('.status-pill.ok'));
+  // Kein hartkodierter Status mehr (kein "abgesagt"/"eingegangen"/"angesehen" aus dem alten Mock)
+  ok('idx18: keine hartkodierten Mock-Status mehr',
+    !/abgesagt|eingegangen|angesehen/.test(statusText));
+  // Klick auf Status-Zeile navigiert zum Kandidatenprofil (Sackgasse behoben)
+  const noahRow = statusLinks.find((a) => a.dataset.id === 'k-noah');
+  click(noahRow);
+  await waitFor(() => window.App.route === 'kandidat' && window.App.param === 'k-noah');
+  ok('idx4: Klick auf Status-Zeile → #/kandidat/<id> (kein toter Klick)',
+    window.App.route === 'kandidat' && window.App.param === 'k-noah');
+  await go('dashboard');
+  // Aktivität aus echtem State: Einladung + veröffentlichte Stelle erscheinen, keine erfundenen Zeilen
+  const aktText = qs('.activity-list') ? qs('.activity-list').textContent : '';
+  ok('idx18: Aktivität enthält echte Schnupper-Einladung',
+    /Schnupper-Einladung: Lena M\./.test(aktText));
+  ok('idx18: Aktivität enthält veröffentlichte Stelle aus App.inserate',
+    window.App.inserate.length > 0 &&
+    aktText.indexOf('Stelle veröffentlicht: ' + window.App.inserate[window.App.inserate.length - 1].beruf) !== -1);
+  ok('idx18: keine erfundenen Aktivitäts-Zeilen mehr',
+    !/Neue Bewerbung für Kauffrau|hat die Einladung angenommen/.test(aktText));
+  // Frischer State: leere Inserate/Einladungen + keine ungelesenen Betrieb-Chats
+  // → Aktivität zeigt empty-state statt erfundener Zeilen
+  const insBackup = window.App.inserate.slice();
+  const einlBackup = window.App.einladungen.slice();
+  const chatsBackup = window.App.chats;
+  window.App.inserate.length = 0;
+  window.App.einladungen.length = 0;
+  // Chats so setzen, dass keine Betrieb-Konversation mit fremder Nachricht endet (unreadCount=0)
+  window.App.chats = { 'b-lena': [{ me: true, text: 'gelesen', time: '09:11' }], 'b-noah': [{ me: true, text: 'gelesen', time: '09:11' }] };
+  await go('dashboard');
+  const aktBlockEmpty = qsa('.dash-block').find((b) => /Aktivität/.test(b.querySelector('.detail-h2').textContent));
+  ok('idx18: leerer State → Aktivität empty-state, keine erfundenen Zeilen',
+    window.unreadCount('betrieb') === 0 &&
+    !!aktBlockEmpty && !!aktBlockEmpty.querySelector('.empty-state') &&
+    /Noch keine Aktivität/.test(aktBlockEmpty.textContent) &&
+    !aktBlockEmpty.querySelector('.activity-list'));
+  // Status-Liste bleibt (KANDIDATEN immer vorhanden), aber Lena nun ohne Einladung → nicht mehr "Schnuppern eingeladen"
+  const lenaRowEmpty = qsa('.status-list a.status-link').find((a) => a.dataset.id === 'k-lena');
+  ok('idx18: ohne Einladung fällt Lena auf "freigegeben" zurück (state-abgeleitet)',
+    !!lenaRowEmpty && /freigegeben/.test(lenaRowEmpty.textContent) &&
+    !/Schnuppern eingeladen/.test(lenaRowEmpty.textContent));
+  // State wiederherstellen, damit Folge-Tests konsistent sind
+  insBackup.forEach((i) => window.App.inserate.push(i));
+  einlBackup.forEach((e) => window.App.einladungen.push(e));
+  window.App.chats = chatsBackup;
 
   // ═════════════ 404 / NOTFOUND ═════════════
   console.log('\n[Sonderfälle · 404 · Rollen-Routen-Schutz]');

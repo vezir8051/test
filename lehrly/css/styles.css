@@ -1150,6 +1150,19 @@ button.step-node:focus-visible { outline: 2px solid var(--primary); outline-offs
 .status-list li:last-child { border-bottom: 0; padding-bottom: 0; }
 .status-list li > span:first-child { font-size: var(--fs-small); min-width: 0; }
 
+/* Verlinkte Status-Zeile (Pipeline): Anker traegt die Flex-Zeile, li nur die Linie */
+.status-list li:has(.status-link) { padding: 0; display: block; }
+.status-list .status-link {
+  display: flex; justify-content: space-between; gap: 14px; align-items: center;
+  padding: 13px 0; color: inherit; text-decoration: none;
+  border-radius: var(--radius-sm); margin: 0 -8px; padding-left: 8px; padding-right: 8px;
+}
+.status-list li:has(.status-link):first-child .status-link { padding-top: 4px; }
+.status-list li:has(.status-link):last-child .status-link { padding-bottom: 0; }
+.status-list .status-link > span:first-child { font-size: var(--fs-small); min-width: 0; }
+.status-list .status-link:hover { background: var(--bg-sunken); }
+.status-list .status-link:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+
 /* Status-Semantik: gruen=positiv, grau=offen/ausstehend, rot=Absage */
 .status-pill {
   font-size: var(--fs-label); font-weight: 600;
