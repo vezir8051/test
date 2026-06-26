@@ -1277,6 +1277,20 @@
 
   // — CHAT (zweispaltig) —
   var chatState = { activeId: null };
+  // Markup der Konversationsliste (linke Sidebar). Zentral, damit chatSend()
+  // die Liste ohne Voll-Reroute neu rendern kann (identisches Markup).
+  function convListHtml() {
+    var convs = KONVERSATIONEN[App.role] || [];
+    return convs.map(function (c) {
+      var active = c.id === chatState.activeId;
+      return '<button class="conv' + (active ? ' active' : '') + '" data-action="open-conv" data-conv="' + c.id + '"' +
+        (active ? ' aria-current="true"' : '') + '>' +
+        '<span class="conv-top"><span class="conv-name">' + esc(c.partner) + '</span><span class="ie-time conv-time tnum">' + esc(c.time) + '</span></span>' +
+        '<span class="conv-kontext">' + esc(c.kontext) + '</span>' +
+        '<span class="conv-preview">' + esc(c.preview) + '</span></button>';
+    }).join('');
+  }
+
   views.chat = function (id) {
     var convs = KONVERSATIONEN[App.role] || [];
     if (convs.length === 0) {
@@ -1292,14 +1306,7 @@
       breadcrumb([{ route: 'start', label: 'Start' }, { label: 'Nachrichten' }]) +
       '<div class="chat-grid">' +
         '<aside class="chat-list" aria-label="Konversationen">' +
-          convs.map(function (c) {
-            var active = c.id === chatState.activeId;
-            return '<button class="conv' + (active ? ' active' : '') + '" data-action="open-conv" data-conv="' + c.id + '"' +
-              (active ? ' aria-current="true"' : '') + '>' +
-              '<span class="conv-top"><span class="conv-name">' + esc(c.partner) + '</span><span class="ie-time conv-time tnum">' + esc(c.time) + '</span></span>' +
-              '<span class="conv-kontext">' + esc(c.kontext) + '</span>' +
-              '<span class="conv-preview">' + esc(c.preview) + '</span></button>';
-          }).join('') +
+          convListHtml() +
         '</aside>' +
         '<section class="chat-pane" aria-label="Konversation">' +
           '<div id="chat-head" class="chat-head"></div>' +
@@ -2071,9 +2078,21 @@
     var msgs = getChatMsgs(chatState.activeId);
     var now = new Date();
     var hh = ('0' + now.getHours()).slice(-2), mm = ('0' + now.getMinutes()).slice(-2);
-    msgs.push({ me: true, text: val.trim(), time: hh + ':' + mm });
+    var time = hh + ':' + mm;
+    var text = val.trim();
+    msgs.push({ me: true, text: text, time: time });
     inp.value = '';
+    // Sidebar-Vorschau/Zeit der aktiven Konversation aktualisieren (idx 18).
+    var conv = (KONVERSATIONEN[App.role] || []).filter(function (c) { return c.id === chatState.activeId; })[0];
+    if (conv) {
+      conv.preview = text;
+      conv.time = time;
+    }
     renderChatConversation();
+    // Konversationsliste ohne Voll-Reroute neu rendern (Reihenfolge bleibt stabil,
+    // aktive Markierung über chatState.activeId erhalten).
+    var list = qs('.chat-list');
+    if (list) list.innerHTML = convListHtml();
   }
   window.chatSend = chatSend;
 
