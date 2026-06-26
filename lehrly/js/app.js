@@ -976,23 +976,25 @@
         '</form></section>' +
 
       '<section id="sec-beruf" class="profil-sec"><h2 class="detail-h2">Berufswunsch</h2>' +
+        '<form data-action="profil-form">' +
         '<label class="field"><span class="field-label">Wunschberuf (EFZ/EBA-Liste)</span>' +
         '<select class="select" data-field="beruf">' +
           '<option value="">Bitte wählen …</option>' +
           ['Kauffrau/Kaufmann EFZ', 'Informatiker/in EFZ', 'Fachfrau/Fachmann Gesundheit EFZ', 'Detailhandelsfachfrau/-mann EFZ', 'Polymechaniker/in EFZ', 'Detailhandelsassistent/in EBA'].map(function (b) {
             return '<option value="' + esc(b) + '"' + (App.profile.beruf === b ? ' selected' : '') + '>' + esc(b) + '</option>';
-          }).join('') + '</select></label></section>' +
+          }).join('') + '</select></label></form></section>' +
 
       '<section id="sec-noten" class="profil-sec"><h2 class="detail-h2">Noten</h2>' +
-        notenInputs() + '</section>' +
+        '<form data-action="profil-form">' + notenInputs() + '</form></section>' +
 
       '<section id="sec-staerken" class="profil-sec"><h2 class="detail-h2">Stärken</h2>' +
         '<p class="hint">Wähle, was dich auszeichnet.</p>' +
         '<div id="strength-tags">' + staerkenTags(ALLE_STAERKEN, true) + '</div></section>' +
 
       '<section id="sec-erfahrung" class="profil-sec"><h2 class="detail-h2">Erfahrung / Schnuppern</h2>' +
+        '<form data-action="profil-form">' +
         '<label class="field"><span class="field-label">Schnupper-Erfahrungen</span>' +
-        '<input class="input" type="text" data-snfield="schnupper" value="' + esc(App.schnupperErf) + '" placeholder="z.B. Raiffeisenbank (3 Tage)"></label></section>' +
+        '<input class="input" type="text" data-snfield="schnupper" value="' + esc(App.schnupperErf) + '" placeholder="z.B. Raiffeisenbank (3 Tage)"></label></form></section>' +
 
       '<section id="sec-dokumente" class="profil-sec"><h2 class="detail-h2">Dokumente</h2>' +
         '<div class="doc-list">' +
@@ -1974,11 +1976,13 @@
   // ── Input-Delegation (Live-Sync, Suche, Filter) ──
   document.addEventListener('input', function (e) {
     var t = e.target;
-    if (t.dataset && t.dataset.field) { App.profile[t.dataset.field] = t.value; updateVollstand(); }
+    if (t.dataset && t.dataset.field) { App.profile[t.dataset.field] = t.value; updateVollstand(); persist(); }
     if (t.dataset && t.dataset.nfield) {
       App.profile.noten = App.profile.noten || { deutsch: '', mathematik: '', franzoesisch: '', englisch: '' };
       // Rohwert speichern, damit Tippen nicht springt; Klemmung erst beim Speichern.
       App.profile.noten[t.dataset.nfield] = t.value;
+      // Rohwert sofort persistieren, damit Tippen nach Reload nicht verloren geht.
+      persist();
       // Inline-Hinweis bei Out-of-Range; gueltige/leere Werte raeumen den Hinweis ab.
       var ner = $('note-err-' + t.dataset.nfield);
       var nv = parseFloat(t.value);
@@ -1991,7 +1995,7 @@
         t.classList.remove('invalid'); t.removeAttribute('aria-invalid');
       }
     }
-    if (t.dataset && t.dataset.snfield === 'schnupper') { App.schnupperErf = t.value; updateVollstand(); }
+    if (t.dataset && t.dataset.snfield === 'schnupper') { App.schnupperErf = t.value; updateVollstand(); persist(); }
     if (t.dataset && t.dataset.bfield) { App.betrieb[t.dataset.bfield] = t.value; updateBetriebPct(); }
     if (t.id === 'bw-motivation') {
       bewerbenState.motivation = t.value;
@@ -2014,7 +2018,7 @@
   // ── Change-Delegation (Selects, Radios) ──
   document.addEventListener('change', function (e) {
     var t = e.target;
-    if (t.dataset && t.dataset.field === 'beruf') { App.profile.beruf = t.value; updateVollstand(); }
+    if (t.dataset && t.dataset.field === 'beruf') { App.profile.beruf = t.value; updateVollstand(); persist(); }
     if (t.dataset && t.dataset.filterKey) { App.stellenFilters[t.dataset.filterKey] = t.value; renderStellenResults(); }
     if (t.dataset && t.dataset.poolfilterKey) { App.poolFilters[t.dataset.poolfilterKey] = t.value; renderPoolResults(); }
     if (t.dataset && t.dataset.action === 'stellen-sort') { App.stellenFilters.sort = t.value; renderStellenResults(); }
