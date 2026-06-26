@@ -801,6 +801,15 @@ async function go(route, param) {
   ok('Nachricht senden fügt Bubble hinzu', qsa('#chat-log .bubble.me').length >= 1);
   ok('Eingabefeld nach Senden geleert', $('chat-inp').value === '');
   ok('Gesendete Bubble zeigt "gesendet"', /gesendet/.test(qs('#chat-log .bubble.me').textContent));
+  // idx 18: Sidebar-Vorschau/Zeit der aktiven Konversation aktualisiert sich nach dem Senden
+  ok('Sidebar-Preview der aktiven Konversation zeigt gesendeten Text',
+    /Guten Tag, ich habe noch eine Frage\./.test(qs('.conv.active[data-conv="c-sbb"] .conv-preview').textContent));
+  ok('Sidebar-Zeit der aktiven Konversation zeigt Uhrzeit (HH:MM)',
+    /^\d{2}:\d{2}$/.test(qs('.conv.active[data-conv="c-sbb"] .conv-time').textContent.trim()));
+  ok('Aktiver Eintrag bleibt nach Re-Render markiert', !!qs('.conv.active[data-conv="c-sbb"]') &&
+    qs('.conv.active[data-conv="c-sbb"]').getAttribute('aria-current') === 'true');
+  ok('Listen-Reihenfolge nach Senden stabil (SBB nicht umsortiert)',
+    qsa('.conv')[1] && qsa('.conv')[1].getAttribute('data-conv') === 'c-sbb');
   // Leere Nachricht wird nicht gesendet
   const logNow = qsa('#chat-log .bubble').length;
   typeInto($('chat-inp'), '   ');
@@ -841,6 +850,12 @@ async function go(route, param) {
   submit(qs('[data-action="chat-send"]'));
   await waitFor(() => qsa('#chat-log .bubble.me').length === 1);
   ok('Senden in neuer Konversation hängt Bubble an', qsa('#chat-log .bubble.me').length === 1 && !qs('#chat-log .chat-log-empty'));
+  // idx 18: frischer Stub (ensureConv) hatte Platzhalter-Preview — nach Senden echter Text + Zeit
+  ok('Stub-Preview ersetzt Platzhalter durch gesendeten Text',
+    /Guten Tag, ich interessiere mich für die Lehrstelle\./.test(qs('.conv.active[data-conv="c-bosch-poly"] .conv-preview').textContent) &&
+    !/noch keine Nachrichten/.test(qs('.conv.active[data-conv="c-bosch-poly"] .conv-preview').textContent));
+  ok('Stub-Zeit ersetzt "Jetzt" durch Uhrzeit (HH:MM)',
+    /^\d{2}:\d{2}$/.test(qs('.conv.active[data-conv="c-bosch-poly"] .conv-time').textContent.trim()));
   window.__xss2 = 0;
   typeInto($('chat-inp'), '<img src=x onerror="window.__xss2=1">');
   submit(qs('[data-action="chat-send"]'));
