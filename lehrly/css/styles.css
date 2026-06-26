@@ -521,6 +521,11 @@ a.list-item:hover .li-go .ic { transform: translateX(2px); }
 }
 .merken-btn.on .ic { fill: var(--success); stroke: var(--success); }
 .merken-btn.on:hover { color: var(--success); border-color: #C9E2D3; background: var(--success-soft); }
+/* Merken-Button auf der Detailseite: als vollbreiter Block unter den CTAs (nicht absolut gepinnt) */
+.aside-card .merken-btn {
+  position: static; width: 100%; margin-top: 10px;
+  justify-content: center; padding: 10px 14px;
+}
 
 /* ── "Nur gemerkte"-Toggle im Filter-Panel ── */
 .merken-toggle {
@@ -1424,6 +1429,9 @@ button.step-node:focus-visible { outline: 2px solid var(--primary); outline-offs
   /* Merken-Button platzsparend: nur Icon, Label ausgeblendet */
   .merken-btn .merken-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .merken-btn { padding: 6px; top: 12px; right: 14px; }
+  /* Detail-Aside-Button bleibt vollbreiter Block mit sichtbarem Label */
+  .aside-card .merken-btn { padding: 10px 14px; top: auto; right: auto; }
+  .aside-card .merken-btn .merken-label { position: static; width: auto; height: auto; margin: 0; clip: auto; }
   .list-item-wrap > .list-item { padding-right: 64px; }
 }
 
