@@ -478,6 +478,85 @@ async function go(route, param) {
   click(qs('[data-action="reset-stellen-filter"]'));
   await waitFor(() => qsa('#stellen-list .list-item').length === 6);
 
+  // ── Berufsfeld-Kacheln bau/gastro/soziales: ehrlicher Empty-State statt irrefuehrender Vollliste ──
+  console.log('\n[Stellen · Berufsfeld-Kacheln bau/gastro/soziales · ehrlicher 0-Zustand]');
+  // (A) bau: volle Assertion — branche, Empty-State, Heading mit Label, Count 0, Filter-Radio aktiv
+  await go('start');
+  click(qs('.feld-tile[data-feld="bau"]'));
+  await waitFor(() => window.App.route === 'stellen');
+  await waitFor(() => !!qs('#stellen-list .empty-state'));
+  ok('Kachel "Bau / Gewerbe" setzt branche=bau (kein all)', window.App.stellenFilters.branche === 'bau');
+  ok('Bau: ehrlicher Empty-State (keine irrefuehrende Vollliste)',
+    !!qs('#stellen-list .empty-state') && qsa('#stellen-list .list-item').length === 0);
+  ok('Bau: Empty-Heading "Keine Lehrstellen" + Label "Bau / Gewerbe"',
+    /Keine Lehrstellen/.test(qs('#stellen-list .empty-state h3').textContent) &&
+    /Bau \/ Gewerbe/.test(qs('#stellen-list .empty-state h3').textContent));
+  ok('Bau: Treffer-Zaehler zeigt "0 Lehrstellen"', /^0 Lehrstellen/.test($('stellen-count').textContent));
+  ok('Bau: Empty-State hat "Filter zurücksetzen"-Aktion', !!qs('#stellen-list [data-action="reset-stellen-filter"]'));
+  ok('Bau: Filter-Radio Branche=bau aktiv gecheckt mit Count 0 + is-empty',
+    qs('.filter-col input[data-filter-key="branche"][value="bau"]').checked &&
+    qs('.filter-col input[data-filter-key="branche"][value="bau"]').closest('.filter-opt').querySelector('.fo-count').textContent === '0' &&
+    qs('.filter-col input[data-filter-key="branche"][value="bau"]').closest('.filter-opt').classList.contains('is-empty'));
+  // Reset setzt das Feld wie jede andere Branche zurueck (branche=all, keine Sonderbehandlung)
+  click(qs('#stellen-list [data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  ok('Bau-Reset: branche zurück auf all + volle Liste', window.App.stellenFilters.branche === 'all');
+
+  // (B) gastro: knappe Assertion
+  await go('start');
+  click(qs('.feld-tile[data-feld="gastro"]'));
+  await waitFor(() => !!qs('#stellen-list .empty-state'));
+  ok('Kachel "Gastronomie": branche=gastro + Empty-State mit Label',
+    window.App.stellenFilters.branche === 'gastro' &&
+    /Keine Lehrstellen/.test(qs('#stellen-list .empty-state h3').textContent) &&
+    /Gastronomie \/ Hotellerie/.test(qs('#stellen-list .empty-state h3').textContent) &&
+    /^0 Lehrstellen/.test($('stellen-count').textContent));
+  click(qs('#stellen-list [data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+
+  // (C) soziales: knappe Assertion
+  await go('start');
+  click(qs('.feld-tile[data-feld="soziales"]'));
+  await waitFor(() => !!qs('#stellen-list .empty-state'));
+  ok('Kachel "Soziales": branche=soziales + Empty-State mit Label',
+    window.App.stellenFilters.branche === 'soziales' &&
+    /Keine Lehrstellen/.test(qs('#stellen-list .empty-state h3').textContent) &&
+    /Soziales \/ Betreuung/.test(qs('#stellen-list .empty-state h3').textContent) &&
+    /^0 Lehrstellen/.test($('stellen-count').textContent));
+  click(qs('#stellen-list [data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+
+  // (D) Gegenprobe: echtes Feld kv liefert weiter Treffer (kein Empty-State)
+  await go('start');
+  click(qs('.feld-tile[data-feld="kv"]'));
+  await waitFor(() => window.App.route === 'stellen');
+  await waitFor(() => qsa('#stellen-list .list-item').length > 0);
+  ok('Gegenprobe Kachel "kv": branche=banken, Treffer vorhanden (kein Empty-State)',
+    window.App.stellenFilters.branche === 'banken' &&
+    qsa('#stellen-list .list-item').length > 0 && !qs('#stellen-list .empty-state'));
+  click(qs('[data-action="reset-stellen-filter"]'));
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+
+  // ── Sortier-Select spiegelt App.stellenFilters.sort nach Re-Render (selected-Attribut) ──
+  console.log('\n[Stellen · Sortier-Select spiegelt State nach Re-Render]');
+  await go('stellen');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 6);
+  changeTo($('stellen-sort'), 'beruf');
+  await waitFor(() => window.App.stellenFilters.sort === 'beruf');
+  ok('Sort-Wechsel auf beruf im State', window.App.stellenFilters.sort === 'beruf');
+  // View neu rendern: zu einer Stelle navigieren und zurueck zu #/stellen
+  await go('stelle', 'zkb-kauffrau');
+  await go('stellen');
+  await waitFor(() => !!$('stellen-sort'));
+  ok('Nach Re-Render: #stellen-sort.value spiegelt State (beruf)', qs('#stellen-sort').value === 'beruf');
+  ok('Nach Re-Render: <option value=beruf> trägt selected-Attribut',
+    qs('#stellen-sort option[value="beruf"]').selected === true &&
+    qs('#stellen-sort option[value="beruf"]').hasAttribute('selected') &&
+    !qs('#stellen-sort option[value="score"]').hasAttribute('selected'));
+  // zurueck auf score fuer saubere Folgezustaende
+  changeTo($('stellen-sort'), 'score');
+  await delay(0);
+
   // ═════════════ STELLEN-DETAIL + BEWERBEN-STEPS ═════════════
   console.log('\n[Stellen-Detail · Bewerben-Flow]');
   click(qs('#stellen-list .list-item[data-id="zkb-kauffrau"]'));
