@@ -346,6 +346,9 @@ ul, ol { margin: 0 0 1em; }
   display: flex; gap: 10px; flex-wrap: wrap;
   max-width: 760px;
 }
+/* Einzelfeld-Variante (Kandidatensuche ohne Ort/PLZ): schmaler, damit das Feld
+   nicht ueber die ganze Breite gedehnt wirkt. */
+.search-hero-single { max-width: 540px; }
 .sh-field {
   display: flex; align-items: center; gap: 9px;
   background: var(--bg-sunken);

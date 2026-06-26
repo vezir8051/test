@@ -441,6 +441,35 @@ async function go(route, param) {
   click(qs('[data-action="reset-stellen-filter"]'));
   await waitFor(() => qsa('#stellen-list .list-item').length === 6);
 
+  // ── Ort/PLZ-Hero-Suche (Lernende): sichtbarer, entfernbarer Ort-Filter (idx 0) ──
+  console.log('\n[Ort-Filter · Stellensuche sichtbar/entfernbar]');
+  await go('start');
+  const heroOrtForm = qs('.search-hero[data-target="stellen"]');
+  ok('Lernende-Hero hat Ort/PLZ-Feld', !!qs('input[name="ort"]', heroOrtForm));
+  typeInto(qs('input[name="ort"]', heroOrtForm), 'Zürich');
+  submit(heroOrtForm);
+  await waitFor(() => window.App.route === 'stellen' && window.App.stellenFilters.ort === 'Zürich');
+  ok('Hero-Ort-Suche füllt stellenFilters.ort + navigiert', window.App.stellenFilters.ort === 'Zürich' && qsa('#stellen-list .list-item').length === 2);
+  ok('Ort-Inputfeld in results-bar gefüllt', !!$('stellen-ort') && $('stellen-ort').value === 'Zürich');
+  ok('Entfernbarer Ort-Chip vorhanden', !!qs('[data-action="clear-ort"]') && /Ort: Zürich/.test(qs('[data-action="clear-ort"]').textContent));
+  ok('Filter-Badge zählt Ort mit', /1/.test(qs('.ft-count').textContent));
+  // Ort-Chip-X entfernen → ort leer, Liste aktualisiert
+  click(qs('[data-action="clear-ort"]'));
+  await waitFor(() => window.App.stellenFilters.ort === '' && qsa('#stellen-list .list-item').length === 6);
+  ok('clear-ort entfernt Ort-Filter + Liste aktualisiert', window.App.stellenFilters.ort === '' && qsa('#stellen-list .list-item').length === 6 && !qs('[data-action="clear-ort"]'));
+  // Ort-Inputfeld live editieren → renderStellenResults reagiert
+  typeInto($('stellen-ort'), 'Bern');
+  await waitFor(() => window.App.stellenFilters.ort === 'Bern' && qsa('#stellen-list .list-item').length === 1);
+  ok('Ort-Inputfeld live editieren filtert sofort', window.App.stellenFilters.ort === 'Bern' && qsa('#stellen-list .list-item').length === 1);
+  // Empty-State nennt den Ort im Heading
+  typeInto($('stellen-ort'), 'Genf');
+  await waitFor(() => qsa('#stellen-list .list-item').length === 0);
+  ok('Empty-State-Heading nennt "in Genf"', /in Genf/.test(qs('#stellen-list .empty-state h3').textContent));
+  // "Filter zurücksetzen" leert ort
+  click(qs('#stellen-list [data-action="reset-stellen-filter"]'));
+  await waitFor(() => window.App.stellenFilters.ort === '' && qsa('#stellen-list .list-item').length === 6);
+  ok('reset-stellen-filter leert ort weiterhin', window.App.stellenFilters.ort === '');
+
   // Berufsfeld-Kachel von Start → setzt Branche
   await go('start');
   click(qs('.feld-tile[data-feld="informatik"]'));
@@ -947,6 +976,19 @@ async function go(route, param) {
   click(qs('.role-opt[data-role="betrieb"]'));
   await waitFor(() => window.App.role === 'betrieb' && window.App.route === 'start');
   ok('Rolle betrieb für Betriebs-Flows', window.App.role === 'betrieb');
+
+  // ── Betriebs-Startseite: Kandidaten-Hero OHNE folgenloses Ort/PLZ-Feld (idx 7) ──
+  await go('start');
+  const kandHero = qs('.search-hero[data-target="kandidaten"]');
+  ok('Betrieb-Start zeigt Kandidaten-Hero', !!kandHero);
+  ok('Kandidaten-Hero hat KEIN Ort/PLZ-Feld mehr', !qs('input[name="ort"]', kandHero) && !$('sh-ort'));
+  ok('Kandidaten-Hero behält Beruf/Stärke-Feld + Suchen', !!qs('input[name="q"]', kandHero) && !!qs('.sh-btn', kandHero));
+  typeInto(qs('input[name="q"]', kandHero), 'Empathie');
+  submit(kandHero);
+  await waitFor(() => window.App.route === 'kandidaten' && window.App.poolFilters.q === 'Empathie');
+  ok('Kandidaten-Hero-Suche setzt poolFilters.q + navigiert (keine verworfene Eingabe)',
+    window.App.route === 'kandidaten' && window.App.poolFilters.q === 'Empathie');
+  window.App.poolFilters.q = '';
 
   // Header-Nav (Betrieb) jeden Link
   const navRoutesBetr = ['start', 'kandidaten', 'ausschreiben', 'chat', 'dashboard'];

@@ -538,13 +538,18 @@
 
   function searchBar(targetRoute) {
     var ph = targetRoute === 'kandidaten' ? 'Beruf oder Stärke …' : 'Beruf, z.B. Kauffrau EFZ';
-    return '<form class="search-hero" data-action="hero-search" data-target="' + targetRoute + '">' +
+    // Das Ort/PLZ-Feld wirkt nur in der Stellensuche (App.stellenFilters.ort). Fuer die
+    // Kandidatensuche gibt es keinen Ort-Filter (poolFilters kennt nur region) – daher
+    // wird das Feld dort weggelassen, statt einen folgenlosen "toten" Klick zu rendern.
+    var ortField = targetRoute === 'kandidaten' ? '' :
+      '<div class="sh-field"><label class="sr-only" for="sh-ort">Ort oder PLZ</label>' +
+        '<svg class="ic" aria-hidden="true"><use href="#i-pin"></use></svg>' +
+        '<input id="sh-ort" class="sh-input" type="text" name="ort" placeholder="Ort oder PLZ" autocomplete="off"></div>';
+    return '<form class="search-hero' + (targetRoute === 'kandidaten' ? ' search-hero-single' : '') + '" data-action="hero-search" data-target="' + targetRoute + '">' +
       '<div class="sh-field"><label class="sr-only" for="sh-q">Beruf</label>' +
         '<svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg>' +
         '<input id="sh-q" class="sh-input" type="text" name="q" placeholder="' + esc(ph) + '" autocomplete="off"></div>' +
-      '<div class="sh-field"><label class="sr-only" for="sh-ort">Ort oder PLZ</label>' +
-        '<svg class="ic" aria-hidden="true"><use href="#i-pin"></use></svg>' +
-        '<input id="sh-ort" class="sh-input" type="text" name="ort" placeholder="Ort oder PLZ" autocomplete="off"></div>' +
+      ortField +
       '<button class="btn btn-primary sh-btn" type="submit">Suchen</button>' +
     '</form>';
   }
@@ -559,6 +564,8 @@
           '<div class="results-bar">' +
             '<div class="search-inline"><svg class="ic" aria-hidden="true"><use href="#i-search"></use></svg>' +
               '<input id="stellen-q" class="search-inline-inp" type="text" placeholder="Beruf suchen …" value="' + esc(App.stellenFilters.q) + '" data-action="stellen-q" aria-label="Beruf suchen"></div>' +
+            '<div class="search-inline"><svg class="ic" aria-hidden="true"><use href="#i-pin"></use></svg>' +
+              '<input id="stellen-ort" class="search-inline-inp" type="text" placeholder="Ort oder PLZ" value="' + esc(App.stellenFilters.ort) + '" data-action="stellen-ort" aria-label="Ort oder PLZ"></div>' +
             '<div class="results-meta"><span id="stellen-count" class="results-count tnum"></span>' +
               '<label class="sort-label">Sortieren ' +
                 '<select id="stellen-sort" class="sort-select" data-action="stellen-sort">' +
@@ -628,6 +635,7 @@
     var f = App.stellenFilters, n = 0;
     ['branche', 'region', 'typ', 'lehrjahr'].forEach(function (k) { if (f[k] !== 'all') n++; });
     if (f.nurGemerkt) n++;
+    if (f.ort) n++;
     return n;
   }
 
@@ -711,6 +719,7 @@
     if (f.region !== 'all') parts.push('in Region ' + stellenOptLabel('region', f.region));
     if (f.typ !== 'all') parts.push('(' + stellenOptLabel('typ', f.typ) + ')');
     if (f.lehrjahr !== 'all') parts.push('mit ' + stellenOptLabel('lehrjahr', f.lehrjahr));
+    if (f.ort) parts.push('in ' + f.ort);
     return parts.join(' ');
   }
 
@@ -758,6 +767,10 @@
       if (f[k] !== 'all') chips.push('<button class="chip-active" data-action="clear-filter" data-key="' + k + '" aria-label="Filter entfernen: ' + esc(labels[k]) + ' ' + esc(stellenOptLabel(k, f[k])) + '">' +
         esc(labels[k]) + ': ' + esc(stellenOptLabel(k, f[k])) + ' <svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>');
     });
+    if (f.ort) {
+      chips.push('<button class="chip-active" data-action="clear-ort" aria-label="Filter entfernen: Ort ' + esc(f.ort) + '">' +
+        'Ort: ' + esc(f.ort) + ' <svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>');
+    }
     var ac = $('active-chips');
     if (ac) ac.innerHTML = chips.join('');
   }
@@ -1739,6 +1752,8 @@
         gotoRoute('stellen'); return true;
       case 'clear-filter':
         App.stellenFilters[el.dataset.key] = 'all'; renderStellenResults(); return true;
+      case 'clear-ort':
+        App.stellenFilters.ort = ''; renderStellenResults(); return true;
       case 'toggle-merken': {
         e.preventDefault();
         var mid = el.dataset.id;
@@ -1946,6 +1961,7 @@
       var ibe = $('inserat-beruf-err'); if (ibe) ibe.hidden = true;
     }
     if (t.dataset && t.dataset.action === 'stellen-q') { App.stellenFilters.q = t.value; renderStellenResults(); }
+    if (t.dataset && t.dataset.action === 'stellen-ort') { App.stellenFilters.ort = t.value.trim(); renderStellenResults(); }
     if (t.dataset && t.dataset.action === 'pool-q') { App.poolFilters.q = t.value; renderPoolResults(); }
   });
 
