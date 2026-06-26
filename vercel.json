@@ -4,6 +4,9 @@
   "outputDirectory": "lehrly",
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/((?!.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
