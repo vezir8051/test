@@ -1572,7 +1572,7 @@
     funktioniert: { titel: 'So funktioniert es', body: [
       'Lernende legen ein Profil an, suchen und filtern Lehrstellen mit transparentem Match-Score und bewerben sich direkt.',
       'Betriebe schreiben Lehrstellen nach Bildungsverordnung aus und finden passende, bis zur Freigabe anonymisierte Profile.'] },
-    schulen: { titel: 'Für Schulen & Berufsberatung', body: [
+    schulen: { titel: 'Für Schulen & Berufsberatung', vorlaeufig: true, body: [
       'Schulen und Berufsberatungsstellen können Lernende auf dem Weg zur Lehrstelle begleiten.',
       'In dieser Vorschau ist dieser Bereich als Platzhalter angelegt.'] },
     impressum: { titel: 'Impressum', body: [
@@ -1581,7 +1581,7 @@
     datenschutz: { titel: 'Datenschutzerklärung', body: [
       'Diese Vorschau speichert Eingaben ausschliesslich lokal im Browser (localStorage) und überträgt keine Personendaten an Server.',
       'Ein produktiver Betrieb würde Daten revDSG-konform in der Schweiz hosten. Es werden nur technisch notwendige Cookies verwendet.'] },
-    agb: { titel: 'AGB', body: [
+    agb: { titel: 'AGB', vorlaeufig: true, body: [
       'Allgemeine Geschäftsbedingungen folgen im produktiven Betrieb.',
       'In dieser Vorschau dient dieser Abschnitt als Platzhalter.'] }
   };
@@ -1591,7 +1591,7 @@
     return '<div class="container narrow">' +
       breadcrumb([{ route: 'start', label: 'Start' }, { label: d.titel }]) +
       '<h1 class="page-h1">' + esc(d.titel) + '</h1>' +
-      '<p class="hint">Vorschau-Inhalt — in Vorbereitung.</p>' +
+      (d.vorlaeufig ? '<p class="hint">Vorschau-Inhalt — in Vorbereitung.</p>' : '') +
       d.body.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') +
       '<div class="nf-links"><a class="link-arrow" data-route="start" href="#/start">Zur Startseite</a></div>' +
     '</div>';
