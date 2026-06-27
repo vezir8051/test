@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cafe One - specialty coffee bar</title>
+  <meta name="description" content="Cafe One is a small specialty coffee bar pouring single-origin filter, dialed-in espresso, and house-baked pastry. Open daily on Voss Street." />
+  <meta name="theme-color" content="#eceee5" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+
+  <meta property="og:title" content="Cafe One - specialty coffee bar" />
+  <meta property="og:description" content="Single-origin filter, dialed-in espresso, house-baked pastry. Open daily on Voss Street." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1200&q=80" />
+
+  <link rel="preload" href="fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/hanken-grotesk.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <span id="top-sentinel" aria-hidden="true"></span>
+
+  <!-- ============ HEADER ============ -->
+  <header class="site-header">
+    <div class="shell nav">
+      <a class="brand" href="#top" aria-label="Cafe One home">Cafe One<span class="dot">.</span></a>
+
+      <nav class="nav-links desktop" aria-label="Primary">
+        <a href="#sourcing">Coffee</a>
+        <a href="#menu">Menu</a>
+        <a href="#gallery">The room</a>
+        <a href="#visit">Visit</a>
+      </nav>
+
+      <div class="nav-cta">
+        <a class="btn btn--primary desktop" href="#visit">Plan a visit <span class="arrow" aria-hidden="true">&rarr;</span></a>
+      </div>
+
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+        <span></span>
+      </button>
+    </div>
+
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="#sourcing">Coffee</a>
+      <a href="#menu">Menu</a>
+      <a href="#gallery">The room</a>
+      <a href="#visit">Visit</a>
+      <a class="btn btn--primary" href="#visit">Plan a visit</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO (asymmetric split) ============ -->
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <span class="hero-brandline">Voss Street, since 2016</span>
+        <h1>Good coffee,<br />no <em>theatre.</em></h1>
+        <p class="lead">A small bar pouring single-origin filter and patient espresso, with pastry baked the same morning you drink it.</p>
+        <div class="hero-actions">
+          <a class="btn btn--primary" href="#menu">View the menu <span class="arrow" aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn--ghost" href="#visit">Plan a visit</a>
+        </div>
+        <div class="hero-meta">
+          <div><span>7am</span><small>open daily</small></div>
+          <div><span>6</span><small>origins on rotation</small></div>
+          <div><span>1</span><small>roast, weekly</small></div>
+        </div>
+      </div>
+      <figure class="hero-figure">
+        <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1100&q=80"
+             alt="A flat white with leaf latte art on a wooden counter" width="1100" height="1320" fetchpriority="high" />
+        <figcaption class="tag">Today: Ethiopia, Guji</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============ STATEMENT (full-width) ============ -->
+    <section class="statement">
+      <div class="shell">
+        <p data-reveal>We keep the menu short so the <b>coffee</b> can be long.</p>
+        <div class="statement-foot">
+          <div data-reveal>
+            <h3>Roasted close</h3>
+            <p>Beans come off the drum a few days before they reach your cup, never weeks.</p>
+          </div>
+          <div data-reveal style="--reveal-delay:90ms">
+            <h3>Dialed every morning</h3>
+            <p>The grinder is reset and tasted before the first customer walks in.</p>
+          </div>
+          <div data-reveal style="--reveal-delay:180ms">
+            <h3>Made to stay</h3>
+            <p>Real cups, a quiet room, and a seat that you do not have to give up at nine.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SOURCING (asymmetric bento) ============ -->
+    <section class="section sourcing" id="sourcing">
+      <div class="shell">
+        <div class="head" data-reveal>
+          <p class="eyebrow">From farm to cup</p>
+          <h2>We buy small, roast small, and pour it before it fades.</h2>
+        </div>
+
+        <div class="bento">
+          <div class="cell media c-a" data-reveal>
+            <img src="https://images.unsplash.com/photo-1559496417-e7f25cb247f3?auto=format&fit=crop&w=900&q=80"
+                 alt="Freshly roasted coffee beans cooling in a tray" width="900" height="900" loading="lazy" />
+            <div class="cap">
+              <h3>Single origin, in season</h3>
+              <p>We follow the harvest and let each lot taste like where it came from.</p>
+            </div>
+          </div>
+
+          <div class="cell olive c-b" data-reveal style="--reveal-delay:80ms">
+            <span class="big">6</span>
+            <p>origins on rotation, swapped as the season turns.<!-- mock --></p>
+          </div>
+
+          <div class="cell paper c-c" data-reveal style="--reveal-delay:140ms">
+            <h3>Two ways to drink</h3>
+            <p>Filter changes weekly. Espresso stays steady, so your regular order is your regular order.</p>
+          </div>
+
+          <div class="cell media c-d" data-reveal>
+            <img src="https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=700&q=80"
+                 alt="A pour-over brew dripping into a glass carafe" width="700" height="500" loading="lazy" />
+          </div>
+
+          <div class="cell olive c-e" data-reveal style="--reveal-delay:80ms">
+            <h3>Milk, oat, and the people next door</h3>
+            <p>Organic dairy from one farm, barista oat that actually steams, and pastry from the bakery two doors down.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MENU (grouped chunks) ============ -->
+    <section class="section menu" id="menu">
+      <div class="shell">
+        <div class="head">
+          <h2 data-reveal>The list</h2>
+          <p class="note" data-reveal style="--reveal-delay:90ms">Prices in euro. Decaf is the same price and never an afterthought. Oat and lactose-free swap in at no charge.</p>
+        </div>
+
+        <div class="menu-grid">
+          <div class="menu-group" data-reveal>
+            <h3>Espresso bar</h3>
+            <div class="menu-item">
+              <span class="name">Espresso</span>
+              <span class="price">2.8</span>
+              <span class="desc">Single or double, pulled to order</span>
+            </div>
+            <div class="menu-item">
+              <span class="name">Cortado</span>
+              <span class="price">3.4</span>
+              <span class="desc">Equal parts shot and warm milk</span>
+            </div>
+            <div class="menu-item">
+              <span class="name">Flat white</span>
+              <span class="price">3.9</span>
+              <span class="desc">Double ristretto, silky microfoam</span>
+            </div>
+            <div class="menu-item">
+              <span class="name">Cappuccino</span>
+              <span class="price">3.8</span>
+              <span class="desc">A proper lid of foam, not a hat</span>
+            </div>
+          </div>
+
+          <div class="menu-group" data-reveal style="--reveal-delay:120ms">
+            <h3>Filter and the rest</h3>
+            <div class="menu-item">
+              <span class="name">Batch brew</span>
+              <span class="price">3.2</span>
+              <span class="desc">This week: Ethiopia, Guji</span>
+            </div>
+            <div class="menu-item">
+              <span class="name">Pour-over</span>
+              <span class="price">4.6</span>
+              <span class="desc">Hand-brewed, ask about today's lot</span>
+            </div>
+            <div class="menu-item">
+              <span class="name">Iced filter</span>
+              <span class="price">3.6</span>
+              <span class="desc">Brewed long, chilled, never watery</span>
+            </div>
+            <div class="menu-item">
+              <span class="name">Morning pastry</span>
+              <span class="price">3.5</span>
+              <span class="desc">Croissant or whatever came out warm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GALLERY (image grid) ============ -->
+    <section class="section gallery" id="gallery">
+      <div class="shell">
+        <div class="head" data-reveal>
+          <h2>The room</h2>
+          <p class="lead">Wood, light, and enough quiet to hear the grinder. Come read, work the morning, or just sit.</p>
+        </div>
+
+        <div class="gallery-grid">
+          <figure class="wide" data-reveal>
+            <img src="https://images.unsplash.com/photo-1525610553991-2bede1a236e2?auto=format&fit=crop&w=900&q=80"
+                 alt="The warm interior of the cafe with counter seating" loading="lazy" />
+          </figure>
+          <figure data-reveal style="--reveal-delay:70ms">
+            <img src="https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=600&q=80"
+                 alt="A barista steaming milk at the espresso machine" loading="lazy" />
+          </figure>
+          <figure data-reveal style="--reveal-delay:120ms">
+            <img src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=500&q=80"
+                 alt="A cup of black coffee seen from above" loading="lazy" />
+          </figure>
+          <figure data-reveal style="--reveal-delay:160ms">
+            <img src="https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=500&q=80"
+                 alt="A barista holding a freshly poured cappuccino" loading="lazy" />
+          </figure>
+          <figure data-reveal style="--reveal-delay:120ms">
+            <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=500&q=80"
+                 alt="Latte art in a white ceramic cup" loading="lazy" />
+          </figure>
+          <figure class="wide" data-reveal style="--reveal-delay:160ms">
+            <img src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=900&q=80"
+                 alt="Two coffees and pastries on a cafe table" loading="lazy" />
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VISIT (split info + image) ============ -->
+    <section class="section visit" id="visit">
+      <div class="shell">
+        <div class="visit-info">
+          <p class="eyebrow" style="color:#e98a5f" data-reveal>Come by</p>
+          <h2 data-reveal style="--reveal-delay:60ms">Find us on Voss Street.</h2>
+          <p class="lead" data-reveal style="--reveal-delay:120ms">Corner spot, big windows, the smell of the first roast. No reservations for one or two, just walk in.</p>
+
+          <dl class="visit-rows" data-reveal style="--reveal-delay:160ms">
+            <div class="visit-row">
+              <dt>Address</dt>
+              <dd>14 Voss Street <span>/ ground floor, corner of Hale Lane</span></dd>
+            </div>
+            <div class="visit-row">
+              <dt>Weekdays</dt>
+              <dd>7:00 to 17:00 <span>/ kitchen until 14:30</span></dd>
+            </div>
+            <div class="visit-row">
+              <dt>Weekends</dt>
+              <dd>8:00 to 18:00 <span>/ brunch from 9:00</span></dd>
+            </div>
+            <div class="visit-row">
+              <dt>Say hello</dt>
+              <dd>hello@cafeone.coffee <span>/ +49 30 8471 2208</span></dd>
+            </div>
+          </dl>
+
+          <div class="visit-actions" data-reveal style="--reveal-delay:200ms">
+            <a class="btn btn--primary" href="https://maps.google.com/?q=14+Voss+Street" target="_blank" rel="noopener">Get directions <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <a class="btn btn--ghost" href="mailto:hello@cafeone.coffee?subject=Table%20for%20a%20group">Reserve for a group</a>
+          </div>
+        </div>
+
+        <figure class="visit-figure" data-reveal style="--reveal-delay:120ms">
+          <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80"
+               alt="Sunlit cafe seating by a large window" loading="lazy" />
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="shell">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <span class="brand">Cafe One<span class="dot">.</span></span>
+          <p>A small specialty coffee bar on Voss Street. Short menu, good beans, a seat you can keep.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Visit</h4>
+          <a href="#visit">14 Voss Street</a>
+          <a href="https://maps.google.com/?q=14+Voss+Street" target="_blank" rel="noopener">Directions</a>
+          <p>Open daily from 7am</p>
+        </div>
+        <div class="footer-col">
+          <h4>Elsewhere</h4>
+          <a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a>
+          <a href="mailto:hello@cafeone.coffee">hello@cafeone.coffee</a>
+          <a href="tel:+493084712208">+49 30 8471 2208</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; <span id="year">2026</span> Cafe One Coffee. All rights reserved.</span>
+        <span>Brewed on Voss Street.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js" defer></script>
+</body>
+</html>
